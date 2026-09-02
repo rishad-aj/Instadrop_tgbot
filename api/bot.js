@@ -1,10 +1,6 @@
 import { Bot, InputFile, webhookCallback } from "grammy";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-
-if (!BOT_TOKEN) {
-  throw new Error("Missing TELEGRAM_BOT_TOKEN");
-}
+const BOT_TOKEN = "8946163976:AAEwnpQ3LuAhNp8HDMkIhi1ZbPMU4Ncsn4s";
 
 const bot = new Bot(BOT_TOKEN);
 

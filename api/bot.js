@@ -6,7 +6,7 @@ const APP = {
   version: "1.0.0"
 };
 
-const CREDIT = "InstaDrop — Created by Muhammed Rishad AJ";
+const MADE_BY = "InstaDrop — Created by Muhammed Rishad AJ";
 
 export default async function handler(req, res) {
   // --------------------------------------------------
@@ -70,8 +70,9 @@ export default async function handler(req, res) {
   }
 
   // --------------------------------------------------
-  // HEADERS — sessionid from env (recommended) or from
-  // an X-IG-Cookie header unlocks carousels + full metadata
+  // HEADERS — set IG_SESSIONID env var (recommended) or
+  // pass X-IG-Cookie header to unlock carousels + likes.
+  // Without a session you still get the first slide + metadata.
   // --------------------------------------------------
   const headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -80,53 +81,80 @@ export default async function handler(req, res) {
   const cookie = process.env.IG_SESSIONID || req.headers["x-ig-cookie"];
   if (cookie) headers["Cookie"] = cookie;
 
-  let meta = { username: null, caption: "", likeCount: null, isCarousel: null };
+  let owner = null;
+  let username = null;
+  let caption = "";
+  let likeCount = null;
+  let isCarousel = null;
   let items = [];
+  let source = null;
   let blocked = false;
+  let mediaId = shortcodeToId(shortcode);
 
   // --------------------------------------------------
-  // METHOD 0 (BEST) — internal API with session:
-  // full carousel slides, video, and rich metadata
+  // METHOD 0 — oEmbed: owner + caption, no session needed
+  // --------------------------------------------------
+  try {
+    const oe = await fetch(
+      `https://www.instagram.com/api/v1/oembed/?url=${encodeURIComponent(`https://www.instagram.com/p/${shortcode}/`)}`,
+      { headers }
+    );
+    if (oe.ok) {
+      const j = await oe.json();
+      username = j.author_name || username;
+      caption = j.title || caption;
+      if (j.media_id && j.media_id.includes("_")) mediaId = j.media_id.split("_")[0];
+    }
+  } catch (_) {}
+
+  // --------------------------------------------------
+  // METHOD 1 (BEST) — internal API with session:
+  // all carousel slides, videos, likes
   // --------------------------------------------------
   if (cookie) {
-    try {
-      const mediaId = shortcodeToId(shortcode);
-      const r = await fetch(`https://www.instagram.com/api/v1/media/${mediaId}/info/`, {
-        headers: { ...headers, "X-IG-App-ID": "936619743392459" }
-      });
-      if (r.ok) {
+    for (const base of [
+      "https://www.instagram.com/api/v1/media/",
+      "https://i.instagram.com/api/v1/media/"
+    ]) {
+      try {
+        const r = await fetch(`${base}${mediaId}/info/`, {
+          headers: { ...headers, "X-IG-App-ID": "936619743392459" }
+        });
+        if (!r.ok) continue;
         const data = await r.json();
-        const post = data && data.items && data.items[0];
-        if (post) {
-          meta.username = post.user?.username || meta.username;
-          meta.caption = post.caption?.text || meta.caption;
-          meta.likeCount = post.like_count ?? meta.likeCount;
-          meta.isCarousel = post.media_type === 8;
+        if (!data || data.status === "fail" || !Array.isArray(data.items) || !data.items.length) continue;
 
-          const slides =
-            post.media_type === 8 && Array.isArray(post.carousel_media)
-              ? post.carousel_media
-              : [post];
+        const post = data.items[0];
+        username = post.user?.username || username;
+        caption = post.caption?.text || caption;
+        likeCount = post.like_count ?? likeCount;
+        isCarousel = post.media_type === 8;
 
-          items = slides.map((s, i) => {
-            const best = pickBest(s.image_versions2 && s.image_versions2.candidates);
-            const vid = (s.video_versions && s.video_versions[0]) || null;
-            return {
-              index: i + 1,
-              type: s.media_type === 2 || vid ? "video" : "image",
-              url: (vid && vid.url) || (best && best.url),
-              width: (vid && vid.width) || (best && best.width) || null,
-              height: (vid && vid.height) || (best && best.height) || null,
-              extension: (vid ? "mp4" : "jpg")
-            };
-          });
-        }
-      }
-    } catch (_) {}
+        const slides =
+          post.media_type === 8 && Array.isArray(post.carousel_media)
+            ? post.carousel_media
+            : [post];
+
+        items = slides.map((s, i) => {
+          const best = pickBest(s.image_versions2 && s.image_versions2.candidates);
+          const vid = (s.video_versions && s.video_versions[0]) || null;
+          return {
+            index: i + 1,
+            type: s.media_type === 2 || vid ? "video" : "image",
+            url: (vid && vid.url) || (best && best.url),
+            width: (vid && vid.width) || (best && best.width) || null,
+            height: (vid && vid.height) || (best && best.height) || null,
+            extension: vid ? "mp4" : "jpg"
+          };
+        });
+        source = "api";
+        break;
+      } catch (_) {}
+    }
   }
 
   // --------------------------------------------------
-  // METHOD 1 — /media/?size=l : largest single image
+  // METHOD 2 — /media/?size=l : largest single image
   // --------------------------------------------------
   if (!items.length) {
     try {
@@ -143,12 +171,13 @@ export default async function handler(req, res) {
           height: null,
           extension: ct.startsWith("video/") ? "mp4" : "jpg"
         });
+        source = "media";
       }
     } catch (_) {}
   }
 
   // --------------------------------------------------
-  // METHOD 2 — og:image / og:video from the post page
+  // METHOD 3 — og:image / og:video from the post page
   // --------------------------------------------------
   if (!items.length) {
     try {
@@ -158,22 +187,22 @@ export default async function handler(req, res) {
       const ogUrl = metaContent(html, "og:url");
       const ogImg = metaContent(html, "og:image");
       const ogVid = metaContent(html, "og:video");
-      const ogDesc = metaContent(html, "og:description");
 
-      meta.username = (ogUrl && ogUrl.match(/instagram\.com\/([A-Za-z0-9_.]+)\/p\//))?.[1] || meta.username;
-      meta.caption = ogDesc ? decodeEntities(ogDesc) : meta.caption;
-      meta.likeCount = ogDesc ? parseLikeCount(ogDesc) : meta.likeCount;
+      username = (ogUrl && ogUrl.match(/instagram\.com\/([A-Za-z0-9_.]+)\/p\//))?.[1] || username;
+      if (!caption) caption = decodeEntities(metaContent(html, "og:description") || "");
+      if (!likeCount) likeCount = parseLikeCount(metaContent(html, "og:description") || "");
 
       if (ogVid) items.push({ index: 1, type: "video", url: ogVid, width: null, height: null, extension: "mp4" });
       else if (ogImg) items.push({ index: 1, type: "image", url: ogImg, width: null, height: null, extension: "jpg" });
       else if (page.status === 403 || page.status === 429) blocked = true;
+      if (items.length) source = "og";
     } catch (_) {
       blocked = true;
     }
   }
 
   // --------------------------------------------------
-  // METHOD 3 — legacy embed page JSON (carousels, captions)
+  // METHOD 4 — legacy embed page JSON (carousels, captions)
   // --------------------------------------------------
   if (!items.length) {
     try {
@@ -182,10 +211,11 @@ export default async function handler(req, res) {
         const media = extractShortcodeMedia(await emb.text());
         if (media) {
           items = mediaToItems(media).map((m, i) => ({ index: i + 1, ...m }));
-          meta.username = media.owner?.username || meta.username;
-          meta.caption = media.edge_media_to_caption?.edges?.[0]?.node?.text || meta.caption;
-          meta.likeCount = media.edge_media_preview_like?.count ?? meta.likeCount;
-          meta.isCarousel = media.__typename === "GraphSidecar";
+          username = media.owner?.username || username;
+          caption = media.edge_media_to_caption?.edges?.[0]?.node?.text || caption;
+          likeCount = media.edge_media_preview_like?.count ?? likeCount;
+          isCarousel = media.__typename === "GraphSidecar";
+          source = "embed";
         }
       }
     } catch (_) {}
@@ -198,12 +228,14 @@ export default async function handler(req, res) {
     return res.status(404).json({
       success: false,
       error: blocked
-        ? "Instagram blocked this server. Pass an X-IG-Cookie header (or set IG_SESSIONID) with your sessionid."
+        ? "Instagram blocked this server. Set IG_SESSIONID or pass X-IG-Cookie."
         : "No media found — the post may be private, deleted, or a story/highlight (not supported)."
     });
   }
 
-  // ?download=1&index=N → 302 redirect straight to that slide's file
+  owner = username ? "@" + username : owner;
+
+  // ?download=1&index=N → 302 redirect straight to that file
   if (req.query.download && items[0]) {
     const idx = parseInt(req.query.index, 10) || 1;
     return res.redirect(302, items[idx - 1]?.url || items[0].url);
@@ -211,20 +243,21 @@ export default async function handler(req, res) {
 
   const payload = {
     success: true,
+    p: true,
     app: APP,
-    credit: CREDIT,
-    post: {
-      url: instagramUrl.origin + pathname,
-      type,
-      shortcode,
-      username: meta.username,
-      caption: meta.caption,
-      likeCount: meta.likeCount,
-      isCarousel: meta.isCarousel,
-      mediaCount: items.length
-    },
+    made_by: MADE_BY,
+    type,
+    shortcode,
+    owner,
+    username,
+    caption,
+    likeCount,
+    isCarousel,
+    image: items.filter((i) => i.type === "image").map((i) => i.url),
+    video: items.filter((i) => i.type === "video").map((i) => i.url),
     media: items,
-    totalMedia: items.length
+    totalMedia: items.length,
+    source
   };
 
   res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=86400");

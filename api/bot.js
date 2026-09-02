@@ -2,13 +2,29 @@ import { Bot, InputFile, webhookCallback } from "grammy";
 
 const BOT_TOKEN = "8946163976:AAEwnpQ3LuAhNp8HDMkIhi1ZbPMU4Ncsn4s";
 
-const bot = new Bot(BOT_TOKEN);
+
+
+// ------------------------------------------------------------------
+// TOKEN — never hardcode it. Set it as a Vercel environment variable:
+//   vercel env add BOT_TOKEN production
+// (If you ever paste a token into a chat/repo, revoke it in @BotFather!)
+// ------------------------------------------------------------------
+
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || ""; // optional but recommended
+
+const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 8000); // keep < Vercel's 10s on Hobby
+
+const bot = BOT_TOKEN ? new Bot(BOT_TOKEN) : null;
 
 // ----------------------------------------------------
 // API CONFIG
-// Put each API here according to what it supports.
+// The SAME downloader endpoints the Instadrop website
+// (public/script.js) uses, tried in order until one
+// returns media. Response shapes vary per service:
+//   thakur-infopd → { image: ["url", ...] } or { video: ["url", ...] }
+//   mn-bots       → { success, media: [{ type, url, thumb }] }
+//   others        → objects with url/video_url/display_url/link, or arrays of those
 // ----------------------------------------------------
-
 const APIS = {
   post: [
     (url) =>
@@ -80,8 +96,8 @@ function cleanUrl(url) {
 }
 
 function detectType(url) {
-  const match = url.match(
-    /instagram\.com\/(reel|reels|p|tv|stories|story|s)\/?/i
+  const match = String(url).match(
+    /(?:instagram\.com|instagr\.am)\/(?:[A-Za-z0-9._]{1,30}\/)?(reel|reels|p|tv|stories|story|s)(?:\/|$)/i
   );
 
   if (!match) {
@@ -111,7 +127,9 @@ function isInstagramUrl(url) {
 
     return (
       u.hostname === "instagram.com" ||
-      u.hostname === "www.instagram.com"
+      u.hostname === "www.instagram.com" ||
+      u.hostname === "instagr.am" ||
+      u.hostname === "www.instagr.am"
     );
   } catch {
     return false;
@@ -121,118 +139,95 @@ function isInstagramUrl(url) {
 
 // ----------------------------------------------------
 // FIND MEDIA URLS IN API RESPONSE
+// Robust against every shape the services actually return:
+//  * explicit keys (url, video, video_url, image_url, display_url, link, thumbnail, img)
+//  * arrays of plain URL strings (thakur's image:[...] / video:[...])
+//  * arrays of objects (mn-bots' media:[{url,type}], items, data, result, ...)
+//  * instagram nested structures (video_versions, image_versions2, carousel_media)
 // ----------------------------------------------------
+
+function cleanMediaUrl(u) {
+  return String(u || "")
+    .trim()
+    .replace(/\\\//g, "/")
+    .replace(/&amp;/g, "&");
+}
 
 function extractMedia(data) {
   const results = [];
+  const seen = new Set();
+
+  const push = (raw, type) => {
+    const url = cleanMediaUrl(raw);
+    if (!/^https?:\/\//i.test(url)) return;
+    if (seen.has(url)) return;
+    seen.add(url);
+
+    const isVideo =
+      type === "video" || /\.(mp4|mov|webm)(\?|&|$)/i.test(url);
+    const isImage =
+      type === "image" || /\.(jpg|jpeg|png|webp|gif)(\?|&|$)/i.test(url);
+
+    if (!isVideo && !isImage) return; // not a direct media file
+
+    results.push({ url, type: isVideo ? "video" : "image" });
+  };
 
   function walk(value) {
     if (!value) return;
 
     if (typeof value === "string") {
-      if (
-        value.startsWith("http://") ||
-        value.startsWith("https://")
-      ) {
-        if (
-          /\.(mp4|mov|webm)(\?|$)/i.test(value) ||
-          /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(value)
-        ) {
-          results.push({
-            url: value,
-            type: /\.(mp4|mov|webm)(\?|$)/i.test(value)
-              ? "video"
-              : "image"
-          });
-        }
-      }
-
+      push(value);
       return;
     }
 
     if (Array.isArray(value)) {
-      for (const item of value) {
-        walk(item);
-      }
-
+      for (const item of value) walk(item);
       return;
     }
 
-    if (typeof value === "object") {
-      const videoKeys = [
-        "video",
-        "video_url",
-        "videoUrl",
-        "download_url",
-        "downloadUrl"
-      ];
+    if (typeof value !== "object") return;
 
-      const imageKeys = [
-        "image",
-        "image_url",
-        "imageUrl",
-        "display_url",
-        "displayUrl",
-        "thumbnail"
-      ];
+    // explicit string keys (also gives us mn-bots' {url, type} objects)
+    if (typeof value.url === "string") push(value.url, value.type || value.kind);
+    if (typeof value.video === "string") push(value.video, "video");
+    if (typeof value.video_url === "string") push(value.video_url, "video");
+    if (typeof value.download_url === "string") push(value.download_url, "video");
+    if (typeof value.image_url === "string") push(value.image_url, "image");
+    if (typeof value.display_url === "string") push(value.display_url, "image");
+    if (typeof value.thumbnail === "string") push(value.thumbnail, "image");
+    if (typeof value.img === "string") push(value.img, "image");
+    if (typeof value.link === "string") push(value.link);
 
-      for (const key of videoKeys) {
-        if (typeof value[key] === "string") {
-          results.push({
-            url: value[key],
-            type: "video"
-          });
-        }
+    // instagram-style nested structures
+    if (Array.isArray(value.video_versions)) {
+      const best = value.video_versions
+        .slice()
+        .sort((a, b) => b.width * b.height - a.width * a.height)[0];
+      if (best) push(best.url, "video");
+    }
+    if (value.image_versions2 && Array.isArray(value.image_versions2.candidates)) {
+      const best = value.image_versions2.candidates
+        .slice()
+        .sort((a, b) => b.width * b.height - a.width * a.height)[0];
+      if (best) push(best.url, "image");
+    }
+
+    // arrays of URL strings or objects, under any known collection key
+    for (const key of ["image", "video", "media", "medias", "items", "data", "result", "results", "stories", "carousel_media"]) {
+      if (Array.isArray(value[key])) {
+        for (const item of value[key]) walk(item);
       }
+    }
 
-      for (const key of imageKeys) {
-        if (typeof value[key] === "string") {
-          results.push({
-            url: value[key],
-            type: "image"
-          });
-        }
-      }
-
-      for (const key of [
-        "items",
-        "media",
-        "medias",
-        "data",
-        "result",
-        "results",
-        "stories",
-        "carousel"
-      ]) {
-        if (value[key]) {
-          walk(value[key]);
-        }
-      }
-
-      // Instagram-style nested structures
-      if (value.video_versions) {
-        walk(value.video_versions);
-      }
-
-      if (value.image_versions2) {
-        walk(value.image_versions2);
-      }
+    // last resort: any nested object (dedup handles repeats)
+    for (const v of Object.values(value)) {
+      if (v && typeof v === "object") walk(v);
     }
   }
 
   walk(data);
-
-  // Remove duplicates
-  const seen = new Set();
-
-  return results.filter((item) => {
-    if (!item.url || seen.has(item.url)) {
-      return false;
-    }
-
-    seen.add(item.url);
-    return true;
-  });
+  return results;
 }
 
 
@@ -245,7 +240,7 @@ async function callApi(apiUrl) {
 
   const timeout = setTimeout(() => {
     controller.abort();
-  }, 20000);
+  }, REQUEST_TIMEOUT_MS);
 
   try {
     const response = await fetch(apiUrl, {
@@ -272,18 +267,9 @@ async function callApi(apiUrl) {
     }
 
     if (typeof data === "string") {
-      const urls = [
-        ...data.matchAll(
-          /https?:\/\/[^\s"'<>\\]+/gi
-        )
-      ].map((m) => m[0]);
-
-      return urls.map((url) => ({
-        url,
-        type: /\.(mp4|mov|webm)(\?|$)/i.test(url)
-          ? "video"
-          : "image"
-      }));
+      // raw HTML/text — grab every http(s) URL and keep the media ones
+      const urls = [...data.matchAll(/https?:\/\/[^\s"'<>\\]+/gi)].map((m) => m[0]);
+      return extractMedia(urls);
     }
 
     return extractMedia(data);
@@ -303,7 +289,7 @@ async function resolveInstagram(url) {
 
   if (!type) {
     throw new Error(
-      "Unsupported Instagram URL. Send a Reel, Post, Story or supported Instagram link."
+      "Unsupported Instagram URL. Send a Reel or Post link."
     );
   }
 
@@ -350,7 +336,7 @@ async function downloadMedia(url) {
 
   const timeout = setTimeout(() => {
     controller.abort();
-  }, 30000);
+  }, REQUEST_TIMEOUT_MS);
 
   try {
     const response = await fetch(url, {
@@ -394,16 +380,21 @@ async function downloadMedia(url) {
 
 
 // ----------------------------------------------------
-// /start
+// /start  — with the Instadrop OG image
 // ----------------------------------------------------
 
 bot.command("start", async (ctx) => {
-  await ctx.reply(
-    "👋 Welcome to Instadrop!\n\n" +
-    "Send me an Instagram Reel or Post URL and I'll send you the media.\n\n" +
-    "Example:\n" +
-    "https://www.instagram.com/reel/XXXXXXXX/"
-  );
+  await ctx.replyWithPhoto("https://instadrop.web.app/og-image.png", {
+    caption:
+      "👋 <b>Welcome to Instadrop</b>\n\n" +
+      "Send me an Instagram <b>Reel</b> or <b>Post</b> link and I'll send the video straight to you.\n\n" +
+      "📌 <b>Examples</b>:\n" +
+      "<code>https://www.instagram.com/reel/AbCdEfGhIjk/</code>\n" +
+      "<code>https://www.instagram.com/p/AbCdEfGhIjk/</code>\n\n" +
+      "🔒 I only look at the link you send — nothing else is collected.\n" +
+      "💾 Carousels are sent slide by slide.",
+    parse_mode: "HTML"
+  });
 });
 
 
@@ -413,13 +404,16 @@ bot.command("start", async (ctx) => {
 
 bot.command("help", async (ctx) => {
   await ctx.reply(
-    "📥 Instadrop Bot\n\n" +
-    "Send an Instagram URL and I'll try to download it.\n\n" +
-    "Supported:\n" +
+    "📥 <b>Instadrop Bot</b>\n\n" +
+    "Send an Instagram URL and I'll download it for you.\n\n" +
+    "<b>Supported:</b>\n" +
     "🎬 Reels\n" +
     "🖼 Posts\n" +
     "📚 Carousels\n\n" +
-    "More Instagram types can be enabled by adding their API."
+    "<b>Commands:</b>\n" +
+    "/start — welcome\n" +
+    "/help — this help",
+    { parse_mode: "HTML" }
   );
 });
 
@@ -432,7 +426,7 @@ bot.on("message:text", async (ctx) => {
   const text = ctx.message.text.trim();
 
   const match = text.match(
-    /https?:\/\/(?:www\.)?instagram\.com\/[^\s]+/i
+    /https?:\/\/(?:www\.)?(?:instagram\.com|instagr\.am)\/[^\s]+/i
   );
 
   if (!match) {
@@ -454,7 +448,7 @@ bot.on("message:text", async (ctx) => {
   }
 
   const status = await ctx.reply(
-    "⏳ Finding media..."
+    "⏳ Downloading..."
   );
 
   try {
@@ -465,9 +459,7 @@ bot.on("message:text", async (ctx) => {
     await ctx.api.editMessageText(
       ctx.chat.id,
       status.message_id,
-      `✅ Found ${media.length} media file${
-        media.length === 1 ? "" : "s"
-      }.\n\n📤 Sending...`
+      `✅ Found ${media.length} media file${media.length === 1 ? "" : "s"}.\n\n📤 Sending...`
     );
 
     let sent = 0;
@@ -494,7 +486,7 @@ bot.on("message:text", async (ctx) => {
           await ctx.replyWithVideo(file, {
             caption:
               i === 0
-                ? "📥 Instadrop"
+                ? "📥 Downloaded with Instadrop"
                 : undefined,
             supports_streaming: true
           });
@@ -502,7 +494,7 @@ bot.on("message:text", async (ctx) => {
           await ctx.replyWithPhoto(file, {
             caption:
               i === 0
-                ? "📥 Instadrop"
+                ? "📥 Downloaded with Instadrop"
                 : undefined
           });
         }
@@ -526,9 +518,7 @@ bot.on("message:text", async (ctx) => {
     await ctx.api.editMessageText(
       ctx.chat.id,
       status.message_id,
-      `✅ Done!\n\nSent ${sent} file${
-        sent === 1 ? "" : "s"
-      }.`
+      `✅ Done!\n\nSent ${sent} file${sent === 1 ? "" : "s"}.`
     );
 
   } catch (error) {
@@ -547,6 +537,16 @@ bot.on("message:text", async (ctx) => {
 // VERCEL WEBHOOK
 // ----------------------------------------------------
 
+// Telegram retries webhook calls it doesn't get a quick 2xx for —
+// remember recent update_ids so a retry never double-sends.
+const processedUpdates = new Map();
+const UPDATE_TTL = 10 * 60 * 1000;
+
+// Vercel: raise this on Pro for bigger/faster downloads (Hobby is capped at 10)
+export const config = {
+  maxDuration: 10
+};
+
 export default async function handler(req, res) {
   if (req.method === "GET") {
     return res.status(200).json({
@@ -562,10 +562,29 @@ export default async function handler(req, res) {
     });
   }
 
+  if (WEBHOOK_SECRET && req.headers["x-telegram-bot-api-secret-token"] !== WEBHOOK_SECRET) {
+    return res.status(401).json({ ok: false });
+  }
+
+  if (!bot) {
+    return res.status(200).json({ ok: true, error: "BOT_TOKEN not configured" });
+  }
+
+  const updateId = req.body && req.body.update_id;
+  if (updateId) {
+    if (processedUpdates.has(updateId)) {
+      return res.status(200).json({ ok: true, deduped: true });
+    }
+    processedUpdates.set(updateId, Date.now());
+    for (const [id, ts] of processedUpdates) {
+      if (Date.now() - ts > UPDATE_TTL) processedUpdates.delete(id);
+    }
+  }
+
   try {
     await webhookCallback(
       bot,
-      "http"
+      "vercel"
     )(req, res);
   } catch (error) {
     console.error(
@@ -580,3 +599,4 @@ export default async function handler(req, res) {
     }
   }
 }
+

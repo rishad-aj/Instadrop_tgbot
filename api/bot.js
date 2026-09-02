@@ -1,410 +1,330 @@
 // api/resolve.js
 
-export default async function handler(req, res) {
-  // ==================================================
-  // CORS
-  // ==================================================
+const APP = {
+  name: "InstaDrop",
+  creator: "Muhammed Rishad AJ",
+  version: "1.0.0"
+};
 
+const CREDIT = "InstaDrop — Created by Muhammed Rishad AJ";
+
+export default async function handler(req, res) {
+  // --------------------------------------------------
+  // CORS
+  // --------------------------------------------------
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, X-IG-Cookie"
-  );
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-IG-Cookie");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
 
+  // --------------------------------------------------
+  // ONLY GET REQUESTS
+  // --------------------------------------------------
   if (req.method !== "GET") {
-    return res.status(405).json({
-      success: false,
-      error: "Method not allowed"
-    });
+    return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
-  // ==================================================
-  // URL
-  // ==================================================
-
-  const inputUrl = req.query.url;
-
-  if (!inputUrl) {
-    return res.status(400).json({
-      success: false,
-      error: "Missing Instagram URL"
-    });
+  // --------------------------------------------------
+  // GET INSTAGRAM URL
+  // --------------------------------------------------
+  const { url } = req.query;
+  if (!url) {
+    return res.status(400).json({ success: false, error: "Missing Instagram URL" });
   }
 
-  let parsedUrl;
-
+  // --------------------------------------------------
+  // VALIDATE INSTAGRAM URL
+  // --------------------------------------------------
+  let instagramUrl;
   try {
-    parsedUrl = new URL(inputUrl);
+    instagramUrl = new URL(url);
   } catch {
-    return res.status(400).json({
-      success: false,
-      error: "Invalid URL"
-    });
+    return res.status(400).json({ success: false, error: "Invalid URL" });
   }
 
-  const hostname = parsedUrl.hostname.toLowerCase();
-
-  if (
-    hostname !== "instagram.com" &&
-    hostname !== "www.instagram.com" &&
-    hostname !== "m.instagram.com"
-  ) {
-    return res.status(400).json({
-      success: false,
-      error: "URL is not an Instagram URL"
-    });
+  const hostname = instagramUrl.hostname.toLowerCase();
+  const validInstagramHosts = ["instagram.com", "www.instagram.com", "m.instagram.com"];
+  if (!validInstagramHosts.includes(hostname)) {
+    return res.status(400).json({ success: false, error: "URL is not an Instagram URL" });
   }
 
-  // ==================================================
-  // EXTRACT SHORTCODE
-  // ==================================================
+  // --------------------------------------------------
+  // DETECT CONTENT TYPE
+  // --------------------------------------------------
+  const pathname = instagramUrl.pathname;
 
-  const match = parsedUrl.pathname.match(
-    /\/(?:p|reel|reels|tv|stories)\/([A-Za-z0-9_-]+)/
-  );
+  let type = "unknown";
+  if (pathname.startsWith("/stories/highlights/")) type = "highlight";
+  else if (pathname.startsWith("/stories/")) type = "story";
+  else if (pathname.startsWith("/reel/") || pathname.startsWith("/reels/")) type = "reel";
+  else if (pathname.startsWith("/p/")) type = "post";
 
-  if (!match) {
-    return res.status(400).json({
-      success: false,
-      error: "Could not extract Instagram shortcode"
-    });
+  // --------------------------------------------------
+  // EXTRACT SHORTCODE (the post ID in the URL)
+  // --------------------------------------------------
+  const match = pathname.match(/\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
+  const shortcode = match && match[1];
+  if (!shortcode) {
+    return res.status(400).json({ success: false, error: "Could not extract post shortcode from URL" });
   }
 
-  const shortcode = match[1];
-
-  // ==================================================
-  // HEADERS
-  //
-  // X-IG-Cookie can optionally be supplied by your
-  // frontend/server.
-  // ==================================================
-
-  const userAgent =
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-    "AppleWebKit/537.36 (KHTML, like Gecko) " +
-    "Chrome/124.0.0.0 Safari/537.36";
-
-  const xIgAppId =
-    "936619743392459";
-
+  // --------------------------------------------------
+  // HEADERS — sessionid from env (recommended) or from
+  // an X-IG-Cookie header unlocks carousels + full metadata
+  // --------------------------------------------------
   const headers = {
-    "User-Agent": userAgent,
-    "X-IG-App-ID": xIgAppId,
-    "Accept": "*/*",
-    "Sec-Fetch-Site": "same-origin"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9"
   };
+  const cookie = process.env.IG_SESSIONID || req.headers["x-ig-cookie"];
+  if (cookie) headers["Cookie"] = cookie;
 
-  if (req.headers["x-ig-cookie"]) {
-    headers["Cookie"] = req.headers["x-ig-cookie"];
-  }
+  let meta = { username: null, caption: "", likeCount: null, isCarousel: null };
+  let items = [];
+  let blocked = false;
 
-  // ==================================================
-  // RESULT
-  // ==================================================
-
-  let media = null;
-  let lastError = null;
-
-  // ==================================================
-  // METHOD 1
-  //
-  // Instagram Magic Parameters
-  //
-  // ?__a=1&__d=dis
-  // ==================================================
-
-  try {
-    const apiUrl =
-      `https://www.instagram.com/p/${shortcode}/` +
-      `?__a=1&__d=dis`;
-
-    const response = await fetch(apiUrl, {
-      method: "GET",
-      headers
-    });
-
-    if (response.ok) {
-      const json = await response.json();
-
-      if (json?.items?.[0]) {
-        media = json.items[0];
-      }
-    } else {
-      lastError = `Magic Parameters returned ${response.status}`;
-    }
-  } catch (error) {
-    lastError = error;
-  }
-
-  // ==================================================
-  // METHOD 2
-  //
-  // Instagram GraphQL
-  //
-  // This is the method used by the GitHub project.
-  // ==================================================
-
-  if (!media) {
+  // --------------------------------------------------
+  // METHOD 0 (BEST) — internal API with session:
+  // full carousel slides, video, and rich metadata
+  // --------------------------------------------------
+  if (cookie) {
     try {
-      const graphqlUrl = new URL(
-        "https://www.instagram.com/api/graphql"
-      );
+      const mediaId = shortcodeToId(shortcode);
+      const r = await fetch(`https://www.instagram.com/api/v1/media/${mediaId}/info/`, {
+        headers: { ...headers, "X-IG-App-ID": "936619743392459" }
+      });
+      if (r.ok) {
+        const data = await r.json();
+        const post = data && data.items && data.items[0];
+        if (post) {
+          meta.username = post.user?.username || meta.username;
+          meta.caption = post.caption?.text || meta.caption;
+          meta.likeCount = post.like_count ?? meta.likeCount;
+          meta.isCarousel = post.media_type === 8;
 
-      graphqlUrl.searchParams.set(
-        "variables",
-        JSON.stringify({
-          shortcode
-        })
-      );
+          const slides =
+            post.media_type === 8 && Array.isArray(post.carousel_media)
+              ? post.carousel_media
+              : [post];
 
-      graphqlUrl.searchParams.set(
-        "doc_id",
-        "10015901848480474"
-      );
-
-      graphqlUrl.searchParams.set(
-        "lsd",
-        "AVqbxe3J_YA"
-      );
-
-      const response = await fetch(
-        graphqlUrl.toString(),
-        {
-          method: "POST",
-
-          headers: {
-            ...headers,
-            "Content-Type":
-              "application/x-www-form-urlencoded",
-            "X-FB-LSD":
-              "AVqbxe3J_YA",
-            "X-ASBD-ID":
-              "129477"
-          }
+          items = slides.map((s, i) => {
+            const best = pickBest(s.image_versions2 && s.image_versions2.candidates);
+            const vid = (s.video_versions && s.video_versions[0]) || null;
+            return {
+              index: i + 1,
+              type: s.media_type === 2 || vid ? "video" : "image",
+              url: (vid && vid.url) || (best && best.url),
+              width: (vid && vid.width) || (best && best.width) || null,
+              height: (vid && vid.height) || (best && best.height) || null,
+              extension: (vid ? "mp4" : "jpg")
+            };
+          });
         }
-      );
-
-      if (response.ok) {
-        const json = await response.json();
-
-        media =
-          json?.data?.xdt_shortcode_media ||
-          null;
-      } else {
-        lastError =
-          `GraphQL returned ${response.status}`;
       }
-    } catch (error) {
-      lastError = error;
-    }
+    } catch (_) {}
   }
 
-  // ==================================================
-  // NOTHING FOUND
-  // ==================================================
-
-  if (!media) {
-    return res.status(404).json({
-      success: false,
-      error:
-        "Unable to resolve this Instagram media",
-      details:
-        process.env.NODE_ENV === "development"
-          ? String(lastError || "")
-          : undefined
-    });
-  }
-
-  // ==================================================
-  // OWNER
-  // ==================================================
-
-  let owner = null;
-
-  if (media?.user?.username) {
-    owner = "@" + media.user.username;
-  } else if (media?.owner?.username) {
-    owner = "@" + media.owner.username;
-  }
-
-  // ==================================================
-  // MEDIA ARRAYS
-  // ==================================================
-
-  const images = [];
-  const videos = [];
-
-  // ==================================================
-  // HELPER
-  // ==================================================
-
-  function addMedia(item) {
-    if (!item) return;
-
-    // ----------------------------------------------
-    // VIDEO
-    // ----------------------------------------------
-
-    if (
-      item.is_video === true ||
-      item.video_url ||
-      item.video_versions?.length
-    ) {
-      const videoUrl =
-        item.video_url ||
-        item.video_versions?.[0]?.url;
-
-      if (videoUrl) {
-        videos.push(videoUrl);
-        return;
+  // --------------------------------------------------
+  // METHOD 1 — /media/?size=l : largest single image
+  // --------------------------------------------------
+  if (!items.length) {
+    try {
+      const r = await fetch(`https://www.instagram.com/p/${shortcode}/media/?size=l`, {
+        headers, redirect: "follow"
+      });
+      const ct = (r.headers.get("content-type") || "").toLowerCase();
+      if (r.ok && (ct.startsWith("image/") || ct.startsWith("video/"))) {
+        items.push({
+          index: 1,
+          type: ct.startsWith("video/") ? "video" : "image",
+          url: r.url,
+          width: null,
+          height: null,
+          extension: ct.startsWith("video/") ? "mp4" : "jpg"
+        });
       }
-    }
-
-    // ----------------------------------------------
-    // IMAGE
-    // ----------------------------------------------
-
-    const imageUrl =
-      item.display_url ||
-      item.image_versions2?.candidates?.[0]?.url ||
-      item.image_versions?.candidates?.[0]?.url;
-
-    if (imageUrl) {
-      images.push(imageUrl);
-    }
+    } catch (_) {}
   }
 
-  // ==================================================
-  // CAROUSEL
-  //
-  // Instagram GraphQL:
-  //
-  // edge_sidecar_to_children.edges[]
-  //
-  // Magic Parameters:
-  //
-  // carousel_media[]
-  // ==================================================
+  // --------------------------------------------------
+  // METHOD 2 — og:image / og:video from the post page
+  // --------------------------------------------------
+  if (!items.length) {
+    try {
+      const page = await fetch(`https://www.instagram.com/p/${shortcode}/`, { headers });
+      const html = await page.text();
 
-  if (
-    media?.edge_sidecar_to_children?.edges?.length
-  ) {
-    for (
-      const edge of media.edge_sidecar_to_children.edges
-    ) {
-      addMedia(edge.node);
+      const ogUrl = metaContent(html, "og:url");
+      const ogImg = metaContent(html, "og:image");
+      const ogVid = metaContent(html, "og:video");
+      const ogDesc = metaContent(html, "og:description");
+
+      meta.username = (ogUrl && ogUrl.match(/instagram\.com\/([A-Za-z0-9_.]+)\/p\//))?.[1] || meta.username;
+      meta.caption = ogDesc ? decodeEntities(ogDesc) : meta.caption;
+      meta.likeCount = ogDesc ? parseLikeCount(ogDesc) : meta.likeCount;
+
+      if (ogVid) items.push({ index: 1, type: "video", url: ogVid, width: null, height: null, extension: "mp4" });
+      else if (ogImg) items.push({ index: 1, type: "image", url: ogImg, width: null, height: null, extension: "jpg" });
+      else if (page.status === 403 || page.status === 429) blocked = true;
+    } catch (_) {
+      blocked = true;
     }
   }
 
-  // ==================================================
-  // MAGIC PARAMETERS CAROUSEL
-  // ==================================================
-
-  else if (
-    media?.product_type === "carousel_container" &&
-    Array.isArray(media.carousel_media)
-  ) {
-    for (const item of media.carousel_media) {
-      addMedia(item);
-    }
+  // --------------------------------------------------
+  // METHOD 3 — legacy embed page JSON (carousels, captions)
+  // --------------------------------------------------
+  if (!items.length) {
+    try {
+      const emb = await fetch(`https://www.instagram.com/p/${shortcode}/embed/captioned/`, { headers });
+      if (emb.ok) {
+        const media = extractShortcodeMedia(await emb.text());
+        if (media) {
+          items = mediaToItems(media).map((m, i) => ({ index: i + 1, ...m }));
+          meta.username = media.owner?.username || meta.username;
+          meta.caption = media.edge_media_to_caption?.edges?.[0]?.node?.text || meta.caption;
+          meta.likeCount = media.edge_media_preview_like?.count ?? meta.likeCount;
+          meta.isCarousel = media.__typename === "GraphSidecar";
+        }
+      }
+    } catch (_) {}
   }
 
-  // ==================================================
-  // SINGLE MEDIA
-  // ==================================================
-
-  else {
-    addMedia(media);
-  }
-
-  // ==================================================
-  // REMOVE DUPLICATES
-  // ==================================================
-
-  const uniqueImages = [
-    ...new Set(images)
-  ];
-
-  const uniqueVideos = [
-    ...new Set(videos)
-  ];
-
-  // ==================================================
-  // NO MEDIA
-  // ==================================================
-
-  if (
-    !uniqueImages.length &&
-    !uniqueVideos.length
-  ) {
-    return res.status(404).json({
-      success: false,
-      error: "No downloadable media found"
-    });
-  }
-
-  // ==================================================
-  // POST / REEL TYPE
-  // ==================================================
-
-  const isPost =
-    parsedUrl.pathname.startsWith("/p/");
-
-  // ==================================================
+  // --------------------------------------------------
   // RESPONSE
-  //
-  // This intentionally follows the structure you
-  // showed from the working resolver.
-  // ==================================================
+  // --------------------------------------------------
+  if (!items.length) {
+    return res.status(404).json({
+      success: false,
+      error: blocked
+        ? "Instagram blocked this server. Pass an X-IG-Cookie header (or set IG_SESSIONID) with your sessionid."
+        : "No media found — the post may be private, deleted, or a story/highlight (not supported)."
+    });
+  }
 
-  const result = {
-    p: isPost,
+  // ?download=1&index=N → 302 redirect straight to that slide's file
+  if (req.query.download && items[0]) {
+    const idx = parseInt(req.query.index, 10) || 1;
+    return res.redirect(302, items[idx - 1]?.url || items[0].url);
+  }
 
-    image: uniqueImages,
-
-    made_by: "Instadrop ♥️",
-
-    owner
+  const payload = {
+    success: true,
+    app: APP,
+    credit: CREDIT,
+    post: {
+      url: instagramUrl.origin + pathname,
+      type,
+      shortcode,
+      username: meta.username,
+      caption: meta.caption,
+      likeCount: meta.likeCount,
+      isCarousel: meta.isCarousel,
+      mediaCount: items.length
+    },
+    media: items,
+    totalMedia: items.length
   };
 
-  // Only include video when there are videos.
-  if (uniqueVideos.length) {
-    result.video = uniqueVideos;
+  res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=86400");
+  if (req.query.pretty) {
+    res.setHeader("Content-Type", "application/json");
+    return res.status(200).send(JSON.stringify(payload, null, 2));
   }
+  return res.status(200).json(payload);
+}
 
-  // ==================================================
-  // OPTIONAL METADATA
-  //
-  // Kept separate so your existing frontend can
-  // continue using image[] / video[].
-  // ==================================================
+// --------------------------------------------------
+// HELPERS
+// --------------------------------------------------
 
-  if (media?.caption?.text) {
-    result.caption = media.caption.text;
+function shortcodeToId(code) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  let id = 0n;
+  for (const c of code) id = id * 64n + BigInt(alphabet.indexOf(c));
+  return id.toString();
+}
+
+function pickBest(candidates) {
+  if (!Array.isArray(candidates) || !candidates.length) return null;
+  return candidates.reduce((a, b) => ((b.width || 0) > (a.width || 0) ? b : a));
+}
+
+function mediaToItems(media) {
+  const items = [];
+  const push = (node) => items.push({
+    type: node.is_video ? "video" : "image",
+    url: node.is_video ? node.video_url || node.video_versions?.[0]?.url || node.display_url : node.display_url,
+    width: node.dimensions?.width || null,
+    height: node.dimensions?.height || null,
+    extension: node.is_video ? "mp4" : "jpg"
+  });
+  if (media.edge_sidecar_to_children?.edges?.length) {
+    for (const e of media.edge_sidecar_to_children.edges) push(e.node);
+  } else {
+    push(media);
   }
+  return items;
+}
 
-  if (
-    media?.edge_media_to_caption?.edges?.[0]
-      ?.node?.text
-  ) {
-    result.caption =
-      media.edge_media_to_caption.edges[0]
-        .node.text;
-  }
-
-  // ==================================================
-  // CACHE
-  // ==================================================
-
-  res.setHeader(
-    "Cache-Control",
-    "public, max-age=300, s-maxage=3600"
+function metaContent(html, prop) {
+  const m = html.match(
+    new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']+)|` +
+               `<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${prop}["']`, "i")
   );
+  return m ? (m[1] || m[2]) : null;
+}
 
-  return res.status(200).json(result);
+function decodeEntities(s) {
+  if (typeof window !== "undefined" && window.DOMParser) {
+    return new DOMParser().parseFromString(s, "text/html").documentElement.textContent || s;
+  }
+  return s.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'")
+          .replace(/&amp;/g, "&").replace(/&#x2019;/g, "’");
+}
+
+function parseLikeCount(desc) {
+  const m = desc.match(/([\d.,]+)\s*([KMB]?)\s*likes/i);
+  if (!m) return null;
+  const n = parseFloat(m[1].replace(/,/g, ""));
+  if (m[2].toUpperCase() === "K") return Math.round(n * 1e3);
+  if (m[2].toUpperCase() === "M") return Math.round(n * 1e6);
+  if (m[2].toUpperCase() === "B") return Math.round(n * 1e9);
+  return Math.round(n);
+}
+
+function scanBalancedJson(html, openIndex) {
+  let depth = 0, inString = false, escaped = false;
+  for (let i = openIndex; i < html.length; i++) {
+    const c = html[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (c === "\\") escaped = true;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) return html.slice(openIndex, i + 1);
+    }
+  }
+  return null;
+}
+
+function extractShortcodeMedia(html) {
+  let from = 0;
+  while (true) {
+    const marker = html.indexOf("__additionalDataLoaded", from);
+    if (marker === -1) return null;
+    const open = html.indexOf("{", marker);
+    const jsonStr = open !== -1 ? scanBalancedJson(html, open) : null;
+    if (jsonStr) {
+      try {
+        const data = JSON.parse(jsonStr);
+        if (data?.graphql?.shortcode_media) return data.graphql.shortcode_media;
+      } catch (_) {}
+    }
+    from = marker + 1;
+  }
 }

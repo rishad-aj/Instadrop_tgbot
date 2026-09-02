@@ -1,4 +1,4 @@
-const TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN";
+const TELEGRAM_BOT_TOKEN = "8946163976:AAEwnpQ3LuAhNp8HDMkIhi1ZbPMU4Ncsn4s";
 const ADMIN_CHAT_ID = "7216371031";
 
 export default async function handler(req, res) {

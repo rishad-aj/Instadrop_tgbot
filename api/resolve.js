@@ -6,11 +6,9 @@ export default async function handler(req, res) {
   // --------------------------------------------------
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-IG-Cookie");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
 
   // --------------------------------------------------
   // ONLY GET REQUESTS
@@ -64,74 +62,103 @@ export default async function handler(req, res) {
   }
 
   // --------------------------------------------------
-  // FETCH MEDIA DATA FROM INSTAGRAM
+  // HEADERS — pass an X-IG-Cookie header with your
+  // sessionid to get around Instagram blocking servers
   // --------------------------------------------------
-  const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
-  const headers = { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9" };
+  const headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9"
+  };
+  if (req.headers["x-ig-cookie"]) {
+    headers["Cookie"] = req.headers["x-ig-cookie"];
+  }
 
-  let media = null;
-  let html = "";
+  const items = [];
+  let username = null;
+  let caption = "";
+  let likeCount = null;
+  let blocked = false;
 
+  // --------------------------------------------------
+  // METHOD 1 — /media/?size=l : direct largest image
+  // --------------------------------------------------
   try {
-    const embedRes = await fetch(`https://www.instagram.com/p/${shortcode}/embed/captioned/`, { headers });
-    if (embedRes.ok) {
-      html = await embedRes.text();
-      media = extractShortcodeMedia(html);
+    const r = await fetch(`https://www.instagram.com/p/${shortcode}/media/?size=l`, {
+      headers, redirect: "follow"
+    });
+    const ct = (r.headers.get("content-type") || "").toLowerCase();
+    if (r.ok && (ct.startsWith("image/") || ct.startsWith("video/"))) {
+      items.push({ type: ct.startsWith("video/") ? "video" : "image", url: r.url, width: null, height: null });
     }
   } catch (_) {}
 
-  // Fallback: scrape og:image from the normal post page
-  if (!media) {
+  // --------------------------------------------------
+  // METHOD 2 — og:image / og:video from the post page
+  // --------------------------------------------------
+  if (!items.length) {
     try {
-      const pageRes = await fetch(`https://www.instagram.com/p/${shortcode}/`, { headers });
-      if (pageRes.ok) html = await pageRes.text();
-      const og = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)/i);
-      if (og) media = { display_url: og[1], is_video: false };
+      const page = await fetch(`https://www.instagram.com/p/${shortcode}/`, { headers });
+      const html = await page.text();
+
+      const ogUrl = metaContent(html, "og:url");
+      const ogImg = metaContent(html, "og:image");
+      const ogVid = metaContent(html, "og:video");
+      const ogDesc = metaContent(html, "og:description");
+
+      username = (ogUrl && ogUrl.match(/instagram\.com\/([A-Za-z0-9_.]+)\/p\//))?.[1] || username;
+      caption = ogDesc ? decodeEntities(ogDesc) : caption;
+      likeCount = ogDesc ? parseLikeCount(ogDesc) : likeCount;
+
+      if (ogVid) items.push({ type: "video", url: ogVid, width: null, height: null });
+      else if (ogImg) items.push({ type: "image", url: ogImg, width: null, height: null });
+      else if (page.status === 403 || page.status === 429) blocked = true;
+    } catch (_) {
+      blocked = true;
+    }
+  }
+
+  // --------------------------------------------------
+  // METHOD 3 — legacy embed page JSON (carousels, captions)
+  // --------------------------------------------------
+  if (!items.length) {
+    try {
+      const emb = await fetch(`https://www.instagram.com/p/${shortcode}/embed/captioned/`, { headers });
+      if (emb.ok) {
+        const media = extractShortcodeMedia(await emb.text());
+        if (media) {
+          for (const item of mediaToItems(media)) items.push(item);
+          username = media.owner?.username || username;
+          caption = media.edge_media_to_caption?.edges?.[0]?.node?.text || caption;
+          likeCount = media.edge_media_preview_like?.count ?? likeCount;
+        }
+      }
     } catch (_) {}
-  }
-
-  if (!media) {
-    return res.status(404).json({
-      success: false,
-      error: "No media found — Instagram may be blocking this server"
-    });
-  }
-
-  // --------------------------------------------------
-  // BUILD MEDIA LIST (single image, reel, or carousel)
-  // --------------------------------------------------
-  const items = [];
-  const push = (node) => {
-    items.push({
-      type: node.is_video ? "video" : "image",
-      url: node.is_video ? node.video_url || node.video_versions?.[0]?.url || node.display_url : node.display_url,
-      width: node.dimensions?.width || null,
-      height: node.dimensions?.height || null
-    });
-  };
-
-  if (media.edge_sidecar_to_children?.edges?.length) {
-    for (const edge of media.edge_sidecar_to_children.edges) push(edge.node);
-  } else {
-    push(media);
-  }
-
-  // Optional: ?download=1 redirects straight to the media file
-  if (req.query.download && items[0]) {
-    return res.redirect(302, items[0].url);
   }
 
   // --------------------------------------------------
   // RESPONSE
   // --------------------------------------------------
+  if (!items.length) {
+    return res.status(404).json({
+      success: false,
+      error: blocked
+        ? "Instagram blocked this server. Pass an X-IG-Cookie header with your sessionid, or run on a residential IP."
+        : "No media found — the post may be private, deleted, or a story/highlight (not supported)."
+    });
+  }
+
+  if (req.query.download && items[0]) {
+    return res.redirect(302, items[0].url);
+  }
+
   res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=86400");
   return res.status(200).json({
     success: true,
     type,
     shortcode,
-    username: media.owner?.username || null,
-    caption: media.edge_media_to_caption?.edges?.[0]?.node?.text || "",
-    likeCount: media.edge_media_preview_like?.count ?? null,
+    username,
+    caption,
+    likeCount,
     media: items
   });
 }
@@ -139,6 +166,49 @@ export default async function handler(req, res) {
 // --------------------------------------------------
 // HELPERS
 // --------------------------------------------------
+
+function mediaToItems(media) {
+  const items = [];
+  const push = (node) => items.push({
+    type: node.is_video ? "video" : "image",
+    url: node.is_video ? node.video_url || node.video_versions?.[0]?.url || node.display_url : node.display_url,
+    width: node.dimensions?.width || null,
+    height: node.dimensions?.height || null
+  });
+  if (media.edge_sidecar_to_children?.edges?.length) {
+    for (const e of media.edge_sidecar_to_children.edges) push(e.node);
+  } else {
+    push(media);
+  }
+  return items;
+}
+
+function metaContent(html, prop) {
+  const m = html.match(
+    new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']+)|` +
+               `<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${prop}["']`, "i")
+  );
+  return m ? (m[1] || m[2]) : null;
+}
+
+function decodeEntities(s) {
+  const d = document ? document : null;
+  if (typeof window !== "undefined" && window.DOMParser) {
+    return new DOMParser().parseFromString(s, "text/html").documentElement.textContent || s;
+  }
+  return s.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'")
+          .replace(/&amp;/g, "&").replace(/&#x2019;/g, "’");
+}
+
+function parseLikeCount(desc) {
+  const m = desc.match(/([\d.,]+)\s*([KMB]?)\s*likes/i);
+  if (!m) return null;
+  const n = parseFloat(m[1].replace(/,/g, ""));
+  if (m[2].toUpperCase() === "K") return Math.round(n * 1e3);
+  if (m[2].toUpperCase() === "M") return Math.round(n * 1e6);
+  if (m[2].toUpperCase() === "B") return Math.round(n * 1e9);
+  return Math.round(n);
+}
 
 // Instagram embeds post data as:
 //   window.__additionalDataLoaded('extra', { "config": ... });

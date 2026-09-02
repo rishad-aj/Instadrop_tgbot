@@ -1,5 +1,13 @@
 // api/resolve.js
 
+const APP = {
+  name: "InstaDrop",
+  creator: "Muhammed Rishad AJ",
+  version: "1.0.0"
+};
+
+const CREDIT = "InstaDrop — Created by Muhammed Rishad AJ";
+
 export default async function handler(req, res) {
   // --------------------------------------------------
   // CORS
@@ -14,51 +22,31 @@ export default async function handler(req, res) {
   // ONLY GET REQUESTS
   // --------------------------------------------------
   if (req.method !== "GET") {
-    return res.status(405).json({
-      success: false,
-      error: "Method not allowed"
-    });
+    return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
   // --------------------------------------------------
   // GET INSTAGRAM URL
   // --------------------------------------------------
   const { url } = req.query;
-
   if (!url) {
-    return res.status(400).json({
-      success: false,
-      error: "Missing Instagram URL"
-    });
+    return res.status(400).json({ success: false, error: "Missing Instagram URL" });
   }
 
   // --------------------------------------------------
   // VALIDATE INSTAGRAM URL
   // --------------------------------------------------
   let instagramUrl;
-
   try {
     instagramUrl = new URL(url);
   } catch {
-    return res.status(400).json({
-      success: false,
-      error: "Invalid URL"
-    });
+    return res.status(400).json({ success: false, error: "Invalid URL" });
   }
 
   const hostname = instagramUrl.hostname.toLowerCase();
-
-  const validInstagramHosts = [
-    "instagram.com",
-    "www.instagram.com",
-    "m.instagram.com"
-  ];
-
+  const validInstagramHosts = ["instagram.com", "www.instagram.com", "m.instagram.com"];
   if (!validInstagramHosts.includes(hostname)) {
-    return res.status(400).json({
-      success: false,
-      error: "URL is not an Instagram URL"
-    });
+    return res.status(400).json({ success: false, error: "URL is not an Instagram URL" });
   }
 
   // --------------------------------------------------
@@ -67,561 +55,276 @@ export default async function handler(req, res) {
   const pathname = instagramUrl.pathname;
 
   let type = "unknown";
-
-  if (pathname.startsWith("/stories/highlights/")) {
-    type = "highlight";
-  } else if (pathname.startsWith("/stories/")) {
-    type = "story";
-  } else if (
-    pathname.startsWith("/reel/") ||
-    pathname.startsWith("/reels/")
-  ) {
-    type = "reel";
-  } else if (pathname.startsWith("/p/")) {
-    type = "post";
-  }
+  if (pathname.startsWith("/stories/highlights/")) type = "highlight";
+  else if (pathname.startsWith("/stories/")) type = "story";
+  else if (pathname.startsWith("/reel/") || pathname.startsWith("/reels/")) type = "reel";
+  else if (pathname.startsWith("/p/")) type = "post";
 
   // --------------------------------------------------
-  // EXTRACT SHORTCODE
+  // EXTRACT SHORTCODE (the post ID in the URL)
   // --------------------------------------------------
-  const match = pathname.match(
-    /\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/
-  );
-
+  const match = pathname.match(/\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
   const shortcode = match && match[1];
-
   if (!shortcode) {
-    return res.status(400).json({
-      success: false,
-      error: "Could not extract post shortcode from URL"
-    });
+    return res.status(400).json({ success: false, error: "Could not extract post shortcode from URL" });
   }
 
   // --------------------------------------------------
-  // HEADERS
+  // HEADERS — sessionid from env (recommended) or from
+  // an X-IG-Cookie header unlocks carousels + full metadata
   // --------------------------------------------------
   const headers = {
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-      "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9"
   };
+  const cookie = process.env.IG_SESSIONID || req.headers["x-ig-cookie"];
+  if (cookie) headers["Cookie"] = cookie;
 
-  if (req.headers["x-ig-cookie"]) {
-    headers["Cookie"] = req.headers["x-ig-cookie"];
-  }
-
-  // --------------------------------------------------
-  // DATA
-  // --------------------------------------------------
+  let meta = { username: null, caption: "", likeCount: null, isCarousel: null };
   let items = [];
-  let username = null;
-  let caption = "";
-  let likeCount = null;
   let blocked = false;
 
   // --------------------------------------------------
-  // METHOD 1
-  // Try Instagram media endpoint
+  // METHOD 0 (BEST) — internal API with session:
+  // full carousel slides, video, and rich metadata
   // --------------------------------------------------
-  try {
-    const r = await fetch(
-      `https://www.instagram.com/p/${shortcode}/media/?size=l`,
-      {
-        headers,
-        redirect: "follow"
-      }
-    );
-
-    const ct = (
-      r.headers.get("content-type") || ""
-    ).toLowerCase();
-
-    if (
-      r.ok &&
-      (ct.startsWith("image/") || ct.startsWith("video/"))
-    ) {
-      items.push({
-        type: ct.startsWith("video/") ? "video" : "image",
-        url: r.url,
-        width: null,
-        height: null,
-        index: 1
-      });
-    }
-
-    if (r.status === 403 || r.status === 429) {
-      blocked = true;
-    }
-  } catch (_) {}
-
-  // --------------------------------------------------
-  // METHOD 2
-  // Instagram post HTML
-  //
-  // This is also where we try to extract carousel data.
-  // --------------------------------------------------
-  try {
-    const page = await fetch(
-      `https://www.instagram.com/p/${shortcode}/`,
-      {
-        headers,
-        redirect: "follow"
-      }
-    );
-
-    const html = await page.text();
-
-    // ----------------------------------------------
-    // Basic OG metadata
-    // ----------------------------------------------
-    const ogUrl = metaContent(html, "og:url");
-    const ogImg = metaContent(html, "og:image");
-    const ogVid = metaContent(html, "og:video");
-    const ogDesc = metaContent(html, "og:description");
-
-    username =
-      (ogUrl &&
-        ogUrl.match(
-          /instagram\.com\/([A-Za-z0-9_.]+)\/(?:p|reel)\//
-        )?.[1]) ||
-      username;
-
-    if (ogDesc) {
-      caption = decodeEntities(ogDesc);
-      likeCount = parseLikeCount(ogDesc);
-    }
-
-    // ----------------------------------------------
-    // IMPORTANT:
-    // Look for Instagram's embedded shortcode_media
-    // ----------------------------------------------
-    const media = extractShortcodeMedia(html);
-
-    if (media) {
-      const carouselItems = mediaToItems(media);
-
-      if (carouselItems.length) {
-        // Replace the single OG/media result
-        // with the complete carousel.
-        items = carouselItems;
-
-        username =
-          media.owner?.username ||
-          username;
-
-        caption =
-          media.edge_media_to_caption?.edges?.[0]?.node?.text ||
-          caption;
-
-        likeCount =
-          media.edge_media_preview_like?.count ??
-          likeCount;
-      }
-    }
-
-    // ----------------------------------------------
-    // Fallback OG media
-    // ----------------------------------------------
-    if (!items.length) {
-      if (ogVid) {
-        items.push({
-          type: "video",
-          url: ogVid,
-          width: null,
-          height: null,
-          index: 1
-        });
-      } else if (ogImg) {
-        items.push({
-          type: "image",
-          url: ogImg,
-          width: null,
-          height: null,
-          index: 1
-        });
-      }
-    }
-
-    if (page.status === 403 || page.status === 429) {
-      blocked = true;
-    }
-  } catch (_) {
-    blocked = true;
-  }
-
-  // --------------------------------------------------
-  // METHOD 3
-  // Legacy embed endpoint
-  // --------------------------------------------------
-  if (!items.length) {
+  if (cookie) {
     try {
-      const emb = await fetch(
-        `https://www.instagram.com/p/${shortcode}/embed/captioned/`,
-        {
-          headers,
-          redirect: "follow"
-        }
-      );
+      const mediaId = shortcodeToId(shortcode);
+      const r = await fetch(`https://www.instagram.com/api/v1/media/${mediaId}/info/`, {
+        headers: { ...headers, "X-IG-App-ID": "936619743392459" }
+      });
+      if (r.ok) {
+        const data = await r.json();
+        const post = data && data.items && data.items[0];
+        if (post) {
+          meta.username = post.user?.username || meta.username;
+          meta.caption = post.caption?.text || meta.caption;
+          meta.likeCount = post.like_count ?? meta.likeCount;
+          meta.isCarousel = post.media_type === 8;
 
-      if (emb.ok) {
-        const media = extractShortcodeMedia(
-          await emb.text()
-        );
+          const slides =
+            post.media_type === 8 && Array.isArray(post.carousel_media)
+              ? post.carousel_media
+              : [post];
 
-        if (media) {
-          const embedItems = mediaToItems(media);
-
-          if (embedItems.length) {
-            items = embedItems;
-          }
-
-          username =
-            media.owner?.username ||
-            username;
-
-          caption =
-            media.edge_media_to_caption?.edges?.[0]?.node?.text ||
-            caption;
-
-          likeCount =
-            media.edge_media_preview_like?.count ??
-            likeCount;
+          items = slides.map((s, i) => {
+            const best = pickBest(s.image_versions2 && s.image_versions2.candidates);
+            const vid = (s.video_versions && s.video_versions[0]) || null;
+            return {
+              index: i + 1,
+              type: s.media_type === 2 || vid ? "video" : "image",
+              url: (vid && vid.url) || (best && best.url),
+              width: (vid && vid.width) || (best && best.width) || null,
+              height: (vid && vid.height) || (best && best.height) || null,
+              extension: (vid ? "mp4" : "jpg")
+            };
+          });
         }
       }
     } catch (_) {}
   }
 
   // --------------------------------------------------
-  // NO MEDIA
+  // METHOD 1 — /media/?size=l : largest single image
   // --------------------------------------------------
   if (!items.length) {
-    return res.status(404).json({
-      success: false,
-      error: blocked
-        ? "Instagram blocked this server. Pass an X-IG-Cookie header with your sessionid, or run on a residential IP."
-        : "No media found — the post may be private, deleted, or unsupported."
-    });
+    try {
+      const r = await fetch(`https://www.instagram.com/p/${shortcode}/media/?size=l`, {
+        headers, redirect: "follow"
+      });
+      const ct = (r.headers.get("content-type") || "").toLowerCase();
+      if (r.ok && (ct.startsWith("image/") || ct.startsWith("video/"))) {
+        items.push({
+          index: 1,
+          type: ct.startsWith("video/") ? "video" : "image",
+          url: r.url,
+          width: null,
+          height: null,
+          extension: ct.startsWith("video/") ? "mp4" : "jpg"
+        });
+      }
+    } catch (_) {}
   }
 
   // --------------------------------------------------
-  // NORMALIZE INDEX
+  // METHOD 2 — og:image / og:video from the post page
   // --------------------------------------------------
-  items = items.map((item, index) => ({
-    ...item,
-    index: index + 1
-  }));
+  if (!items.length) {
+    try {
+      const page = await fetch(`https://www.instagram.com/p/${shortcode}/`, { headers });
+      const html = await page.text();
+
+      const ogUrl = metaContent(html, "og:url");
+      const ogImg = metaContent(html, "og:image");
+      const ogVid = metaContent(html, "og:video");
+      const ogDesc = metaContent(html, "og:description");
+
+      meta.username = (ogUrl && ogUrl.match(/instagram\.com\/([A-Za-z0-9_.]+)\/p\//))?.[1] || meta.username;
+      meta.caption = ogDesc ? decodeEntities(ogDesc) : meta.caption;
+      meta.likeCount = ogDesc ? parseLikeCount(ogDesc) : meta.likeCount;
+
+      if (ogVid) items.push({ index: 1, type: "video", url: ogVid, width: null, height: null, extension: "mp4" });
+      else if (ogImg) items.push({ index: 1, type: "image", url: ogImg, width: null, height: null, extension: "jpg" });
+      else if (page.status === 403 || page.status === 429) blocked = true;
+    } catch (_) {
+      blocked = true;
+    }
+  }
 
   // --------------------------------------------------
-  // DOWNLOAD REDIRECT
-  //
-  // ?download=1 returns first media item.
-  // ?download=2 returns second carousel item, etc.
+  // METHOD 3 — legacy embed page JSON (carousels, captions)
   // --------------------------------------------------
-  if (req.query.download) {
-    const requestedIndex =
-      parseInt(req.query.download, 10) || 1;
-
-    const selected =
-      items[requestedIndex - 1] || items[0];
-
-    return res.redirect(302, selected.url);
+  if (!items.length) {
+    try {
+      const emb = await fetch(`https://www.instagram.com/p/${shortcode}/embed/captioned/`, { headers });
+      if (emb.ok) {
+        const media = extractShortcodeMedia(await emb.text());
+        if (media) {
+          items = mediaToItems(media).map((m, i) => ({ index: i + 1, ...m }));
+          meta.username = media.owner?.username || meta.username;
+          meta.caption = media.edge_media_to_caption?.edges?.[0]?.node?.text || meta.caption;
+          meta.likeCount = media.edge_media_preview_like?.count ?? meta.likeCount;
+          meta.isCarousel = media.__typename === "GraphSidecar";
+        }
+      }
+    } catch (_) {}
   }
 
   // --------------------------------------------------
   // RESPONSE
   // --------------------------------------------------
-  res.setHeader(
-    "Cache-Control",
-    "public, max-age=3600, s-maxage=86400"
-  );
+  if (!items.length) {
+    return res.status(404).json({
+      success: false,
+      error: blocked
+        ? "Instagram blocked this server. Pass an X-IG-Cookie header (or set IG_SESSIONID) with your sessionid."
+        : "No media found — the post may be private, deleted, or a story/highlight (not supported)."
+    });
+  }
 
-  return res.status(200).json({
+  // ?download=1&index=N → 302 redirect straight to that slide's file
+  if (req.query.download && items[0]) {
+    const idx = parseInt(req.query.index, 10) || 1;
+    return res.redirect(302, items[idx - 1]?.url || items[0].url);
+  }
+
+  const payload = {
     success: true,
-
-    type,
-
-    shortcode,
-
-    source_url: instagramUrl.href,
-
-    username,
-
-    caption,
-
-    likeCount,
-
-    media_count: items.length,
-
-    is_carousel: items.length > 1,
-
-    media: items,
-
-    watermark: {
-      enabled: true,
-      text: "Downloaded with Instadrop",
-      position: "bottom"
+    app: APP,
+    credit: CREDIT,
+    post: {
+      url: instagramUrl.origin + pathname,
+      type,
+      shortcode,
+      username: meta.username,
+      caption: meta.caption,
+      likeCount: meta.likeCount,
+      isCarousel: meta.isCarousel,
+      mediaCount: items.length
     },
+    media: items,
+    totalMedia: items.length
+  };
 
-    powered_by: "Instadrop"
-  });
+  res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=86400");
+  if (req.query.pretty) {
+    res.setHeader("Content-Type", "application/json");
+    return res.status(200).send(JSON.stringify(payload, null, 2));
+  }
+  return res.status(200).json(payload);
 }
 
-// ==================================================
+// --------------------------------------------------
 // HELPERS
-// ==================================================
+// --------------------------------------------------
+
+function shortcodeToId(code) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  let id = 0n;
+  for (const c of code) id = id * 64n + BigInt(alphabet.indexOf(c));
+  return id.toString();
+}
+
+function pickBest(candidates) {
+  if (!Array.isArray(candidates) || !candidates.length) return null;
+  return candidates.reduce((a, b) => ((b.width || 0) > (a.width || 0) ? b : a));
+}
 
 function mediaToItems(media) {
   const items = [];
-
-  const push = (node) => {
-    if (!node) return;
-
-    const isVideo =
-      node.is_video === true ||
-      !!node.video_url ||
-      !!node.video_versions?.[0]?.url;
-
-    const mediaUrl = isVideo
-      ? (
-          node.video_url ||
-          node.video_versions?.[0]?.url ||
-          node.display_url
-        )
-      : (
-          node.display_url ||
-          node.image_versions2?.candidates?.[0]?.url
-        );
-
-    if (!mediaUrl) return;
-
-    items.push({
-      type: isVideo ? "video" : "image",
-      url: mediaUrl,
-
-      width:
-        node.dimensions?.width ||
-        node.original_width ||
-        null,
-
-      height:
-        node.dimensions?.height ||
-        node.original_height ||
-        null
-    });
-  };
-
-  // ----------------------------------------------
-  // CAROUSEL
-  // ----------------------------------------------
-  if (
-    media.edge_sidecar_to_children?.edges?.length
-  ) {
-    for (
-      const edge of media.edge_sidecar_to_children.edges
-    ) {
-      push(edge.node);
-    }
-  }
-
-  // ----------------------------------------------
-  // SINGLE POST
-  // ----------------------------------------------
-  else {
+  const push = (node) => items.push({
+    type: node.is_video ? "video" : "image",
+    url: node.is_video ? node.video_url || node.video_versions?.[0]?.url || node.display_url : node.display_url,
+    width: node.dimensions?.width || null,
+    height: node.dimensions?.height || null,
+    extension: node.is_video ? "mp4" : "jpg"
+  });
+  if (media.edge_sidecar_to_children?.edges?.length) {
+    for (const e of media.edge_sidecar_to_children.edges) push(e.node);
+  } else {
     push(media);
   }
-
   return items;
 }
 
-// ==================================================
-// META TAG PARSER
-// ==================================================
-
 function metaContent(html, prop) {
-  const escaped = prop.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
   const m = html.match(
-    new RegExp(
-      `<meta[^>]+(?:property|name)=["']${escaped}["'][^>]+content=["']([^"']+)` +
-      `|<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${escaped}["']`,
-      "i"
-    )
+    new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']+)|` +
+               `<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${prop}["']`, "i")
   );
-
   return m ? (m[1] || m[2]) : null;
 }
 
-// ==================================================
-// HTML ENTITY DECODER
-// ==================================================
-
 function decodeEntities(s) {
-  return s
-    .replace(/&quot;/g, '"')
-    .replace(/&#x27;|&#39;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/&#x2019;/g, "’")
-    .replace(/&#x2F;/g, "/")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">");
+  if (typeof window !== "undefined" && window.DOMParser) {
+    return new DOMParser().parseFromString(s, "text/html").documentElement.textContent || s;
+  }
+  return s.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'")
+          .replace(/&amp;/g, "&").replace(/&#x2019;/g, "’");
 }
 
-// ==================================================
-// LIKE COUNT
-// ==================================================
-
 function parseLikeCount(desc) {
-  const m = desc.match(
-    /([\d.,]+)\s*([KMB]?)\s*likes/i
-  );
-
+  const m = desc.match(/([\d.,]+)\s*([KMB]?)\s*likes/i);
   if (!m) return null;
-
-  const n = parseFloat(
-    m[1].replace(/,/g, "")
-  );
-
-  const suffix = m[2].toUpperCase();
-
-  if (suffix === "K") {
-    return Math.round(n * 1e3);
-  }
-
-  if (suffix === "M") {
-    return Math.round(n * 1e6);
-  }
-
-  if (suffix === "B") {
-    return Math.round(n * 1e9);
-  }
-
+  const n = parseFloat(m[1].replace(/,/g, ""));
+  if (m[2].toUpperCase() === "K") return Math.round(n * 1e3);
+  if (m[2].toUpperCase() === "M") return Math.round(n * 1e6);
+  if (m[2].toUpperCase() === "B") return Math.round(n * 1e9);
   return Math.round(n);
 }
 
-// ==================================================
-// BALANCED JSON SCANNER
-// ==================================================
-
 function scanBalancedJson(html, openIndex) {
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-
-  for (
-    let i = openIndex;
-    i < html.length;
-    i++
-  ) {
+  let depth = 0, inString = false, escaped = false;
+  for (let i = openIndex; i < html.length; i++) {
     const c = html[i];
-
     if (inString) {
-      if (escaped) {
-        escaped = false;
-      } else if (c === "\\") {
-        escaped = true;
-      } else if (c === '"') {
-        inString = false;
-      }
-    } else {
-      if (c === '"') {
-        inString = true;
-      } else if (c === "{") {
-        depth++;
-      } else if (c === "}") {
-        depth--;
-
-        if (depth === 0) {
-          return html.slice(
-            openIndex,
-            i + 1
-          );
-        }
-      }
+      if (escaped) escaped = false;
+      else if (c === "\\") escaped = true;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) return html.slice(openIndex, i + 1);
     }
   }
-
   return null;
 }
 
-// ==================================================
-// EXTRACT INSTAGRAM EMBEDDED MEDIA
-// ==================================================
-
 function extractShortcodeMedia(html) {
   let from = 0;
-
   while (true) {
-    const marker = html.indexOf(
-      "__additionalDataLoaded",
-      from
-    );
-
-    if (marker === -1) {
-      break;
-    }
-
-    const open = html.indexOf(
-      "{",
-      marker
-    );
-
-    const jsonStr =
-      open !== -1
-        ? scanBalancedJson(html, open)
-        : null;
-
+    const marker = html.indexOf("__additionalDataLoaded", from);
+    if (marker === -1) return null;
+    const open = html.indexOf("{", marker);
+    const jsonStr = open !== -1 ? scanBalancedJson(html, open) : null;
     if (jsonStr) {
       try {
         const data = JSON.parse(jsonStr);
-
-        if (
-          data?.graphql?.shortcode_media
-        ) {
-          return data.graphql.shortcode_media;
-        }
+        if (data?.graphql?.shortcode_media) return data.graphql.shortcode_media;
       } catch (_) {}
     }
-
     from = marker + 1;
   }
-
-  // ----------------------------------------------
-  // Additional fallback:
-  // Search for graphql shortcode_media directly.
-  // ----------------------------------------------
-  const graphqlIndex =
-    html.indexOf(
-      '"shortcode_media"'
-    );
-
-  if (graphqlIndex !== -1) {
-    const open = html.lastIndexOf(
-      "{",
-      graphqlIndex
-    );
-
-    if (open !== -1) {
-      const jsonStr =
-        scanBalancedJson(
-          html,
-          open
-        );
-
-      if (jsonStr) {
-        try {
-          const data = JSON.parse(jsonStr);
-
-          if (
-            data?.graphql?.shortcode_media
-          ) {
-            return data.graphql.shortcode_media;
-          }
-        } catch (_) {}
-      }
-    }
-  }
-
-  return null;
 }

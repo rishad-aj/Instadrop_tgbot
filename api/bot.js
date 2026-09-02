@@ -1,661 +1,725 @@
+const BOT_TOKEN = "8946163976:AAEwnpQ3LuAhNp8HDMkIhi1ZbPMU4Ncsn4s";
+const START_IMAGE_URL = "https://instadrop.web.app/og-image.png";
 
-/* ============================================================
-   Instadrop Telegram Bot — bot.js
-   Vercel serverless function. Deploy as  api/bot.js
-   Requires Node 18+ (global fetch / FormData / Blob).
+const bot = new Bot(BOT_TOKEN);
 
-   Setup
-     1. Create a bot with @BotFather and copy the token.
-     2. Set env vars on Vercel:  BOT_TOKEN=<token>
-        (optional)               ADMIN_SECRET=<random string>
-     3. Deploy, then register the webhook once:
-        https://<your-app>.vercel.app/api/bot?setwebhook=<ADMIN_SECRET>
-        (or call Telegram setWebhook yourself with that /api/bot URL)
+// ----------------------------------------------------
+// HTTP HELPERS
+// ----------------------------------------------------
 
-   What it does (ported from the Instadrop web app):
-     - paste reel/post link           -> video(s) / image(s)
-     - story / highlight link          -> media
-     - profile link or bare username   -> HD profile picture
-     - /audio <link> or the "Extract audio" button on a video -> MP3
-   ============================================================ */
+const USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36";
+const REQUEST_TIMEOUT = 12000;
+const MAX_TELEGRAM_FILE = 50 * 1024 * 1024;
 
-'use strict';
-
-const BOT_TOKEN = "8946163976:AAEwnpQ3LuAhNp8HDMkIhi1ZbPMU4Ncsn4s";const ADMIN_SECRET = process.env.ADMIN_SECRET || '';
-const API = 'https://api.telegram.org/bot' + BOT_TOKEN + '/';
-
-const API_DG = 'https://api.downloadgram.org/media';
-const FFMPEG_CORE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js';
-const FFMPEG_WASM = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm';
-
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-function withTimeout(promise, ms, msg) {
-  let timer;
-  return Promise.race([
-    promise,
-    new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(msg || 'Request timed out.')), ms); }),
-  ]).finally(() => clearTimeout(timer));
-}
-
-/* ================= HTTP helpers ================= */
-
-async function httpBuffer(url, opts = {}, timeoutMs = 60000) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, {
-      ...opts,
-      signal: ctrl.signal,
-      headers: { 'User-Agent': UA, ...(opts.headers || {}) },
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return Buffer.from(await res.arrayBuffer());
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function httpText(url, opts = {}, timeoutMs = 25000) {
-  return (await httpBuffer(url, opts, timeoutMs)).toString('utf8');
-}
-
-async function httpJson(url, opts = {}, timeoutMs = 25000) {
-  return JSON.parse(await httpText(url, opts, timeoutMs));
-}
-
-async function postText(url, body) {
-  const res = await withTimeout(
-    fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'User-Agent': UA },
-      body: JSON.stringify(body),
-    }),
-    25000,
-    'service timed out'
+async function fetchWithTimeout(url, options = &#123;&#125;) &#123;
+  const controller = new AbortController();
+  const timer = setTimeout(
+    () =&gt; controller.abort(),
+    options.timeout || REQUEST_TIMEOUT
   );
-  if (!res.ok) throw new Error('HTTP ' + (res.status || 'error'));
+  try &#123;
+    return await fetch(url, &#123; ...options, signal: controller.signal &#125;);
+  &#125; finally &#123;
+    clearTimeout(timer);
+  &#125;
+&#125;
+
+async function getText(url) &#123;
+  const res = await fetchWithTimeout(url, &#123;
+    headers: &#123; "User-Agent": USER_AGENT, Accept: "application/json,text/html,*/*" &#125;,
+  &#125;);
+  if (!res.ok) throw new Error(`HTTP $&#123;res.status&#125;`);
   return await res.text();
-}
+&#125;
 
-/* ================= URL parsing ================= */
+async function getJson(url) &#123;
+  return JSON.parse(await getText(url));
+&#125;
 
-function extractShortcode(url) {
-  const m = String(url).trim().match(/instagram\.com\/(?:[A-Za-z0-9._]{1,30}\/)?(?:reel|p|reels|tv)\/([A-Za-z0-9_-]+)/);
-  return m ? m[1] : null;
-}
+async function postJson(url, body) &#123;
+  const res = await fetchWithTimeout(url, &#123;
+    method: "POST",
+    headers: &#123; "Content-Type": "application/json", "User-Agent": USER_AGENT &#125;,
+    body: JSON.stringify(body),
+  &#125;);
+  if (!res.ok) throw new Error(`HTTP $&#123;res.status&#125;`);
+  const text = await res.text();
+  try &#123;
+    return JSON.parse(text);
+  &#125; catch &#123;
+    return text;
+  &#125;
+&#125;
 
-function parseInput(raw) {
-  const s = String(raw).trim();
-  if (/instagram\.com\/stories\/highlights\//.test(s)) return { kind: 'highlight', url: s };
-  if (/instagram\.com\/stories\//.test(s)) return { kind: 'story', url: s };
-  const code = extractShortcode(s);
-  if (code) return { kind: 'post', code };
-  const prof = s.match(/instagram\.com\/([A-Za-z0-9._]{1,30})\/?(?:\?.*)?$/);
-  if (prof && !/^(reel|p|reels|tv|stories|highlights)$/.test(prof[1])) return { kind: 'dp', username: prof[1] };
-  if (/^[A-Za-z0-9._]{1,30}$/.test(s)) return { kind: 'dp', username: s };
-  return { kind: 'unknown' };
-}
+// ----------------------------------------------------
+// URL HELPERS
+// ----------------------------------------------------
 
-/* ================= media resolution (port from script.js) ================= */
+function cleanUrl(url) &#123;
+  return String(url || "")
+    .trim()
+    .replace(/&#91;?#&#93;.*$/, "")
+    .replace(/\/+$/, "");
+&#125;
 
-function cleanUrl(u) { return String(u || '').replace(/\\\//g, '/').replace(/&amp;/g, '&'); }
+function decodeEntities(s) &#123;
+  return String(s || "")
+    .replace(/&amp;amp;/g, "&amp;")
+    .replace(/&amp;quot;/g, '"')
+    .replace(/&amp;#39;/g, "'")
+    .replace(/&amp;lt;/g, "&lt;")
+    .replace(/&amp;gt;/g, "&gt;");
+&#125;
 
-function deepFindKey(o, key) {
-  if (!o || typeof o !== 'object') return null;
-  if (key in o) return o[key];
-  for (const v of Object.values(o)) {
-    const r = deepFindKey(v, key);
-    if (r !== null && r !== undefined) return r;
-  }
+const RESERVED_WORDS = new Set(&#91;
+  "reel", "reels", "p", "tv", "stories", "story", "highlights",
+  "s", "explore", "accounts", "about", "directory",
+&#93;);
+
+// Returns &#123; kind: "reel"|"post"|"story"|"highlight"|"profile", ... &#125; or null
+function parseInput(raw) &#123;
+  const s = String(raw || "").trim().replace(/^@/, "");
+  if (!s) return null;
+
+  if (/instagram\.com\/stories\/highlights\//i.test(s)) &#123;
+    return &#123; kind: "highlight", url: cleanUrl(s) &#125;;
+  &#125;
+  if (/instagram\.com\/(stories|story)\//i.test(s)) &#123;
+    return &#123; kind: "story", url: cleanUrl(s) &#125;;
+  &#125;
+
+  const post = s.match(
+    /instagram\.com\/(?:&#91;A-Za-z0-9._&#93;&#123;1,30&#125;\/)?(reel|reels|p|tv)\/(&#91;A-Za-z0-9_-&#93;+)/i
+  );
+  if (post) &#123;
+    return &#123;
+      kind: /^reel/i.test(post&#91;1&#93;) ? "reel" : "post",
+      code: post&#91;2&#93;,
+    &#125;;
+  &#125;
+
+  const prof = s.match(
+    /instagram\.com\/(&#91;A-Za-z0-9._&#93;&#123;1,30&#125;)\/?(?:\?.*)?$/i
+  );
+  if (prof &amp;&amp; !RESERVED_WORDS.has(prof&#91;1&#93;.toLowerCase())) &#123;
+    return &#123; kind: "profile", username: prof&#91;1&#93; &#125;;
+  &#125;
+
+  if (/^&#91;A-Za-z0-9._&#93;&#123;1,30&#125;$/.test(s) &amp;&amp; !RESERVED_WORDS.has(s.toLowerCase())) &#123;
+    return &#123; kind: "profile", username: s &#125;;
+  &#125;
+
   return null;
-}
+&#125;
 
-function jsonScriptBlocks(html) {
-  return (html.match(/<script type="application\/json"[^>]*>([\s\S]*?)<\/script>/g) || []).map((raw) => {
-    const m = raw.match(/^<script type="application\/json"[^>]*>([\s\S]*?)<\/script>$/);
-    return m ? m[1] : '';
-  });
-}
+// ----------------------------------------------------
+// RESPONSE PARSERS (match the real API shapes)
+// ----------------------------------------------------
 
-function largestCandidate(list) {
-  if (!list || !list.length) return null;
-  return list.reduce((a, b) => (a.height * a.width >= b.height * b.width ? a : b));
-}
-
-function normalizeItems(it) {
-  const out = [];
-  if (!it || typeof it !== 'object') return out;
-  const img = it.image_versions2 ? largestCandidate(it.image_versions2.candidates) : null;
-  const thumb = img ? img.url : it.display_url || null;
-  const vid = it.video_versions ? largestCandidate(it.video_versions) : null;
-  const videoUrl = vid ? vid.url : it.video_url || null;
-  if (videoUrl) out.push({ kind: 'video', thumb, url: videoUrl });
-  else if (thumb) out.push({ kind: 'image', thumb, url: thumb });
-  if (Array.isArray(it.carousel_media)) for (const c of it.carousel_media) out.push(...normalizeItems(c));
-  return out;
-}
-
-function itemsFromConnection(conn) {
-  const items = [];
-  for (const e of conn.edges || []) for (const it of (e.node && e.node.items) || []) items.push(...normalizeItems(it));
-  return items;
-}
-
-function resolvePageFromHtml(html, keys) {
-  for (const b of jsonScriptBlocks(html)) {
-    let j;
-    try { j = JSON.parse(b); } catch (e) { continue; }
-    for (const key of keys) {
-      const found = deepFindKey(j, key);
-      if (!found) continue;
-      if (key === 'xdt_api__v1__feed__reels_media__connection') return itemsFromConnection(found);
-      if (key === 'xdt_api__v1__media__shortcode__web_info') {
-        const items = [];
-        for (const it of found.items || []) items.push(...normalizeItems(it));
-        return items;
-      }
-      if (key === 'xdt_shortcode_media') return normalizeItems(found);
-    }
-  }
-  return [];
-}
-
-function jsonToItems(text) {
-  let j;
-  try { j = JSON.parse(text); } catch (e) { return []; }
-  const items = [];
+// Generic deep scan — handles most JSON APIs (anon-social, ddvideo,
+// snapinsta, indown) AND thakur's shapes:
+//   post:  &#123; "p": true, "image": &#91;"https://...jpg", ...&#93; &#125;
+//   reel:  &#123; "video": &#91; &#123; "video": "...mp4", "thumbnail": "..." &#125; &#93; &#125;
+function jsonToItems(data) &#123;
+  const items = &#91;&#93;;
   const seen = new Set();
-  const push = (raw, thumb, kind) => {
+  const usedThumbs = new Set();
+
+  const push = (raw, thumb, type) =&gt; &#123;
     const u = cleanUrl(raw);
-    if (!/^https?:\/\//.test(u)) return;
+    if (!/^https?:\/\//i.test(u)) return;
+    // A URL used as a video thumbnail is a preview, not a separate media item.
+    if (type === "image" &amp;&amp; usedThumbs.has(u)) return;
     if (seen.has(u)) return;
     seen.add(u);
-    items.push({ kind: kind || (/\.mp4(\?|&|$)/i.test(u) ? 'video' : 'image'), thumb: thumb ? cleanUrl(thumb) : null, url: u });
-  };
-  const scan = (o) => {
-    if (!o || typeof o !== 'object') return;
-    if (typeof o.url === 'string' && /^https?:\/\//.test(o.url)) push(o.url, o.thumb || o.thumbnail || o.img);
-    if (typeof o.video === 'string' && /^https?:\/\//.test(o.video)) push(o.video, o.thumbnail || o.thumb, 'video');
-    if (typeof o.video_url === 'string' && /^https?:\/\//.test(o.video_url)) push(o.video_url, o.thumbnail || o.thumb || o.display_url, 'video');
-    if (typeof o.image_url === 'string' && /^https?:\/\//.test(o.image_url)) push(o.image_url, o.image_url, 'image');
-    if (typeof o.display_url === 'string') push(o.display_url, o.display_url, 'image');
-    if (typeof o.link === 'string' && /^https?:\/\//.test(o.link)) push(o.link, o.thumbnail || o.thumb);
-    if (typeof o.thumbnail === 'string' && /^https?:\/\//.test(o.thumbnail)) push(o.thumbnail, o.thumbnail, 'image');
-    if (o.image_versions2 && Array.isArray(o.image_versions2.candidates)) {
-      const c = o.image_versions2.candidates.slice().sort((a, b) => (b.width * b.height) - (a.width * a.height))[0];
-      if (c) push(c.url, c.url, 'image');
-    }
-    if (Array.isArray(o.video_versions)) {
-      const v = o.video_versions.slice().sort((a, b) => (b.width * b.height) - (a.width * a.height))[0];
-      if (v) push(v.url, v.url, 'video');
-    }
-    if (Array.isArray(o.media)) { for (const m of o.media) scan(m); return; }
-    if (Array.isArray(o.stories)) { for (const m of o.stories) scan(m); return; }
-    if (Array.isArray(o.items)) { for (const m of o.items) scan(m); return; }
-    if (Array.isArray(o.medias)) { for (const m of o.medias) scan(m); return; }
-    if (Array.isArray(o.data)) { for (const m of o.data) scan(m); return; }
-    if (Array.isArray(o.result)) { for (const m of o.result) scan(m); return; }
-    for (const v of Object.values(o)) if (v && typeof v === 'object') scan(v);
-  };
-  scan(j);
-  return items;
-}
+    const finalType =
+      type || (/\.(mp4|mov|webm)(\?|&amp;|$)/i.test(u) ? "video" : "image");
+    if (finalType === "video" &amp;&amp; thumb) usedThumbs.add(cleanUrl(thumb));
+    items.push(&#123; url: u, type: finalType, thumb: thumb ? cleanUrl(thumb) : null &#125;);
+  &#125;;
 
-function parseMnBots(t) {
+  const scan = (o) =&gt; &#123;
+    if (!o || typeof o !== "object") return;
+
+    if (Array.isArray(o)) &#123;
+      for (const v of o) &#123;
+        if (typeof v === "string") &#123;
+          if (/^https?:\/\//i.test(v)) push(v, null);
+        &#125; else &#123;
+          scan(v);
+        &#125;
+      &#125;
+      return;
+    &#125;
+
+    if (typeof o.url === "string") push(o.url, o.thumb || o.thumbnail || o.img);
+    if (typeof o.video === "string") push(o.video, o.thumbnail || o.thumb, "video");
+    if (typeof o.video_url === "string") push(o.video_url, o.thumbnail || o.thumb || o.display_url, "video");
+    if (typeof o.videoUrl === "string") push(o.videoUrl, o.thumbnail || o.thumb, "video");
+    if (typeof o.download_url === "string") push(o.download_url, o.thumbnail || o.thumb);
+    if (typeof o.downloadUrl === "string") push(o.downloadUrl, o.thumbnail || o.thumb);
+    if (typeof o.image_url === "string") push(o.image_url, o.image_url, "image");
+    if (typeof o.image === "string") push(o.image, o.image, "image");
+    if (typeof o.display_url === "string") push(o.display_url, o.display_url, "image");
+    if (typeof o.displayUrl === "string") push(o.displayUrl, o.displayUrl, "image");
+    if (typeof o.link === "string") push(o.link, o.thumbnail || o.thumb);
+    if (typeof o.thumbnail === "string") push(o.thumbnail, o.thumbnail, "image");
+
+    if (Array.isArray(o.image)) for (const v of o.image) scan(v);
+    if (Array.isArray(o.video)) for (const v of o.video) scan(v);
+
+    if (o.image_versions2 &amp;&amp; Array.isArray(o.image_versions2.candidates)) &#123;
+      const best = o.image_versions2.candidates
+        .slice()
+        .sort((a, b) =&gt; b.width * b.height - a.width * a.height)&#91;0&#93;;
+      if (best) push(best.url, best.url, "image");
+    &#125;
+    if (Array.isArray(o.video_versions)) &#123;
+      const best = o.video_versions
+        .slice()
+        .sort((a, b) =&gt; b.width * b.height - a.width * a.height)&#91;0&#93;;
+      if (best) push(best.url, best.url, "video");
+    &#125;
+
+    for (const k of &#91;"media", "medias", "items", "data", "result", "results", "stories", "carousel", "edges"&#93;) &#123;
+      if (o&#91;k&#93;) scan(o&#91;k&#93;);
+    &#125;
+    for (const v of Object.values(o)) &#123;
+      if (v &amp;&amp; typeof v === "object") scan(v);
+    &#125;
+  &#125;;
+
+  scan(data);
+  return items;
+&#125;
+
+// mn-bots: &#123; success: true, media: &#91;&#123; type, thumb, url, server2 &#125;&#93; &#125;
+function parseMnBots(text) &#123;
   let j;
-  try { j = JSON.parse(t); } catch (e) { return []; }
-  if (!j.success || !j.media) return [];
-  return j.media.map((m) => ({
-    kind: (m.type === 'video' || /\.mp4/i.test(m.url)) ? 'video' : 'image',
-    thumb: m.thumb || null,
-    url: m.url || m.server2 || null,
-  })).filter((m) => m.url);
-}
-
-function decodeDgResponse(body) {
-  let html = null;
-  try {
-    const fakeDoc = {
-      getElementById(id) {
-        if (id === 'div_download') return { set innerHTML(v) { html = v; } };
-        return { remove() {} };
-      },
-    };
-    new Function('loader', 'document', 'showAd', body)({ style: {} }, fakeDoc, () => {});
-  } catch (e) {}
-  return html;
-}
-
-function extractItems(html) {
-  const items = [];
-  const parts = html.split('class="download-items"');
-  for (let i = 1; i < parts.length; i++) {
-    const block = parts[i].split('class="download-items"')[0];
-    const img = block.match(/<img[^>]*src="([^"]+)"/);
-    const link = block.match(/<a[^>]*href="([^"]+)"/);
-    if (!link) continue;
-    items.push({
-      kind: /icon-ivideo/.test(block) ? 'video' : 'image',
-      thumb: img ? img[1] : null,
-      url: link[1],
-    });
-  }
+  try &#123;
+    j = JSON.parse(text);
+  &#125; catch &#123;
+    return &#91;&#93;;
+  &#125;
+  if (!j || j.success !== true || !Array.isArray(j.media)) return &#91;&#93;;
+  const items = &#91;&#93;;
+  for (const m of j.media) &#123;
+    const url = cleanUrl(m.url || m.server2);
+    if (!/^https?:\/\//i.test(url)) continue;
+    items.push(&#123;
+      url,
+      type: m.type === "video" || /\.mp4(\?|&amp;|$)/i.test(url) ? "video" : "image",
+      thumb: m.thumb ? cleanUrl(m.thumb) : null,
+    &#125;);
+  &#125;
   return items;
-}
+&#125;
 
-async function firstWorking(candidates) {
-  for (const c of candidates) {
-    try {
-      const t = await withTimeout(c.fetch(), 25000, c.name + ' timed out');
-      const items = c.parse(t);
-      if (items && items.length) return items;
-    } catch (e) {
-      // try next candidate
-    }
-  }
-  return [];
-}
+// downloadgram returns a JS snippet that injects HTML:
+//   loader&#91;'style'&#93;&#91;'display'&#93;='none',document&#91;'getElementById'&#93;('div_download')
+//   &#91;'innerHTML'&#93;='&lt;div class="download-items"&gt;...&lt;a href="...token..."&gt;...'
+// We run it with a fake document (like the site does), then regex the HTML.
+function parseDownloadgram(text) &#123;
+  let html = null;
+  try &#123;
+    const loader = &#123; style: &#123;&#125; &#125;;
+    const fakeDoc = &#123;
+      getElementById(id) &#123;
+        if (id === "div_download") return &#123; set innerHTML(v) &#123; html = v; &#125; &#125;;
+        return &#123; remove() &#123;&#125; &#125;;
+      &#125;,
+    &#125;;
+    new Function("loader", "document", "showAd", text)(loader, fakeDoc, () =&gt; &#123;&#125;);
+  &#125; catch (e) &#123;
+    return &#91;&#93;;
+  &#125;
+  if (!html) return &#91;&#93;;
 
-const POST_KEYS = ['xdt_api__v1__media__shortcode__web_info', 'xdt_shortcode_media', 'xdt_api__v1__feed__reels_media__connection'];
+  const items = &#91;&#93;;
+  const blocks = html.split('class="download-items"').slice(1);
+  for (const block of blocks) &#123;
+    const linkMatch = block.match(/&lt;a&#91;^&gt;&#93;*href="(&#91;^"&#93;+)"/);
+    if (!linkMatch) continue;
+    const imgMatch = block.match(/&lt;img&#91;^&gt;&#93;*src="(&#91;^"&#93;+)"/);
+    items.push(&#123;
+      url: decodeEntities(linkMatch&#91;1&#93;),
+      type: /icon-ivideo/.test(block) ? "video" : "image",
+      thumb: imgMatch ? decodeEntities(imgMatch&#91;1&#93;) : null,
+    &#125;);
+  &#125;
+  return items;
+&#125;
 
-async function fetchMedia(url) {
-  const code = extractShortcode(url);
-  if (!code) throw new Error("That doesn't look like an Instagram reel/post link.");
-  const clean = 'https://www.instagram.com/reel/' + code + '/';
+// ----------------------------------------------------
+// MEDIA RESOLUTION (each type has its own API list)
+// ----------------------------------------------------
 
-  const items = await firstWorking([
-    { name: 'thakur-infopd', fetch: () => httpText('https://insta.thakur-infopd.workers.dev/?url=' + encodeURIComponent(clean)), parse: jsonToItems },
-    { name: 'mn-bots', fetch: () => httpText('https://instagram-downloader.mn-bots.workers.dev/?url=' + encodeURIComponent(clean)), parse: parseMnBots },
-    { name: 'anon-social', fetch: () => httpText('https://anon-social-info.vercel.app/igdl?key=igdl305&url=' + encodeURIComponent(clean)), parse: jsonToItems },
-    { name: 'downloadgram', fetch: () => postText(API_DG, { url: clean }), parse: (t) => { const html = decodeDgResponse(t); return html ? extractItems(html) : []; } },
-    { name: 'ddvideo', fetch: () => httpText('https://api.dd.video/api/instagram?url=' + encodeURIComponent(clean)), parse: jsonToItems },
-    { name: 'snapinsta', fetch: () => httpText('https://snapinsta.app/api/instagram?url=' + encodeURIComponent(clean)), parse: jsonToItems },
-    { name: 'indown', fetch: () => httpText('https://indown.io/api/info?url=' + encodeURIComponent(clean)), parse: jsonToItems },
-    { name: 'local-scrape', fetch: () => httpText(clean), parse: (h) => resolvePageFromHtml(h, POST_KEYS) },
-  ]);
+function mediaCandidates(url, kind) &#123;
+  const isPost = kind === "post" || kind === "reel";
+  const list = &#91;
+    &#123;
+      name: "thakur-infopd",
+      fetch: () =&gt;
+        getText("https://insta.thakur-infopd.workers.dev/?url=" + encodeURIComponent(url)),
+      parse: jsonToItems,
+    &#125;,
+    &#123;
+      name: "mn-bots",
+      fetch: () =&gt;
+        getText("https://instagram-downloader.mn-bots.workers.dev/?url=" + encodeURIComponent(url)),
+      parse: parseMnBots,
+    &#125;,
+    &#123;
+      name: "anon-social",
+      fetch: () =&gt;
+        getText("https://anon-social-info.vercel.app/igdl?key=igdl305&amp;url=" + encodeURIComponent(url)),
+      parse: jsonToItems,
+    &#125;,
+  &#93;;
 
-  if (!items.length) {
-    throw new Error('No downloadable media was found in that post — the free services are busy right now. Try again in a moment.');
-  }
-  return { code, items };
-}
+  if (isPost) &#123;
+    list.push(&#123;
+      name: "downloadgram",
+      fetch: async () =&gt; &#123;
+        const res = await fetchWithTimeout("https://api.downloadgram.org/media", &#123;
+          method: "POST",
+          headers: &#123; "Content-Type": "application/json", "User-Agent": USER_AGENT &#125;,
+          body: JSON.stringify(&#123; url &#125;),
+        &#125;);
+        if (!res.ok) throw new Error(`HTTP $&#123;res.status&#125;`);
+        return await res.text();
+      &#125;,
+      parse: parseDownloadgram,
+    &#125;);
+  &#125;
 
-async function fetchStoryMedia(url) {
-  const isHl = /\/highlights\//.test(url);
-  const items = await firstWorking([
-    { name: 'thakur-infopd', fetch: () => httpText('https://insta.thakur-infopd.workers.dev/?url=' + encodeURIComponent(url)), parse: jsonToItems },
-    { name: 'mn-bots', fetch: () => httpText('https://instagram-downloader.mn-bots.workers.dev/?url=' + encodeURIComponent(url)), parse: parseMnBots },
-    { name: 'anon-social', fetch: () => httpText('https://anon-social-info.vercel.app/igdl?key=igdl305&url=' + encodeURIComponent(url)), parse: jsonToItems },
-    { name: 'snapinsta', fetch: () => httpText('https://snapinsta.app/api/instagram?url=' + encodeURIComponent(url)), parse: jsonToItems },
-    { name: 'ddvideo', fetch: () => httpText('https://api.dd.video/api/instagram?url=' + encodeURIComponent(url)), parse: jsonToItems },
-    { name: 'indown', fetch: () => httpText('https://indown.io/api/info?url=' + encodeURIComponent(url)), parse: jsonToItems },
-    { name: 'local-scrape', fetch: () => httpText(url), parse: (h) => resolvePageFromHtml(h, ['xdt_api__v1__feed__reels_media__connection']) },
-  ]);
+  list.push(
+    &#123;
+      name: "ddvideo",
+      fetch: () =&gt;
+        getText("https://api.dd.video/api/instagram?url=" + encodeURIComponent(url)),
+      parse: jsonToItems,
+    &#125;,
+    &#123;
+      name: "snapinsta",
+      fetch: () =&gt;
+        getText("https://snapinsta.app/api/instagram?url=" + encodeURIComponent(url)),
+      parse: jsonToItems,
+    &#125;,
+    &#123;
+      name: "indown",
+      fetch: () =&gt;
+        getText("https://indown.io/api/info?url=" + encodeURIComponent(url)),
+      parse: jsonToItems,
+    &#125;
+  );
 
-  if (!items.length) {
+  return list;
+&#125;
+
+// Try each API in order until one returns media.
+async function firstWorking(candidates) &#123;
+  for (const c of candidates) &#123;
+    try &#123;
+      const text = await c.fetch();
+      const items = c.parse(text);
+      if (items &amp;&amp; items.length) &#123;
+        const seen = new Set();
+        return items.filter((i) =&gt; &#123;
+          if (seen.has(i.url)) return false;
+          seen.add(i.url);
+          return true;
+        &#125;);
+      &#125;
+    &#125; catch (e) &#123;
+      // try the next candidate
+    &#125;
+  &#125;
+  return &#91;&#93;;
+&#125;
+
+async function resolveMedia(url, kind) &#123;
+  const items = await firstWorking(mediaCandidates(url, kind));
+  if (!items.length) &#123;
     throw new Error(
-      isHl
-        ? "Couldn't resolve that highlight — the free services are busy right now, or the highlight is private. Try again in a moment."
-        : "Couldn't resolve that story right now — active stories expire after 24 hours and may be private. Try again in a moment."
+      "Could not resolve this Instagram link — the free services are busy right now. Try again in a moment."
     );
-  }
-  return { items };
-}
+  &#125;
+  return items;
+&#125;
 
-async function resolveAvatar(username) {
-  try {
-    const data = await httpJson('https://greatonlinetools.com/endpoints-tools/endpoint.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username }),
-    });
-    if (data && data.status) {
-      const picUrl = data.downloadUrl || data.profilePictureUrl;
-      if (picUrl) return cleanUrl(picUrl);
-    }
-  } catch (e) {}
+// ----------------------------------------------------
+// PROFILE PICTURE (DP)
+// ----------------------------------------------------
 
-  try {
-    const data = await httpJson('https://bj-insta-profile-info.mmabbas011687.workers.dev/info?username=' + encodeURIComponent(username));
-    if (data && data.pic) return cleanUrl(data.pic);
-  } catch (e) {}
+function deepFindKey(o, key) &#123;
+  if (!o || typeof o !== "object") return null;
+  if (Array.isArray(o)) &#123;
+    for (const v of o) &#123;
+      const r = deepFindKey(v, key);
+      if (r) return r;
+    &#125;
+    return null;
+  &#125;
+  for (const &#91;k, v&#93; of Object.entries(o)) &#123;
+    if (k === key) return v;
+    const r = deepFindKey(v, key);
+    if (r) return r;
+  &#125;
+  return null;
+&#125;
 
-  try {
-    const html = await httpText('https://www.instagram.com/' + encodeURIComponent(username) + '/');
-    let user = null;
-    for (const b of jsonScriptBlocks(html)) {
-      let j;
-      try { j = JSON.parse(b); } catch (e) { continue; }
-      user = deepFindKey(j, 'xig_user_by_username');
-      if (user) break;
-    }
-    if (user && user.profile_pic_url) return cleanUrl(user.profile_pic_url);
-  } catch (e) {}
+function jsonScriptBlocks(html) &#123;
+  const blocks = &#91;&#93;;
+  const re = /&lt;script type="application\/json"&#91;^&gt;&#93;*&gt;(&#91;\s\S&#93;*?)&lt;\/script&gt;/g;
+  let m;
+  while ((m = re.exec(html))) &#123;
+    const text = m&#91;1&#93;.trim();
+    if (!text) continue;
+    try &#123;
+      blocks.push(JSON.parse(text));
+    &#125; catch (e) &#123;&#125;
+  &#125;
+  return blocks;
+&#125;
 
-  throw new Error("Couldn't find a profile picture for @" + username + ' (the APIs may be blocked or the profile is private).');
-}
+// Scrape the profile page for a DIRECT scontent CDN url (Telegram can fetch these,
+// unlike the tokenized urls some APIs return).
+async function scrapeProfilePic(username) &#123;
+  const html = await getText(
+    "https://www.instagram.com/" + encodeURIComponent(username) + "/"
+  );
+  for (const block of jsonScriptBlocks(html)) &#123;
+    const pic = deepFindKey(block, "profile_pic_url");
+    if (typeof pic === "string" &amp;&amp; /^https?:\/\//i.test(pic)) &#123;
+      return cleanUrl(pic);
+    &#125;
+  &#125;
+  return null;
+&#125;
 
-/* ================= ffmpeg audio -> mp3 (wasm, no native binary) ================= */
+// Returns &#123; candidates, direct &#125; — urls the BOT can download, and urls
+// Telegram itself can fetch directly (direct CDN urls, not tokenized ones).
+async function resolveProfilePic(username) &#123;
+  const candidates = &#91;&#93;;
+  const direct = &#91;&#93;;
+  const push = (u, isDirect) =&gt; &#123;
+    const c = cleanUrl(u);
+    if (!c || !/^https?:\/\//i.test(c)) return;
+    if (!candidates.includes(c)) candidates.push(c);
+    if (isDirect &amp;&amp; !direct.includes(c)) direct.push(c);
+  &#125;;
 
-let ffmpegCorePromise = null;
+  // 1) greatonlinetools (POST) — tokenized urls, bot must download + re-upload
+  try &#123;
+    const data = await postJson(
+      "https://greatonlinetools.com/endpoints-tools/endpoint.php",
+      &#123; username &#125;
+    );
+    if (data &amp;&amp; data.status) &#123;
+      push(data.downloadUrl || data.profilePictureUrl, false);
+    &#125;
+  &#125; catch (e) &#123;&#125;
 
-function getFfmpegCore() {
-  if (ffmpegCorePromise) return ffmpegCorePromise;
-  ffmpegCorePromise = (async () => {
-    const [coreJs, wasmBuf] = await Promise.all([
-      httpText(FFMPEG_CORE, {}, 30000),
-      httpBuffer(FFMPEG_WASM, {}, 60000),
-    ]);
-    if (typeof globalThis.self === 'undefined') globalThis.self = globalThis;
-    const factory = new Function(coreJs + '\n;return (typeof createFFmpegCore!=="undefined" ? createFFmpegCore : null);')();
-    if (!factory) throw new Error('Audio converter failed to initialize.');
-    return await factory({
-      mainScriptUrlOrBlob: null,
-      wasmBinary: wasmBuf,
-      print: () => {},
-      printErr: (m) => console.error('[ffmpeg]', m),
-    });
-  })();
-  ffmpegCorePromise.catch(() => { ffmpegCorePromise = null; });
-  return ffmpegCorePromise;
-}
+  // 2) direct scrape of the profile page — gives a clean scontent CDN url
+  try &#123;
+    const pic = await scrapeProfilePic(username);
+    if (pic) push(pic, true);
+  &#125; catch (e) &#123;&#125;
 
-async function convertToMp3(buf) {
-  const mod = await getFfmpegCore();
-  mod.FS.writeFile('in.mp4', new Uint8Array(buf));
-  try {
-    const ret = mod.exec('-i', 'in.mp4', '-vn', '-acodec', 'libmp3lame', '-q:a', '4', 'out.mp3');
-    if (ret !== undefined && ret !== 0) throw new Error('ffmpeg exited with code ' + ret);
-    return Buffer.from(mod.FS.readFile('out.mp3'));
-  } finally {
-    try { mod.FS.unlink('in.mp4'); } catch (e) {}
-    try { mod.FS.unlink('out.mp3'); } catch (e) {}
-  }
-}
+  // 3) insta-profile-info worker — fallback
+  try &#123;
+    const data = await getJson(
+      "https://bj-insta-profile-info.mmabbas011687.workers.dev/info?username=" +
+        encodeURIComponent(username)
+    );
+    if (data &amp;&amp; data.pic) push(data.pic, true);
+  &#125; catch (e) &#123;&#125;
 
-/* ================= Telegram API helpers ================= */
+  if (!candidates.length) &#123;
+    throw new Error("Couldn't find a profile picture for @" + username + ".");
+  &#125;
+  return &#123; candidates, direct &#125;;
+&#125;
 
-function fileParam(buf, type, name) {
-  return { file: new Uint8Array(buf), type, name };
-}
+// ----------------------------------------------------
+// DOWNLOAD MEDIA
+// ----------------------------------------------------
 
-async function tg(method, params) {
-  const hasFile = Object.values(params).some((v) => v && v.file);
-  const url = API + method;
-  let res;
-  if (hasFile) {
-    const fd = new FormData();
-    for (const [k, v] of Object.entries(params)) {
-      if (v === undefined || v === null) continue;
-      if (v && v.file) fd.append(k, new Blob([v.file], { type: v.type || 'application/octet-stream' }), v.name || 'file');
-      else fd.append(k, String(v));
-    }
-    res = await fetch(url, { method: 'POST', body: fd });
-  } else {
-    res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
-  }
-  const data = await res.json().catch(() => ({}));
-  if (!data.ok) throw new Error('Telegram ' + method + ' failed: ' + JSON.stringify(data).slice(0, 300));
-  return data.result;
-}
+async function downloadMedia(url) &#123;
+  const res = await fetchWithTimeout(url, &#123;
+    headers: &#123; "User-Agent": USER_AGENT &#125;,
+    timeout: 30000,
+  &#125;);
+  if (!res.ok) throw new Error(`Media HTTP $&#123;res.status&#125;`);
 
-async function sendMsg(chatId, text, extra = {}) {
-  return tg('sendMessage', { chat_id: chatId, text, ...extra });
-}
+  const contentLength = Number(res.headers.get("content-length") || 0);
+  if (contentLength &gt; MAX_TELEGRAM_FILE) &#123;
+    throw new Error("File is larger than Telegram's 50 MB limit.");
+  &#125;
 
-function captionFor(item, code, buf, i, total) {
-  const mb = (buf.length / 1048576).toFixed(1);
-  const lines = ['📦 ' + mb + ' MB'];
-  if (code) lines.push('🔗 instagram.com/reel/' + code);
-  if (total > 1) lines.push('Item ' + (i + 1) + '/' + total);
-  return lines.join('\n');
-}
+  const buffer = Buffer.from(await res.arrayBuffer());
+  if (buffer.length &gt; MAX_TELEGRAM_FILE) &#123;
+    throw new Error("File is larger than Telegram's 50 MB limit.");
+  &#125;
 
-function filenameFor(item, filePrefix, i, total) {
-  const base = filePrefix || 'instagram_media';
-  const ext = item.kind === 'video' ? 'mp4' : 'jpg';
-  return base + (total > 1 ? '_' + (i + 1) : '') + '.' + ext;
-}
+  return &#123; buffer, contentType: res.headers.get("content-type") || "" &#125;;
+&#125;
 
-async function mapLimit(arr, limit, fn) {
-  const results = new Array(arr.length);
-  let i = 0;
-  async function worker() {
-    while (i < arr.length) {
-      const idx = i++;
-      results[idx] = await fn(arr[idx], idx);
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, arr.length) }, () => worker()));
-  return results;
-}
+// ----------------------------------------------------
+// /start
+// ----------------------------------------------------
 
-async function sendItems(chatId, items, opts = {}) {
-  const { code = null, filePrefix = null } = opts;
-  const total = items.length;
-  await mapLimit(items, 3, async (item, i) => {
-    try {
-      const buf = await httpBuffer(item.url);
-      const caption = captionFor(item, code, buf, i, total);
-      const name = filenameFor(item, filePrefix, i, total);
-      const mb = (buf.length / 1048576).toFixed(1);
+bot.command("start", async (ctx) =&gt; &#123;
+  const caption =
+    "👋 &lt;b&gt;Welcome to Instadrop!&lt;/b&gt;\n\n" +
+    "I download Instagram media for you — just send me a link.\n\n" +
+    "📥 &lt;b&gt;What I support:&lt;/b&gt;\n" +
+    "🎬 Reels &amp; Posts\n" +
+    "🖼️ Carousels (multi-image posts)\n" +
+    "📖 Stories &amp; Highlights\n" +
+    "👤 Profile pictures\n\n" +
+    "&lt;b&gt;Examples:&lt;/b&gt;\n" +
+    "https://www.instagram.com/reel/XXXXXXXX/\n" +
+    "https://www.instagram.com/p/XXXXXXXX/\n" +
+    "@username\n\n" +
+    "Just paste a link and I'll handle the rest! 🚀";
 
-      if (item.kind === 'video') {
-        if (buf.length > 49 * 1048576) {
-          await sendMsg(chatId, '⚠️ Video ' + (total > 1 ? '(' + (i + 1) + '/' + total + ') ' : '') + 'is too large for Telegram (' + mb + ' MB). Direct link:\n' + item.url);
-          return;
-        }
-        await tg('sendChatAction', { chat_id: chatId, action: 'upload_video' });
-        const params = { chat_id: chatId, video: fileParam(buf, 'video/mp4', name), caption, supports_streaming: true };
-        if (code) {
-          params.reply_markup = JSON.stringify({ inline_keyboard: [[{ text: '🎵 Extract audio (MP3)', callback_data: 'audio:' + code }]] });
-        }
-        await tg('sendVideo', params);
-      } else {
-        if (buf.length > 9 * 1048576) {
-          await tg('sendChatAction', { chat_id: chatId, action: 'upload_document' });
-          await tg('sendDocument', { chat_id: chatId, document: fileParam(buf, 'image/jpeg', name), caption });
-        } else {
-          await tg('sendChatAction', { chat_id: chatId, action: 'upload_photo' });
-          await tg('sendPhoto', { chat_id: chatId, photo: fileParam(buf, 'image/jpeg', name), caption });
-        }
-      }
-    } catch (e) {
-      await sendMsg(chatId, '⚠️ Item ' + (total > 1 ? '(' + (i + 1) + '/' + total + ') ' : '') + 'failed: ' + (e && e.message || e));
-    }
-  });
-}
+  try &#123;
+    const img = await downloadMedia(START_IMAGE_URL);
+    await ctx.replyWithPhoto(new InputFile(img.buffer, "instadrop_welcome.jpg"), &#123;
+      caption,
+      parse_mode: "HTML",
+      reply_markup: &#123;
+        inline_keyboard: &#91;
+          &#91;&#123; text: "❓ How to use", callback_data: "howto" &#125;&#93;,
+        &#93;,
+      &#125;,
+    &#125;);
+  &#125; catch (e) &#123;
+    await ctx.reply(caption, &#123; parse_mode: "HTML" &#125;);
+  &#125;
+&#125;);
 
-/* ================= handlers ================= */
+bot.callbackQuery("howto", async (ctx) =&gt; &#123;
+  await ctx.answerCallbackQuery(&#123;
+    text: "Send an Instagram link (reel, post, story, highlight) or a @username for a profile pic.",
+    show_alert: true,
+  &#125;);
+&#125;);
 
-const HELP_TEXT =
-  '📥 <b>Instadrop Bot</b>\n\n' +
-  'Send me an Instagram link to download it:\n\n' +
-  '• Reel / post link  →  video or images\n' +
-  '• Story / highlight link  →  its media\n' +
-  '• Profile link or username  →  HD profile picture\n' +
-  '• Videos come with an <b>Extract audio (MP3)</b> button\n\n' +
-  'Commands:\n' +
-  '/reel &lt;link&gt;   /story &lt;link&gt;   /dp &lt;username&gt;   /audio &lt;link&gt;';
+// ----------------------------------------------------
+// /help
+// ----------------------------------------------------
 
-async function runPost(chatId, codeOrUrl) {
-  await tg('sendChatAction', { chat_id: chatId, action: 'typing' });
-  const status = await sendMsg(chatId, '⏳ Resolving the post…');
-  try {
-    const url = /^https?:/i.test(codeOrUrl) ? codeOrUrl : 'https://www.instagram.com/reel/' + codeOrUrl + '/';
-    const data = await fetchMedia(url);
-    try {
-      await tg('editMessageText', { chat_id: chatId, message_id: status.message_id, text: '✅ Found ' + data.items.length + ' item(s). Downloading…' });
-    } catch (e) {}
-    await sendItems(chatId, data.items, { code: data.code, filePrefix: 'instagram_' + data.code });
-  } catch (e) {
-    await sendMsg(chatId, '❌ ' + (e && e.message || e));
-  }
-}
+bot.command("help", async (ctx) =&gt; &#123;
+  await ctx.reply(
+    "📥 &lt;b&gt;Instadrop Bot&lt;/b&gt;\n\n" +
+      "Send me an Instagram link and I'll download it for you.\n\n" +
+      "🎬 &lt;b&gt;Reels / Posts:&lt;/b&gt;\n" +
+      "https://www.instagram.com/reel/...\n" +
+      "https://www.instagram.com/p/...\n\n" +
+      "📖 &lt;b&gt;Stories / Highlights:&lt;/b&gt;\n" +
+      "https://www.instagram.com/stories/...\n" +
+      "https://www.instagram.com/stories/highlights/...\n\n" +
+      "👤 &lt;b&gt;Profile picture:&lt;/b&gt;\n" +
+      "https://www.instagram.com/username/\n" +
+      "or just send @username",
+    &#123; parse_mode: "HTML" &#125;
+  );
+&#125;);
 
-async function runStory(chatId, parsed) {
-  const isHl = parsed.kind === 'highlight';
-  const hlId = isHl ? ((parsed.url.match(/highlights\/(\d+)/) || [])[1] || 'highlight') : null;
-  await tg('sendChatAction', { chat_id: chatId, action: 'typing' });
-  const status = await sendMsg(chatId, isHl ? '⏳ Looking up the highlight…' : '⏳ Looking up the story…');
-  try {
-    const data = await fetchStoryMedia(parsed.url);
-    try {
-      await tg('editMessageText', { chat_id: chatId, message_id: status.message_id, text: '✅ Found ' + data.items.length + ' item(s). Downloading…' });
-    } catch (e) {}
-    await sendItems(chatId, data.items, { filePrefix: isHl ? 'highlight_' + hlId : 'story' });
-  } catch (e) {
-    await sendMsg(chatId, '❌ ' + (e && e.message || e));
-  }
-}
+// ----------------------------------------------------
+// HANDLE MESSAGE
+// ----------------------------------------------------
 
-async function runDp(chatId, raw) {
-  const username = String(raw || '').replace(/^@/, '').trim()
-    .replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '');
-  if (!username || !/^[A-Za-z0-9._]{1,30}$/.test(username)) {
-    return sendMsg(chatId, 'Usage: /dp &lt;username&gt; — or just send a profile link / username.');
-  }
-  await tg('sendChatAction', { chat_id: chatId, action: 'typing' });
-  const status = await sendMsg(chatId, '⏳ Looking up @' + username + '…');
-  try {
-    const url = await resolveAvatar(username);
-    const buf = await httpBuffer(url);
-    try {
-      await tg('editMessageText', { chat_id: chatId, message_id: status.message_id, text: '✅ Found it — downloading…' });
-    } catch (e) {}
-    await tg('sendChatAction', { chat_id: chatId, action: 'upload_photo' });
-    await tg('sendPhoto', {
-      chat_id: chatId,
-      photo: fileParam(buf, 'image/jpeg', username + '_profile_pic.jpg'),
-      caption: '🖼 Profile picture of @' + username + '\n📦 ' + (buf.length / 1048576).toFixed(1) + ' MB',
-    });
-  } catch (e) {
-    await sendMsg(chatId, '❌ ' + (e && e.message || e));
-  }
-}
+bot.on("message:text", async (ctx) =&gt; &#123;
+  const text = ctx.message.text.trim();
 
-async function extractAudio(chatId, codeOrUrl, replyToMsgId) {
-  const url = /^https?:/i.test(codeOrUrl) ? codeOrUrl : 'https://www.instagram.com/reel/' + codeOrUrl + '/';
-  const code = extractShortcode(url);
-  if (!code) return sendMsg(chatId, 'Send a reel/post link or shortcode: /audio &lt;link&gt;', { reply_to_message_id: replyToMsgId });
-  await sendMsg(chatId, '🎵 Resolving, downloading and converting to MP3 — this can take up to a minute…', { reply_to_message_id: replyToMsgId });
-  try {
-    const data = await fetchMedia(url);
-    const video = data.items.find((i) => i.kind === 'video') || data.items[0];
-    if (!video) throw new Error('No video found in that post.');
-    const buf = await httpBuffer(video.url);
-    const mp3 = await convertToMp3(buf);
-    await tg('sendChatAction', { chat_id: chatId, action: 'upload_audio' });
-    await tg('sendAudio', {
-      chat_id: chatId,
-      audio: fileParam(mp3, 'audio/mpeg', code + '.mp3'),
-      title: 'Instagram audio',
-      performer: '@instagram',
-      reply_to_message_id: replyToMsgId,
-    });
-  } catch (e) {
-    await sendMsg(chatId, '❌ Audio failed: ' + (e && e.message || e), { reply_to_message_id: replyToMsgId });
-  }
-}
+  const urlMatch = text.match(/https?:\/\/&#91;^\s&#93;+/i);
+  const parsed = parseInput(urlMatch ? urlMatch&#91;0&#93; : text);
 
-async function handleCallback(query) {
-  const data = query.data || '';
-  const chatId = query.message && query.message.chat.id;
-  const msgId = query.message && query.message.message_id;
-  if (!chatId) return;
-  try {
-    await tg('answerCallbackQuery', { callback_query_id: query.id, text: 'Working on it…' });
-  } catch (e) {}
-  if (data.startsWith('audio:')) {
-    await extractAudio(chatId, data.slice(6), msgId);
-  }
-}
+  if (!parsed) &#123;
+    await ctx.reply(
+      "❌ Send a valid Instagram link (reel, post, story, highlight) or a username.\n\n" +
+        "Example: https://www.instagram.com/reel/XXXXXXXX/"
+    );
+    return;
+  &#125;
 
-async function handleMessage(msg) {
-  const chatId = msg.chat.id;
-  const text = (msg.text || '').trim();
-  if (!text) return;
+  if (parsed.kind === "profile") &#123;
+    await handleProfile(ctx, parsed.username);
+    return;
+  &#125;
 
-  const cmd = text.match(/^\/(\w+)(?:@\w+)?\s*(.*)$/);
-  if (cmd) {
-    const name = cmd[1].toLowerCase();
-    const rest = (cmd[2] || '').trim();
-    if (name === 'start' || name === 'help') return sendMsg(chatId, HELP_TEXT, { parse_mode: 'HTML' });
-    if (name === 'reel' || name === 'post') return runPost(chatId, rest);
-    if (name === 'story' || name === 'highlight') {
-      const parsed = { kind: name, url: rest };
-      return runStory(chatId, parsed);
-    }
-    if (name === 'dp' || name === 'profile') return runDp(chatId, rest);
-    if (name === 'audio') return extractAudio(chatId, rest, null);
-    return sendMsg(chatId, 'Unknown command. Send /help.');
-  }
+  const status = await ctx.reply("⏳ Finding media...");
 
-  const parsed = parseInput(text);
-  if (parsed.kind === 'unknown') {
-    return sendMsg(chatId, 'Paste a full Instagram link (reel/post, story or highlight), a profile link, or a bare username.');
-  }
-  if (parsed.kind === 'story' || parsed.kind === 'highlight') return runStory(chatId, parsed);
-  if (parsed.kind === 'post') return runPost(chatId, parsed.code);
-  return runDp(chatId, parsed.username);
-}
+  try &#123;
+    const url =
+      parsed.kind === "post" || parsed.kind === "reel"
+        ? "https://www.instagram.com/reel/" + parsed.code + "/"
+        : parsed.url;
 
-async function processUpdate(u) {
-  if (u && u.message && u.message.text != null) {
-    await handleMessage(u.message);
-  } else if (u && u.callback_query) {
-    await handleCallback(u.callback_query);
-  }
-}
+    const media = await resolveMedia(url, parsed.kind);
 
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', (c) => chunks.push(c));
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    req.on('error', reject);
-  });
-}
+    await ctx.api.editMessageText(
+      ctx.chat.id,
+      status.message_id,
+      `✅ Found $&#123;media.length&#125; media file$&#123;media.length === 1 ? "" : "s"&#125;.\n\n📤 Sending...`
+    );
 
-/* ================= Vercel handler ================= */
+    let sent = 0;
+    const sentHashes = new Set();
 
-module.exports = async function handler(req, res) {
-  if (req.method === 'GET') {
-    const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
-    const url = new URL(req.url, 'https://' + host);
-    if (url.searchParams.get('setwebhook') === ADMIN_SECRET && ADMIN_SECRET) {
-      const webhookUrl = 'https://' + host + url.pathname;
-      const r = await fetch(API + 'setWebhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: webhookUrl, allowed_updates: ['message', 'callback_query'] }),
-      });
-      return res.status(200).json(await r.json());
-    }
-    if (url.searchParams.get('deletewebhook') === ADMIN_SECRET && ADMIN_SECRET) {
-      const r = await fetch(API + 'deleteWebhook', { method: 'POST' });
-      return res.status(200).json(await r.json());
-    }
-    return res.status(200).json({ ok: true, name: 'Instadrop Telegram Bot', hint: 'Set BOT_TOKEN, then call /api/bot?setwebhook=<ADMIN_SECRET> once.' });
-  }
+    // Download everything in parallel (faster than sequential on serverless),
+    // then send in order, skipping content that is a byte-for-byte duplicate
+    // (some APIs return the same image under two different urls).
+    const results = await Promise.allSettled(
+      media.map((item) =&gt; downloadMedia(item.url))
+    );
 
-  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method not allowed' });
-  if (!BOT_TOKEN) return res.status(500).json({ ok: false, error: 'BOT_TOKEN env var is not set' });
+    for (let i = 0; i &lt; results.length; i++) &#123;
+      const item = media&#91;i&#93;;
+      const result = results&#91;i&#93;;
 
-  let body = req.body;
-  if (!body || typeof body === 'string') {
-    const raw = await readBody(req);
-    try { body = JSON.parse(raw); } catch (e) { return res.status(400).json({ ok: false, error: 'invalid json' }); }
-  }
+      if (result.status !== "fulfilled") &#123;
+        console.log("Media download failed:", item.url, result.reason &amp;&amp; result.reason.message);
+        continue;
+      &#125;
 
-  try {
-    await processUpdate(body);
-    res.status(200).json({ ok: true });
-  } catch (e) {
-    console.error('update processing error:', e);
-    res.status(200).json({ ok: true, error: String((e && e.message) || e) });
-  }
-};
+      const downloaded = result.value;
+      const hash = createHash("sha1").update(downloaded.buffer).digest("hex");
+      if (sentHashes.has(hash)) &#123;
+        console.log("Duplicate media skipped:", item.url);
+        continue;
+      &#125;
+      sentHashes.add(hash);
+
+      try &#123;
+        const extension = item.type === "video" ? "mp4" : "jpg";
+        const file = new InputFile(
+          downloaded.buffer,
+          `instadrop_$&#123;parsed.code || "story"&#125;_$&#123;i + 1&#125;.$&#123;extension&#125;`
+        );
+
+        if (item.type === "video") &#123;
+          await ctx.replyWithVideo(file, &#123;
+            caption: sent === 0 ? "📥 Instadrop" : undefined,
+            supports_streaming: true,
+          &#125;);
+        &#125; else &#123;
+          await ctx.replyWithPhoto(file, &#123;
+            caption: sent === 0 ? "📥 Instadrop" : undefined,
+          &#125;);
+        &#125;
+
+        sent++;
+      &#125; catch (error) &#123;
+        console.log("Media send failed:", error.message);
+      &#125;
+    &#125;
+
+    if (sent === 0) &#123;
+      throw new Error("The media could not be uploaded to Telegram.");
+    &#125;
+
+    await ctx.api.editMessageText(
+      ctx.chat.id,
+      status.message_id,
+      `✅ Done!\n\nSent $&#123;sent&#125; file$&#123;sent === 1 ? "" : "s"&#125;.`
+    );
+  &#125; catch (error) &#123;
+    console.error(error);
+    await ctx.api
+      .editMessageText(ctx.chat.id, status.message_id, `❌ $&#123;error.message || "Download failed."&#125;`)
+      .catch(() =&gt; &#123;&#125;);
+  &#125;
+&#125;);
+
+async function handleProfile(ctx, username) &#123;
+  const status = await ctx.reply(`⏳ Looking up @$&#123;username&#125;'s profile picture...`);
+
+  try &#123;
+    const &#123; candidates, direct &#125; = await resolveProfilePic(username);
+
+    // 1) Download each candidate and re-upload as a file. This works even for
+    //    tokenized urls that Telegram's servers can't fetch on their own.
+    for (const url of candidates) &#123;
+      try &#123;
+        const downloaded = await downloadMedia(url);
+        await ctx.api.editMessageText(
+          ctx.chat.id,
+          status.message_id,
+          `✅ Found @$&#123;username&#125;'s profile picture.\n\n📤 Sending...`
+        );
+        await ctx.replyWithPhoto(
+          new InputFile(downloaded.buffer, `$&#123;username&#125;_profile_pic.jpg`),
+          &#123; caption: `👤 @$&#123;username&#125;` &#125;
+        );
+        await ctx.api.editMessageText(
+          ctx.chat.id,
+          status.message_id,
+          `✅ Sent @$&#123;username&#125;'s profile picture.`
+        );
+        return;
+      &#125; catch (e) &#123;
+        console.log("DP download failed:", url, e.message);
+      &#125;
+    &#125;
+
+    // 2) Last resort: let Telegram fetch the url directly (only direct CDN urls work).
+    const directUrls = direct.length ? direct : candidates;
+    for (const url of directUrls) &#123;
+      try &#123;
+        await ctx.api.editMessageText(
+          ctx.chat.id,
+          status.message_id,
+          `✅ Sending @$&#123;username&#125;'s profile picture...`
+        );
+        await ctx.replyWithPhoto(url, &#123; caption: `👤 @$&#123;username&#125;` &#125;);
+        await ctx.api.editMessageText(
+          ctx.chat.id,
+          status.message_id,
+          `✅ Sent @$&#123;username&#125;'s profile picture.`
+        );
+        return;
+      &#125; catch (e) &#123;
+        console.log("DP direct send failed:", url, e.message);
+      &#125;
+    &#125;
+
+    throw new Error(`Couldn't download the profile picture for @$&#123;username&#125;.`);
+  &#125; catch (error) &#123;
+    console.error(error);
+    await ctx.api
+      .editMessageText(ctx.chat.id, status.message_id, `❌ $&#123;error.message || "Could not find the profile."&#125;`)
+      .catch(() =&gt; &#123;&#125;);
+  &#125;
+&#125;
+
+// ----------------------------------------------------
+// VERCEL WEBHOOK
+// ----------------------------------------------------
+
+export default async function handler(req, res) &#123;
+  if (req.method === "GET") &#123;
+    return res.status(200).json(&#123;
+      ok: true,
+      service: "Instadrop Telegram Bot",
+    &#125;);
+  &#125;
+
+  if (req.method !== "POST") &#123;
+    return res.status(405).json(&#123; ok: false, error: "Method not allowed" &#125;);
+  &#125;
+
+  try &#123;
+    await webhookCallback(bot, "http")(req, res);
+  &#125; catch (error) &#123;
+    console.error("Telegram webhook error:", error);
+    if (!res.headersSent) &#123;
+      return res.status(500).json(&#123; ok: false &#125;);
+    &#125;
+  &#125;
+&#125;

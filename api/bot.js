@@ -6,177 +6,567 @@ const { Telegraf } = require('telegraf');
 
 // ---------- Configuration ----------
 const BOT_TOKEN = "8946163976:AAEwnpQ3LuAhNp8HDMkIhi1ZbPMU4Ncsn4s"; // Replace with your real token from @BotFather
-const API_URL = 'https://instadrop.rishu-rishad2019.workers.dev/?url=';
+const API_URL =
+  "https://instadrop.rishu-rishad2019.workers.dev/?url=";
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// ---------- Helpers ----------
-function extractInstagramUrls(text) {
-  const regex = /(https?:\/\/)?(www\.)?instagram\.com\/[^\s]+/gi;
+// ----------------------------------------------------
+// INSTAGRAM URL EXTRACTOR
+// ----------------------------------------------------
+
+function extractInstagramUrls(text = "") {
+  const regex =
+    /(?:https?:\/\/)?(?:www\.)?instagram\.com\/[^\s<>"']+/gi;
+
   return text.match(regex) || [];
 }
 
-// Send a single media object (post/reel/profile picture)
-async function sendSingleMedia(ctx, data, captionPrefix = '') {
-  const images = data.image || [];
-  const videos = data.video || []; // may be array of strings or objects {video, cover}
-  const captionText = data.caption || '';
-  const username = data.username || '';
+function cleanInstagramUrl(url) {
+  return url
+    .replace(/[),.!?]+$/g, "")
+    .trim();
+}
 
-  // Build final caption
-  let fullCaption = captionPrefix ? `${captionPrefix}\n` : '';
-  if (captionText) fullCaption += `${captionText}\n`;
-  if (username) fullCaption += `@${username}`;
+// ----------------------------------------------------
+// CAPTION
+// ----------------------------------------------------
+
+function buildCaption(data, prefix = "") {
+  let caption = "";
+
+  if (prefix) caption += `${prefix}\n`;
+
+  if (data.caption) {
+    caption += `${data.caption}\n`;
+  }
+
+  if (data.username) {
+    caption += `👤 @${data.username}`;
+  }
+
   if (data.taken_at) {
-    const date = new Date(data.taken_at).toLocaleString();
-    fullCaption += `\n📅 ${date}`;
+    const date = new Date(data.taken_at);
+
+    if (!isNaN(date.getTime())) {
+      caption += `\n📅 ${date.toLocaleString()}`;
+    }
   }
-  // Engagement stats
+
   const stats = [];
-  if (data.like_count) stats.push(`❤️ ${data.like_count}`);
-  if (data.comment_count) stats.push(`💬 ${data.comment_count}`);
-  if (data.view_count) stats.push(`👁️ ${data.view_count}`);
-  if (stats.length) fullCaption += `\n${stats.join(' · ')}`;
-  // Trim to Telegram limit
-  if (fullCaption.length > 1000) fullCaption = fullCaption.slice(0, 997) + '...';
 
-  // Collect all media (photos & videos) for album
-  const mediaItems = [];
-
-  for (const img of images) {
-    mediaItems.push({ type: 'photo', media: img });
+  if (data.like_count != null) {
+    stats.push(`❤️ ${data.like_count}`);
   }
 
-  for (const v of videos) {
-    let videoUrl = typeof v === 'string' ? v : v?.video;
-    if (!videoUrl) continue;
-    mediaItems.push({ type: 'video', media: videoUrl });
+  if (data.comment_count != null) {
+    stats.push(`💬 ${data.comment_count}`);
   }
 
-  // Send as album (max 10 per group)
-  if (mediaItems.length > 1) {
-    const chunkSize = 10;
-    for (let i = 0; i < mediaItems.length; i += chunkSize) {
-      const chunk = mediaItems.slice(i, i + chunkSize);
-      const inputMedia = chunk.map(item => ({
-        type: item.type,
-        media: item.media,
-      }));
-      try {
-        await ctx.sendMediaGroup(inputMedia, {
-          caption: i === 0 ? fullCaption : '',
+  if (data.view_count != null) {
+    stats.push(`👁️ ${data.view_count}`);
+  }
+
+  if (stats.length) {
+    caption += `\n${stats.join(" · ")}`;
+  }
+
+  if (caption.length > 1000) {
+    caption = caption.slice(0, 997) + "...";
+  }
+
+  return caption;
+}
+
+// ----------------------------------------------------
+// GET MEDIA
+// ----------------------------------------------------
+
+function getMediaItems(data) {
+  const media = [];
+
+  // Images
+  if (Array.isArray(data.image)) {
+    for (const image of data.image) {
+      if (
+        typeof image === "string" &&
+        image.startsWith("http")
+      ) {
+        media.push({
+          type: "photo",
+          media: image,
         });
-      } catch {
-        // Fallback: send individually
-        for (const item of chunk) {
-          if (item.type === 'photo') await ctx.sendPhoto(item.media);
-          else await ctx.sendVideo(item.media);
-        }
-        if (i === 0 && fullCaption) await ctx.reply(fullCaption);
       }
     }
+  }
+
+  // Single image
+  if (
+    typeof data.image === "string" &&
+    data.image.startsWith("http")
+  ) {
+    media.push({
+      type: "photo",
+      media: data.image,
+    });
+  }
+
+  // Videos
+  if (Array.isArray(data.video)) {
+    for (const item of data.video) {
+      let url = null;
+
+      if (typeof item === "string") {
+        url = item;
+      } else if (item && typeof item === "object") {
+        url =
+          item.video ||
+          item.url ||
+          item.src ||
+          null;
+      }
+
+      if (
+        typeof url === "string" &&
+        url.startsWith("http")
+      ) {
+        media.push({
+          type: "video",
+          media: url,
+        });
+      }
+    }
+  }
+
+  // Single video
+  if (
+    typeof data.video === "string" &&
+    data.video.startsWith("http")
+  ) {
+    media.push({
+      type: "video",
+      media: data.video,
+    });
+  }
+
+  return media;
+}
+
+// ----------------------------------------------------
+// SEND MEDIA
+// ----------------------------------------------------
+
+async function sendSingleMedia(
+  ctx,
+  data,
+  prefix = ""
+) {
+  const media = getMediaItems(data);
+  const caption = buildCaption(
+    data,
+    prefix
+  );
+
+  // No media
+  if (media.length === 0) {
+    await ctx.reply(
+      caption ||
+        "❌ No downloadable media found."
+    );
+    return;
+  }
+
+  // Multiple media
+  if (media.length > 1) {
+    for (let i = 0; i < media.length; i += 10) {
+      const chunk = media.slice(
+        i,
+        i + 10
+      );
+
+      const group = chunk.map(
+        (item, index) => ({
+          type: item.type,
+          media: item.media,
+
+          ...(i === 0 &&
+          index === 0 &&
+          caption
+            ? {
+                caption,
+                parse_mode: "HTML",
+              }
+            : {}),
+        })
+      );
+
+      try {
+        await ctx.telegram.sendMediaGroup(
+          ctx.chat.id,
+          group
+        );
+      } catch (error) {
+        console.error(
+          "Media group error:",
+          error.message
+        );
+
+        // Individual fallback
+        for (const item of chunk) {
+          try {
+            if (item.type === "photo") {
+              await ctx.replyWithPhoto(
+                item.media
+              );
+            } else {
+              await ctx.replyWithVideo(
+                item.media
+              );
+            }
+          } catch (e) {
+            console.error(
+              "Media send error:",
+              e.message
+            );
+          }
+        }
+      }
+    }
+
     return;
   }
 
   // Single media
-  if (mediaItems.length === 1) {
-    const item = mediaItems[0];
-    if (item.type === 'photo') {
-      await ctx.sendPhoto(item.media, { caption: fullCaption });
+  const item = media[0];
+
+  try {
+    if (item.type === "photo") {
+      await ctx.replyWithPhoto(
+        item.media,
+        caption
+          ? {
+              caption,
+              parse_mode: "HTML",
+            }
+          : {}
+      );
     } else {
-      await ctx.sendVideo(item.media, { caption: fullCaption });
+      await ctx.replyWithVideo(
+        item.media,
+        caption
+          ? {
+              caption,
+              parse_mode: "HTML",
+            }
+          : {}
+      );
     }
-    return;
-  }
+  } catch (error) {
+    console.error(
+      "Telegram media error:",
+      error.message
+    );
 
-  // No media – send caption only
-  if (fullCaption) await ctx.reply(fullCaption);
-  else await ctx.reply('No media found in this content.');
+    await ctx.reply(
+      `⚠️ Media found, but Telegram couldn't download it directly.\n\n${item.media}`
+    );
+  }
 }
 
-// Main dispatcher for API response
+// ----------------------------------------------------
+// API RESPONSE
+// ----------------------------------------------------
+
 async function sendMedia(ctx, data) {
-  // Collection (stories / highlights)
-  if (data.items && Array.isArray(data.items)) {
+  // Stories / highlights
+  if (
+    Array.isArray(data.items) &&
+    data.items.length
+  ) {
+    const username =
+      data.username || "User";
+
     for (const item of data.items) {
-      await sendSingleMedia(ctx, item, `📌 ${data.username || 'User'}`);
+      await sendSingleMedia(
+        ctx,
+        item,
+        `📌 @${username}`
+      );
     }
+
     return;
   }
-  // Single media
-  await sendSingleMedia(ctx, data);
+
+  // Normal post / reel / profile
+  await sendSingleMedia(
+    ctx,
+    data
+  );
 }
 
-// ---------- Bot Commands ----------
+// ----------------------------------------------------
+// START
+// ----------------------------------------------------
+
 bot.start(async (ctx) => {
-  const photo = 'https://instadrop.web.app/og-image.png';
-  const caption = `🌟 Welcome to *InstaDrop*!
+  const photo =
+    "https://instadrop.web.app/og-image.png";
 
-I can download Instagram content for you:
-📸 Posts & Reels
-📖 Stories
-✨ Highlights
-👤 Profile Pictures
+  const caption =
+    `<b>🌟 Welcome to InstaDrop!</b>\n\n` +
+    `I can download Instagram content for you:\n\n` +
+    `📸 Posts & Reels\n` +
+    `📖 Stories\n` +
+    `✨ Highlights\n` +
+    `👤 Profile Pictures\n\n` +
+    `Just send me an Instagram link and I'll fetch the media.\n\n` +
+    `⚡ <b>Fast • Simple • Free</b>\n\n` +
+    `👨‍💻 Created by Muhammed Rishad AJ`;
 
-Just send me any Instagram link and I'll send the media!
+  try {
+    await ctx.replyWithPhoto(
+      photo,
+      {
+        caption,
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "🌐 Visit InstaDrop",
+                url:
+                  "https://instadrop.web.app/",
+              },
+            ],
+            [
+              {
+                text: "❓ How to Use",
+                callback_data: "help",
+              },
+            ],
+          ],
+        },
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Start error:",
+      error.message
+    );
 
-🔗 [Website](https://instadrop.web.app/)
-👨‍💻 Created by Muhammed Rishad AJ`;
-
-  await ctx.replyWithPhoto(photo, {
-    caption,
-    parse_mode: 'Markdown',
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: '🌐 Visit Website', url: 'https://instadrop.web.app/' }],
-      ],
-    },
-  });
+    await ctx.reply(
+      caption,
+      {
+        parse_mode: "HTML",
+      }
+    );
+  }
 });
+
+// ----------------------------------------------------
+// HELP
+// ----------------------------------------------------
 
 bot.help(async (ctx) => {
   await ctx.reply(
-    '📥 *How to use InstaDrop*\n\n' +
-    'Send any Instagram URL (post, reel, story, highlight, or profile) and I will download it for you.\n\n' +
-    'Examples:\n' +
-    '• https://instagram.com/p/ABC123\n' +
-    '• https://instagram.com/reel/XYZ789\n' +
-    '• https://instagram.com/username/stories/123456\n' +
-    '• https://instagram.com/username (profile picture)\n\n' +
-    'Powered by [InstaDrop](https://instadrop.web.app/)',
-    { parse_mode: 'Markdown' }
+    `<b>📥 How to use InstaDrop</b>\n\n` +
+      `Send any Instagram link here.\n\n` +
+      `<b>Supported:</b>\n` +
+      `📸 Posts\n` +
+      `🎬 Reels\n` +
+      `📖 Stories\n` +
+      `✨ Highlights\n` +
+      `👤 Profile Pictures\n\n` +
+      `⚡ Powered by InstaDrop`,
+    {
+      parse_mode: "HTML",
+    }
   );
 });
 
-// ---------- Message Handler ----------
-bot.on('text', async (ctx) => {
-  const urls = extractInstagramUrls(ctx.message.text);
-  if (urls.length === 0) return; // ignore non-Instagram messages
+// ----------------------------------------------------
+// HELP BUTTON
+// ----------------------------------------------------
 
-  await ctx.sendChatAction('typing');
+bot.action("help", async (ctx) => {
+  await ctx.answerCbQuery();
+
+  await ctx.reply(
+    `<b>📥 How to use InstaDrop</b>\n\n` +
+      `Simply send an Instagram URL and I'll try to download the media.\n\n` +
+      `📸 Posts\n` +
+      `🎬 Reels\n` +
+      `📖 Stories\n` +
+      `✨ Highlights\n` +
+      `👤 Profile Pictures`,
+    {
+      parse_mode: "HTML",
+    }
+  );
+});
+
+// ----------------------------------------------------
+// TEXT HANDLER
+// ----------------------------------------------------
+
+bot.on("text", async (ctx) => {
+  const text =
+    ctx.message.text || "";
+
+  if (text.startsWith("/")) {
+    return;
+  }
+
+  const found =
+    extractInstagramUrls(text);
+
+  if (!found.length) {
+    return;
+  }
+
+  const urls = [
+    ...new Set(
+      found.map(cleanInstagramUrl)
+    ),
+  ];
+
+  console.log(
+    "Instagram URLs:",
+    urls
+  );
+
+  try {
+    await ctx.sendChatAction(
+      "typing"
+    );
+  } catch {}
 
   for (const url of urls) {
     try {
-      const response = await fetch(`${API_URL}${encodeURIComponent(url)}`);
-      if (!response.ok) {
-        throw new Error(`API error (${response.status})`);
-      }
-      const data = await response.json();
+      console.log(
+        "Fetching:",
+        url
+      );
 
-      if (data.error) {
-        await ctx.reply(`❌ ${data.error}`);
+      const apiEndpoint =
+        API_URL +
+        encodeURIComponent(url);
+
+      const response =
+        await fetch(apiEndpoint);
+
+      if (!response.ok) {
+        throw new Error(
+          `API returned ${response.status}`
+        );
+      }
+
+      const data =
+        await response.json();
+
+      console.log(
+        "API response:",
+        JSON.stringify(data).slice(
+          0,
+          1000
+        )
+      );
+
+      if (
+        data.error ||
+        data.success === false
+      ) {
+        await ctx.reply(
+          `❌ ${
+            data.error ||
+            data.message ||
+            "Unable to download this content."
+          }`
+        );
+
         continue;
       }
 
-      await sendMedia(ctx, data);
-    } catch (err) {
-      console.error('Error processing URL:', err);
-      await ctx.reply(`❌ Failed to process media. Please try again later.\nError: ${err.message}`);
+      await sendMedia(
+        ctx,
+        data
+      );
+    } catch (error) {
+      console.error(
+        "Processing error:",
+        error
+      );
+
+      await ctx.reply(
+        `❌ <b>Failed to process this Instagram link.</b>\n\nPlease try again later.`,
+        {
+          parse_mode: "HTML",
+        }
+      );
     }
   }
 });
 
-// ---------- Vercel Webhook Handler ----------
-// If your file is placed at /api/bot.js, the webhook path is '/api/bot'.
-// Adjust if you deploy differently.
-module.exports = bot.webhookCallback('/api/bot');
+// ----------------------------------------------------
+// GLOBAL ERROR
+// ----------------------------------------------------
+
+bot.catch((error) => {
+  console.error(
+    "Telegraf error:",
+    error
+  );
+});
+
+// ----------------------------------------------------
+// VERCEL HANDLER
+// ----------------------------------------------------
+
+module.exports = async function handler(
+  req,
+  res
+) {
+  console.log(
+    "Webhook request:",
+    req.method,
+    req.url
+  );
+
+  // GET test
+  if (req.method === "GET") {
+    return res.status(200).json({
+      ok: true,
+      bot: "InstaDrop",
+      message:
+        "Telegram webhook is running.",
+    });
+  }
+
+  // Telegram webhook must be POST
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      ok: false,
+      error: "Method not allowed",
+    });
+  }
+
+  try {
+    await bot.handleUpdate(
+      req.body
+    );
+
+    return res.status(200).json({
+      ok: true,
+    });
+  } catch (error) {
+    console.error(
+      "Webhook error:",
+      error
+    );
+
+    return res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+};

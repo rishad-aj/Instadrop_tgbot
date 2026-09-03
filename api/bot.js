@@ -10,24 +10,27 @@ const WELCOME_IMAGE =
 const WEBSITE_URL =
   "https://instadrop.web.app/";
 
-// --------------------------------------------------
+
+// ==================================================
 // TEMPORARY STORAGE
+// ==================================================
 //
-// Stores API response data for callback buttons.
+// Stores API response data for:
+// - Get Cover Photo
+// - Get Details
 //
 // IMPORTANT:
 // This is in-memory storage.
-// For permanent/reliable production storage,
-// use KV / Redis / database.
-// --------------------------------------------------
+// For serverless production, use KV / Redis / DB.
+// ==================================================
 
 const notifiedUsers = new Set();
 const mediaStorage = new Map();
 
 
-// --------------------------------------------------
+// ==================================================
 // TELEGRAM API HELPER
-// --------------------------------------------------
+// ==================================================
 
 async function telegram(method, body) {
   const response = await fetch(
@@ -45,9 +48,9 @@ async function telegram(method, body) {
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // CHECK INSTAGRAM URL
-// --------------------------------------------------
+// ==================================================
 
 function isInstagramUrl(text) {
   if (!text) return false;
@@ -66,9 +69,9 @@ function isInstagramUrl(text) {
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // CREATE STORAGE ID
-// --------------------------------------------------
+// ==================================================
 
 function createStorageId() {
   return (
@@ -80,9 +83,9 @@ function createStorageId() {
 }
 
 
-// --------------------------------------------------
-// STORE API DATA
-// --------------------------------------------------
+// ==================================================
+// STORE MEDIA/API DATA
+// ==================================================
 
 function storeMediaData(data) {
   const id = createStorageId();
@@ -92,7 +95,7 @@ function storeMediaData(data) {
     createdAt: Date.now()
   });
 
-  // Remove old entries after 30 minutes
+  // Remove entries older than 30 minutes
   const expiry =
     Date.now() - 30 * 60 * 1000;
 
@@ -106,31 +109,23 @@ function storeMediaData(data) {
 }
 
 
-// --------------------------------------------------
-// GET URL FROM OBJECT
-// --------------------------------------------------
+// ==================================================
+// UNIQUE URLS
+// ==================================================
 
-function getUrlFromObject(data, keys = []) {
-  if (!data || typeof data !== "object") {
-    return null;
-  }
-
-  for (const key of keys) {
-    if (
-      typeof data[key] === "string" &&
-      /^https?:\/\//i.test(data[key])
-    ) {
-      return data[key];
-    }
-  }
-
-  return null;
+function uniqueUrls(urls) {
+  return [...new Set(urls)];
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // GET MEDIA TYPE
-// --------------------------------------------------
+// ==================================================
+//
+// The API already tells us whether something came from
+// image[] or video[], but this function is still useful
+// when sending individual media.
+// ==================================================
 
 function getMediaType(url) {
   if (!url || typeof url !== "string") {
@@ -148,138 +143,130 @@ function getMediaType(url) {
     return "video";
   }
 
+  // Important:
+  // Instagram image URLs can contain .heic even when
+  // Instagram is returning a JPG through query params
+  // such as stp=dst-jpg.
+  //
+  // Anything that came from image[] is therefore treated
+  // as a photo.
   return "photo";
 }
 
 
-// --------------------------------------------------
-// GENERIC MEDIA EXTRACTION
+// ==================================================
+// EXTRACT MEDIA FROM NEW API
+// ==================================================
 //
-// Used for normal posts / carousels.
+// Normal post/carousel API:
 //
-// IMPORTANT:
-// We DO NOT use this for Reels.
+// {
+//   "image": [
+//     "IMAGE_1",
+//     "IMAGE_2"
+//   ],
+//   "video": []
+// }
 //
-// This prevents the Reel cover from being extracted.
-// --------------------------------------------------
+// We directly read image[] and video[].
+//
+// This avoids relying on file extensions.
+// ==================================================
 
-function extractMedia(data, results = []) {
-  if (!data) return results;
+function extractMedia(data) {
+  const results = [];
+
+  if (!data || typeof data !== "object") {
+    return results;
+  }
+
 
   // ------------------------------------------------
-  // String
+  // IMAGES
   // ------------------------------------------------
 
-  if (typeof data === "string") {
-    if (/^https?:\/\//i.test(data)) {
-      const lower = data.toLowerCase();
-
+  if (Array.isArray(data.image)) {
+    for (const image of data.image) {
       if (
-        lower.includes(".mp4") ||
-        lower.includes(".mov") ||
-        lower.includes(".webm") ||
-        lower.includes(".jpg") ||
-        lower.includes(".jpeg") ||
-        lower.includes(".png") ||
-        lower.includes(".webp") ||
-        lower.includes("video") ||
-        lower.includes("image")
+        typeof image === "string" &&
+        /^https?:\/\//i.test(image)
       ) {
-        results.push(data);
+        results.push(image);
       }
     }
-
-    return results;
   }
 
 
   // ------------------------------------------------
-  // Array
+  // VIDEOS
+  // ------------------------------------------------
+  //
+  // Supports:
+  //
+  // video: [
+  //   "VIDEO_URL"
+  // ]
+  //
+  // AND:
+  //
+  // video: [
+  //   {
+  //     video: "VIDEO_URL"
+  //   }
+  // ]
+  //
   // ------------------------------------------------
 
-  if (Array.isArray(data)) {
-    for (const item of data) {
-      extractMedia(item, results);
-    }
+  if (Array.isArray(data.video)) {
+    for (const video of data.video) {
 
-    return results;
-  }
-
-
-  // ------------------------------------------------
-  // Object
-  // ------------------------------------------------
-
-  if (typeof data === "object") {
-    const preferredKeys = [
-      "url",
-      "download_url",
-      "downloadUrl",
-      "media_url",
-      "mediaUrl",
-      "video_url",
-      "videoUrl",
-      "image_url",
-      "imageUrl",
-      "src",
-      "source",
-      "thumbnail"
-    ];
+      // Plain URL
+      if (
+        typeof video === "string" &&
+        /^https?:\/\//i.test(video)
+      ) {
+        results.push(video);
+        continue;
+      }
 
 
-    for (const key of preferredKeys) {
-      if (typeof data[key] === "string") {
-        const value = data[key];
+      // Object format
+      if (
+        video &&
+        typeof video === "object"
+      ) {
+        const videoUrl =
+          video.video ||
+          video.url ||
+          video.download_url ||
+          video.downloadUrl ||
+          video.media_url ||
+          video.mediaUrl ||
+          video.video_url ||
+          video.videoUrl;
 
-        if (/^https?:\/\//i.test(value)) {
-          const lower = value.toLowerCase();
-
-          if (
-            lower.includes(".mp4") ||
-            lower.includes(".mov") ||
-            lower.includes(".webm") ||
-            lower.includes(".jpg") ||
-            lower.includes(".jpeg") ||
-            lower.includes(".png") ||
-            lower.includes(".webp") ||
-            lower.includes("video") ||
-            lower.includes("image")
-          ) {
-            results.push(value);
-          }
+        if (
+          typeof videoUrl === "string" &&
+          /^https?:\/\//i.test(videoUrl)
+        ) {
+          results.push(videoUrl);
         }
       }
     }
-
-
-    // Recursively inspect everything else
-    for (const [key, value] of Object.entries(data)) {
-      if (!preferredKeys.includes(key)) {
-        extractMedia(value, results);
-      }
-    }
   }
 
-  return results;
+
+  return uniqueUrls(results);
 }
 
 
-// --------------------------------------------------
-// UNIQUE URLS
-// --------------------------------------------------
-
-function uniqueUrls(urls) {
-  return [...new Set(urls)];
-}
-
-
-// --------------------------------------------------
+// ==================================================
 // DETECT REEL
+// ==================================================
 //
-// YOUR NEW API EXAMPLE:
+// Your Reel API:
 //
 // {
-//   "p": true,
 //   "video": [
 //     {
 //       "video": "VIDEO_URL",
@@ -287,16 +274,14 @@ function uniqueUrls(urls) {
 //     }
 //   ],
 //   "cover": "COVER_URL",
-//   "caption": "...",
 //   ...
 // }
 //
-// If video[] contains objects with a "video"
-// property, this is treated as a Reel.
+// This MUST be detected before extractMedia().
 //
-// IMPORTANT:
-// The cover is NOT sent here.
-// --------------------------------------------------
+// Otherwise the cover could accidentally be treated
+// as downloadable media.
+// ==================================================
 
 function isReelResponse(data) {
   if (!data || typeof data !== "object") {
@@ -304,7 +289,7 @@ function isReelResponse(data) {
   }
 
 
-  // Exact structure from your API
+  // Exact new Reel format
   if (
     Array.isArray(data.video) &&
     data.video.length > 0 &&
@@ -319,7 +304,7 @@ function isReelResponse(data) {
   }
 
 
-  // Fallback
+  // Fallback format
   if (
     typeof data.video === "string" &&
     typeof data.cover === "string"
@@ -328,7 +313,7 @@ function isReelResponse(data) {
   }
 
 
-  // Optional type fields
+  // Optional API type fields
   if (
     data.type === "reel" ||
     data.type === "reels" ||
@@ -343,17 +328,25 @@ function isReelResponse(data) {
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // GET REEL VIDEO
+// ==================================================
 //
-// EXACTLY:
+// IMPORTANT:
 //
-// video[0].video
+// For:
 //
-// NOT:
+// video: [
+//   {
+//     video: "VIDEO",
+//     cover: "COVER"
+//   }
+// ]
 //
-// video[0].cover
-// --------------------------------------------------
+// ONLY video.video is returned.
+//
+// cover is NEVER returned here.
+// ==================================================
 
 function getReelVideo(data) {
   if (!data) {
@@ -361,16 +354,9 @@ function getReelVideo(data) {
   }
 
 
-  // New API format
+  // New API structure
   if (Array.isArray(data.video)) {
     for (const item of data.video) {
-
-      // Example:
-      //
-      // {
-      //   video: "https://...mp4",
-      //   cover: "https://...jpg"
-      // }
 
       if (
         item &&
@@ -382,7 +368,7 @@ function getReelVideo(data) {
       }
 
 
-      // Fallback if API returns plain strings
+      // Fallback if video[] contains strings
       if (
         typeof item === "string" &&
         /^https?:\/\//i.test(item)
@@ -393,7 +379,7 @@ function getReelVideo(data) {
   }
 
 
-  // Fallback if video itself is a string
+  // Fallback if video is directly a URL
   if (
     typeof data.video === "string" &&
     /^https?:\/\//i.test(data.video)
@@ -406,17 +392,18 @@ function getReelVideo(data) {
 }
 
 
-// --------------------------------------------------
-// GET REEL COVER
+// ==================================================
+// GET COVER
+// ==================================================
 //
-// This is ONLY STORED.
+// Cover is stored only.
 //
-// It is NOT automatically sent.
+// It is NOT sent automatically.
 //
 // It is sent only when:
-// "🖼️ Get Cover Photo"
+// 🖼️ Get Cover Photo
 // is clicked.
-// --------------------------------------------------
+// ==================================================
 
 function getCoverUrl(data) {
   if (!data) {
@@ -424,7 +411,7 @@ function getCoverUrl(data) {
   }
 
 
-  // First check top-level cover
+  // Top-level cover
   if (
     typeof data.cover === "string" &&
     /^https?:\/\//i.test(data.cover)
@@ -433,7 +420,7 @@ function getCoverUrl(data) {
   }
 
 
-  // Then check cover inside video[]
+  // Cover inside video[]
   if (Array.isArray(data.video)) {
     for (const item of data.video) {
 
@@ -453,9 +440,9 @@ function getCoverUrl(data) {
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // GET CAPTION
-// --------------------------------------------------
+// ==================================================
 
 function getCaption(data) {
   if (!data || typeof data !== "object") {
@@ -471,9 +458,9 @@ function getCaption(data) {
 }
 
 
-// --------------------------------------------------
-// ESCAPE HTML
-// --------------------------------------------------
+// ==================================================
+// HTML ESCAPE
+// ==================================================
 
 function escapeHtml(value) {
   return String(value)
@@ -484,9 +471,9 @@ function escapeHtml(value) {
 }
 
 
-// --------------------------------------------------
-// FORMAT NUMBERS
-// --------------------------------------------------
+// ==================================================
+// FORMAT NUMBER
+// ==================================================
 
 function formatNumber(value) {
   const number = Number(value);
@@ -499,11 +486,25 @@ function formatNumber(value) {
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // FORMAT DETAILS
+// ==================================================
 //
-// Sends all useful details returned by your new API.
-// --------------------------------------------------
+// Uses the details returned by your new API.
+//
+// Example:
+//
+// username
+// caption
+// taken_at
+// like_count
+// comment_count
+// view_count
+// play_count
+// reshare_count
+// made_by
+// etc.
+// ==================================================
 
 function formatDetails(data) {
   if (!data || typeof data !== "object") {
@@ -519,7 +520,10 @@ function formatDetails(data) {
   lines.push("");
 
 
+  // ------------------------------------------------
   // Username
+  // ------------------------------------------------
+
   const username =
     data.username ||
     data.owner?.username ||
@@ -528,22 +532,32 @@ function formatDetails(data) {
 
   if (username) {
     lines.push(
-      `👤 <b>Username:</b> ${escapeHtml(username)}`
+      `👤 <b>Username:</b> ${escapeHtml(
+        String(username)
+      )}`
     );
   }
 
 
+  // ------------------------------------------------
   // Caption
+  // ------------------------------------------------
+
   if (data.caption) {
     lines.push("");
     lines.push("📝 <b>Caption:</b>");
     lines.push(
-      escapeHtml(String(data.caption))
+      escapeHtml(
+        String(data.caption)
+      )
     );
   }
 
 
-  // Taken at
+  // ------------------------------------------------
+  // Taken At
+  // ------------------------------------------------
+
   if (data.taken_at) {
     lines.push(
       `📅 <b>Taken at:</b> ${escapeHtml(
@@ -553,7 +567,10 @@ function formatDetails(data) {
   }
 
 
+  // ------------------------------------------------
   // Likes
+  // ------------------------------------------------
+
   if (data.like_count !== undefined) {
     lines.push(
       `❤️ <b>Likes:</b> ${formatNumber(
@@ -563,7 +580,10 @@ function formatDetails(data) {
   }
 
 
+  // ------------------------------------------------
   // Comments
+  // ------------------------------------------------
+
   if (data.comment_count !== undefined) {
     lines.push(
       `💬 <b>Comments:</b> ${formatNumber(
@@ -573,7 +593,10 @@ function formatDetails(data) {
   }
 
 
+  // ------------------------------------------------
   // Views
+  // ------------------------------------------------
+
   if (data.view_count !== undefined) {
     lines.push(
       `👁️ <b>Views:</b> ${formatNumber(
@@ -583,7 +606,10 @@ function formatDetails(data) {
   }
 
 
+  // ------------------------------------------------
   // Plays
+  // ------------------------------------------------
+
   if (data.play_count !== undefined) {
     lines.push(
       `▶️ <b>Plays:</b> ${formatNumber(
@@ -593,7 +619,10 @@ function formatDetails(data) {
   }
 
 
+  // ------------------------------------------------
   // Reshares
+  // ------------------------------------------------
+
   if (data.reshare_count !== undefined) {
     lines.push(
       `🔁 <b>Reshares:</b> ${formatNumber(
@@ -603,7 +632,10 @@ function formatDetails(data) {
   }
 
 
-  // Image count
+  // ------------------------------------------------
+  // Images
+  // ------------------------------------------------
+
   if (Array.isArray(data.image)) {
     lines.push(
       `🖼️ <b>Images:</b> ${data.image.length}`
@@ -611,7 +643,10 @@ function formatDetails(data) {
   }
 
 
-  // Video count
+  // ------------------------------------------------
+  // Videos
+  // ------------------------------------------------
+
   if (Array.isArray(data.video)) {
     lines.push(
       `🎬 <b>Videos:</b> ${data.video.length}`
@@ -619,7 +654,10 @@ function formatDetails(data) {
   }
 
 
+  // ------------------------------------------------
   // Post flag
+  // ------------------------------------------------
+
   if (data.p !== undefined) {
     lines.push(
       `📌 <b>Post:</b> ${
@@ -629,7 +667,10 @@ function formatDetails(data) {
   }
 
 
-  // API source
+  // ------------------------------------------------
+  // Made by
+  // ------------------------------------------------
+
   if (data.made_by) {
     lines.push(
       `⚙️ <b>Source:</b> ${escapeHtml(
@@ -646,18 +687,22 @@ function formatDetails(data) {
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // MEDIA BUTTONS
-// --------------------------------------------------
+// ==================================================
 
 function buildMediaKeyboard(
   storageId,
   isReel = false
 ) {
 
-  // Reel:
+  // ------------------------------------------------
+  // REEL
+  // ------------------------------------------------
   //
-  // [ Get Cover Photo ] [ Get Details ]
+  // [ 🖼️ Get Cover Photo ]
+  // [ 📋 Get Details ]
+  // ------------------------------------------------
 
   if (isReel) {
     return {
@@ -679,9 +724,9 @@ function buildMediaKeyboard(
   }
 
 
-  // Normal post/carousel:
-  //
-  // [ Get Details ]
+  // ------------------------------------------------
+  // NORMAL POST / CAROUSEL
+  // ------------------------------------------------
 
   return {
     inline_keyboard: [
@@ -697,16 +742,17 @@ function buildMediaKeyboard(
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // SEND MEDIA
-// --------------------------------------------------
+// ==================================================
 
 async function sendMedia(
   chatId,
   url,
   options = {}
 ) {
-  const type = getMediaType(url);
+  const type =
+    getMediaType(url);
 
   const replyMarkup =
     options.storageId
@@ -717,22 +763,33 @@ async function sendMedia(
       : undefined;
 
 
+  // ------------------------------------------------
   // VIDEO
+  // ------------------------------------------------
+
   if (type === "video") {
+
     const body = {
       chat_id: chatId,
       video: url,
       supports_streaming: true
     };
 
+
     if (options.caption) {
-      body.caption = options.caption;
-      body.parse_mode = "HTML";
+      body.caption =
+        options.caption;
+
+      body.parse_mode =
+        "HTML";
     }
 
+
     if (replyMarkup) {
-      body.reply_markup = replyMarkup;
+      body.reply_markup =
+        replyMarkup;
     }
+
 
     return await telegram(
       "sendVideo",
@@ -741,20 +798,30 @@ async function sendMedia(
   }
 
 
+  // ------------------------------------------------
   // PHOTO
+  // ------------------------------------------------
+
   const body = {
     chat_id: chatId,
     photo: url
   };
 
+
   if (options.caption) {
-    body.caption = options.caption;
-    body.parse_mode = "HTML";
+    body.caption =
+      options.caption;
+
+    body.parse_mode =
+      "HTML";
   }
 
+
   if (replyMarkup) {
-    body.reply_markup = replyMarkup;
+    body.reply_markup =
+      replyMarkup;
   }
+
 
   return await telegram(
     "sendPhoto",
@@ -763,9 +830,9 @@ async function sendMedia(
 }
 
 
-// --------------------------------------------------
-// WELCOME
-// --------------------------------------------------
+// ==================================================
+// WELCOME MESSAGE
+// ==================================================
 
 async function sendWelcome(
   chatId,
@@ -785,79 +852,115 @@ async function sendWelcome(
     `🔗 <b>Simply paste an Instagram link to get started!</b>\n\n` +
     `⚡ Fast • Simple • Easy`;
 
-  await telegram("sendPhoto", {
-    chat_id: chatId,
-    photo: WELCOME_IMAGE,
-    caption: welcomeCaption,
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: "🌐 Visit Instadrop",
-            url: WEBSITE_URL
-          }
+  await telegram(
+    "sendPhoto",
+    {
+      chat_id: chatId,
+
+      photo: WELCOME_IMAGE,
+
+      caption:
+        welcomeCaption,
+
+      parse_mode: "HTML",
+
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text:
+                "🌐 Visit Instadrop",
+
+              url:
+                WEBSITE_URL
+            }
+          ]
         ]
-      ]
+      }
     }
-  });
+  );
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // NOTIFY ADMIN
-// --------------------------------------------------
+// ==================================================
 
 async function notifyAdmin(user) {
-  const chatId = user.id;
+  const chatId =
+    user.id;
 
-  if (notifiedUsers.has(chatId)) {
+
+  if (
+    notifiedUsers.has(chatId)
+  ) {
     return;
   }
 
+
   const firstName =
-    user.first_name || "Unknown";
+    user.first_name ||
+    "Unknown";
 
   const lastName =
-    user.last_name || "";
+    user.last_name ||
+    "";
 
   const username =
     user.username
       ? `@${user.username}`
       : "No username";
 
+
   const adminMessage =
     `🆕 <b>New User Started Instadrop</b>\n\n` +
     `👤 <b>Name:</b> ${escapeHtml(
       firstName
-    )} ${escapeHtml(lastName)}\n` +
+    )} ${escapeHtml(
+      lastName
+    )}\n` +
     `🔗 <b>Username:</b> ${escapeHtml(
       username
     )}\n` +
     `🆔 <b>Chat ID:</b> <code>${chatId}</code>`;
 
-  await telegram("sendMessage", {
-    chat_id: ADMIN_CHAT_ID,
-    text: adminMessage,
-    parse_mode: "HTML"
-  });
+
+  await telegram(
+    "sendMessage",
+    {
+      chat_id:
+        ADMIN_CHAT_ID,
+
+      text:
+        adminMessage,
+
+      parse_mode:
+        "HTML"
+    }
+  );
+
 
   notifiedUsers.add(chatId);
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // CALL INSTADROP API
-// --------------------------------------------------
+// ==================================================
 
 async function downloadFromAPI(
   instagramUrl
 ) {
   const endpoint =
     API_URL +
-    encodeURIComponent(instagramUrl);
+    encodeURIComponent(
+      instagramUrl
+    );
 
-  const response = await fetch(endpoint);
+
+  const response =
+    await fetch(endpoint);
+
 
   if (!response.ok) {
     throw new Error(
@@ -865,10 +968,12 @@ async function downloadFromAPI(
     );
   }
 
+
   const contentType =
     response.headers.get(
       "content-type"
     ) || "";
+
 
   if (
     !contentType.includes(
@@ -880,31 +985,32 @@ async function downloadFromAPI(
     );
   }
 
+
   const data =
     await response.json();
 
 
-  // -----------------------------------------------
+  // ==================================================
+  // REEL
+  // ==================================================
+  //
   // IMPORTANT:
   //
-  // If Reel:
-  // DO NOT call extractMedia(data)
+  // We DO NOT use extractMedia() here.
   //
-  // Because extractMedia would find:
+  // We manually get:
   //
-  // video[0].video
-  // video[0].cover
+  // video[].video -> video
+  // video[].cover -> stored
   //
-  // and possibly the top-level cover.
-  //
-  // Instead, Reel media is handled manually.
-  // -----------------------------------------------
+  // ==================================================
 
-  const reel =
+  const isReel =
     isReelResponse(data);
 
 
-  if (reel) {
+  if (isReel) {
+
     return {
       raw: data,
 
@@ -924,9 +1030,9 @@ async function downloadFromAPI(
   }
 
 
-  // -----------------------------------------------
+  // ==================================================
   // NORMAL POST / CAROUSEL
-  // -----------------------------------------------
+  // ==================================================
 
   return {
     raw: data,
@@ -935,22 +1041,21 @@ async function downloadFromAPI(
 
     reelVideo: null,
 
-    cover: getCoverUrl(data),
+    cover:
+      getCoverUrl(data),
 
     caption:
       getCaption(data),
 
     media:
-      uniqueUrls(
-        extractMedia(data)
-      )
+      extractMedia(data)
   };
 }
 
 
-// --------------------------------------------------
-// CALLBACK HANDLER
-// --------------------------------------------------
+// ==================================================
+// HANDLE CALLBACK BUTTONS
+// ==================================================
 
 async function handleCallbackQuery(
   callbackQuery
@@ -968,7 +1073,10 @@ async function handleCallbackQuery(
     callbackQuery.data || "";
 
 
-  // Acknowledge button immediately
+  // ------------------------------------------------
+  // Acknowledge button click
+  // ------------------------------------------------
+
   await telegram(
     "answerCallbackQuery",
     {
@@ -986,32 +1094,45 @@ async function handleCallbackQuery(
   const parts =
     callbackData.split(":");
 
-  const action = parts[0];
-  const storageId = parts[1];
+  const action =
+    parts[0];
+
+  const storageId =
+    parts[1];
 
 
-  if (!action || !storageId) {
+  if (
+    !action ||
+    !storageId
+  ) {
     return;
   }
 
 
   const stored =
-    mediaStorage.get(storageId);
+    mediaStorage.get(
+      storageId
+    );
 
 
-  // ------------------------------------------------
-  // EXPIRED STORAGE
-  // ------------------------------------------------
+  // ==================================================
+  // EXPIRED DATA
+  // ==================================================
 
   if (!stored) {
+
     await telegram(
       "sendMessage",
       {
-        chat_id: chatId,
+        chat_id:
+          chatId,
+
         text:
           `⚠️ <b>This media information has expired.</b>\n\n` +
           `Please send the Instagram link again.`,
-        parse_mode: "HTML"
+
+        parse_mode:
+          "HTML"
       }
     );
 
@@ -1023,16 +1144,23 @@ async function handleCallbackQuery(
   // GET COVER PHOTO
   // ==================================================
 
-  if (action === "get_cover") {
+  if (
+    action === "get_cover"
+  ) {
 
     if (!stored.cover) {
+
       await telegram(
         "sendMessage",
         {
-          chat_id: chatId,
+          chat_id:
+            chatId,
+
           text:
             `❌ <b>Cover photo is not available.</b>`,
-          parse_mode: "HTML"
+
+          parse_mode:
+            "HTML"
         }
       );
 
@@ -1045,15 +1173,18 @@ async function handleCallbackQuery(
       await telegram(
         "sendPhoto",
         {
-          chat_id: chatId,
+          chat_id:
+            chatId,
 
-          photo: stored.cover,
+          photo:
+            stored.cover,
 
           caption:
             `🖼️ <b>Reel Cover</b>\n\n` +
             `Downloaded from Instadrop.`,
 
-          parse_mode: "HTML"
+          parse_mode:
+            "HTML"
         }
       );
 
@@ -1065,20 +1196,22 @@ async function handleCallbackQuery(
       );
 
 
-      // Fallback to URL
       await telegram(
         "sendMessage",
         {
-          chat_id: chatId,
+          chat_id:
+            chatId,
 
           text:
             `🖼️ <b>Cover Photo:</b>\n\n` +
             `${stored.cover}`,
 
-          parse_mode: "HTML"
+          parse_mode:
+            "HTML"
         }
       );
     }
+
 
     return;
   }
@@ -1088,45 +1221,56 @@ async function handleCallbackQuery(
   // GET DETAILS
   // ==================================================
 
-  if (action === "get_details") {
+  if (
+    action === "get_details"
+  ) {
 
     const details =
       formatDetails(
         stored.raw
       );
 
+
     await telegram(
       "sendMessage",
       {
-        chat_id: chatId,
+        chat_id:
+          chatId,
 
-        text: details,
+        text:
+          details,
 
-        parse_mode: "HTML",
+        parse_mode:
+          "HTML",
 
-        disable_web_page_preview: true
+        disable_web_page_preview:
+          true
       }
     );
+
 
     return;
   }
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // MAIN HANDLER
-// --------------------------------------------------
+// ==================================================
 
 export default async function handler(
   req,
   res
 ) {
 
-  // ------------------------------------------------
-  // GET / OTHER REQUEST
-  // ------------------------------------------------
+  // ==================================================
+  // NON POST REQUEST
+  // ==================================================
 
-  if (req.method !== "POST") {
+  if (
+    req.method !== "POST"
+  ) {
+
     return res
       .status(200)
       .send(
@@ -1142,6 +1286,7 @@ export default async function handler(
 
 
     if (!update) {
+
       return res
         .status(200)
         .json({
@@ -1154,11 +1299,14 @@ export default async function handler(
     // CALLBACK QUERY
     // ==================================================
 
-    if (update.callback_query) {
+    if (
+      update.callback_query
+    ) {
 
       await handleCallbackQuery(
         update.callback_query
       );
+
 
       return res
         .status(200)
@@ -1172,7 +1320,10 @@ export default async function handler(
     // NORMAL MESSAGE
     // ==================================================
 
-    if (!update.message) {
+    if (
+      !update.message
+    ) {
+
       return res
         .status(200)
         .json({
@@ -1189,6 +1340,7 @@ export default async function handler(
 
 
     if (!user) {
+
       return res
         .status(200)
         .json({
@@ -1220,12 +1372,16 @@ export default async function handler(
       text.startsWith("/start ")
     ) {
 
-      await notifyAdmin(user);
+      await notifyAdmin(
+        user
+      );
+
 
       await sendWelcome(
         chatId,
         firstName
       );
+
 
       return res
         .status(200)
@@ -1240,6 +1396,7 @@ export default async function handler(
     // ==================================================
 
     if (!text) {
+
       return res
         .status(200)
         .json({
@@ -1257,20 +1414,22 @@ export default async function handler(
     ) {
 
       // ------------------------------------------------
-      // PROCESSING MESSAGE
+      // PROCESSING
       // ------------------------------------------------
 
       const processing =
         await telegram(
           "sendMessage",
           {
-            chat_id: chatId,
+            chat_id:
+              chatId,
 
             text:
               `⏳ <b>Processing your Instagram link...</b>\n\n` +
               `Please wait a moment 🚀`,
 
-            parse_mode: "HTML"
+            parse_mode:
+              "HTML"
           }
         );
 
@@ -1278,7 +1437,7 @@ export default async function handler(
       try {
 
         // ------------------------------------------------
-        // API
+        // API REQUEST
         // ------------------------------------------------
 
         const result =
@@ -1291,7 +1450,9 @@ export default async function handler(
         // REEL
         // ==================================================
 
-        if (result.isReel) {
+        if (
+          result.isReel
+        ) {
 
           const reelVideo =
             result.reelVideo;
@@ -1300,7 +1461,10 @@ export default async function handler(
             result.cover;
 
 
-          // No video
+          // ------------------------------------------------
+          // MAKE SURE VIDEO EXISTS
+          // ------------------------------------------------
+
           if (!reelVideo) {
             throw new Error(
               "Reel detected but no video URL was found."
@@ -1309,23 +1473,25 @@ export default async function handler(
 
 
           // ------------------------------------------------
-          // STORE DATA
+          // STORE REEL INFORMATION
           //
-          // Cover is stored here.
-          //
-          // It is NOT sent.
+          // Cover is stored only.
+          // It is NOT sent now.
           // ------------------------------------------------
 
           const storageId =
             storeMediaData({
-              raw: result.raw,
+              raw:
+                result.raw,
 
-              cover: reelCover,
+              cover:
+                reelCover,
 
               caption:
                 result.caption,
 
-              isReel: true
+              isReel:
+                true
             });
 
 
@@ -1334,13 +1500,15 @@ export default async function handler(
           // ------------------------------------------------
 
           if (
-            processing.result?.message_id
+            processing.result
+              ?.message_id
           ) {
 
             await telegram(
               "deleteMessage",
               {
-                chat_id: chatId,
+                chat_id:
+                  chatId,
 
                 message_id:
                   processing.result
@@ -1350,27 +1518,38 @@ export default async function handler(
           }
 
 
-          // ------------------------------------------------
-          // SEND ONLY REEL VIDEO
+          // ==================================================
+          // SEND REEL VIDEO ONLY
+          // ==================================================
           //
           // NO COVER IS SENT HERE.
-          // ------------------------------------------------
+          //
+          // Buttons:
+          //
+          // 🖼️ Get Cover Photo
+          // 📋 Get Details
+          //
+          // ==================================================
 
           try {
 
             await telegram(
               "sendVideo",
               {
-                chat_id: chatId,
+                chat_id:
+                  chatId,
 
-                video: reelVideo,
+                video:
+                  reelVideo,
 
                 caption:
                   `📥 <b>Downloaded from Instadrop</b>`,
 
-                parse_mode: "HTML",
+                parse_mode:
+                  "HTML",
 
-                supports_streaming: true,
+                supports_streaming:
+                  true,
 
                 reply_markup:
                   buildMediaKeyboard(
@@ -1388,19 +1567,22 @@ export default async function handler(
             );
 
 
-            // Fallback if Telegram can't fetch
-            // the video directly.
+            // ------------------------------------------------
+            // FALLBACK
+            // ------------------------------------------------
 
             await telegram(
               "sendMessage",
               {
-                chat_id: chatId,
+                chat_id:
+                  chatId,
 
                 text:
                   `📥 <b>Reel Download:</b>\n\n` +
                   `${reelVideo}`,
 
-                parse_mode: "HTML",
+                parse_mode:
+                  "HTML",
 
                 reply_markup:
                   buildMediaKeyboard(
@@ -1421,14 +1603,17 @@ export default async function handler(
 
 
         // ==================================================
-        // NORMAL POST / CAROUSEL / OTHER MEDIA
+        // NORMAL POST / CAROUSEL
         // ==================================================
 
         const media =
           result.media;
 
 
-        // No media
+        // ------------------------------------------------
+        // NO MEDIA
+        // ------------------------------------------------
+
         if (
           !media ||
           media.length === 0
@@ -1442,7 +1627,8 @@ export default async function handler(
             await telegram(
               "editMessageText",
               {
-                chat_id: chatId,
+                chat_id:
+                  chatId,
 
                 message_id:
                   processing.result
@@ -1452,7 +1638,8 @@ export default async function handler(
                   `❌ <b>Sorry, I couldn't find downloadable media.</b>\n\n` +
                   `The post may be private, unavailable, or unsupported.`,
 
-                parse_mode: "HTML"
+                parse_mode:
+                  "HTML"
               }
             );
           }
@@ -1472,14 +1659,17 @@ export default async function handler(
 
         const storageId =
           storeMediaData({
-            raw: result.raw,
+            raw:
+              result.raw,
 
-            cover: result.cover,
+            cover:
+              result.cover,
 
             caption:
               result.caption,
 
-            isReel: false
+            isReel:
+              false
           });
 
 
@@ -1488,13 +1678,15 @@ export default async function handler(
         // ------------------------------------------------
 
         if (
-          processing.result?.message_id
+          processing.result
+            ?.message_id
         ) {
 
           await telegram(
             "deleteMessage",
             {
-              chat_id: chatId,
+              chat_id:
+                chatId,
 
               message_id:
                 processing.result
@@ -1504,15 +1696,21 @@ export default async function handler(
         }
 
 
-        // ------------------------------------------------
-        // SEND ALL NORMAL MEDIA
+        // ==================================================
+        // SEND NORMAL MEDIA
+        // ==================================================
         //
-        // Carousel behavior stays.
+        // For:
         //
-        // Each media gets:
+        // image: [image1, image2]
         //
-        // [ 📋 Get Details ]
-        // ------------------------------------------------
+        // both images are sent.
+        //
+        // Each gets:
+        //
+        // 📋 Get Details
+        //
+        // ==================================================
 
         for (
           let i = 0;
@@ -1528,11 +1726,16 @@ export default async function handler(
 
             await sendMedia(
               chatId,
-              mediaUrl,
-              {
-                storageId,
 
-                isReel: false,
+              mediaUrl,
+
+              {
+                storageId:
+
+                  storageId,
+
+                isReel:
+                  false,
 
                 caption:
                   i === 0
@@ -1549,18 +1752,22 @@ export default async function handler(
             );
 
 
-            // Fallback URL
+            // ------------------------------------------------
+            // FALLBACK URL
+            // ------------------------------------------------
 
             await telegram(
               "sendMessage",
               {
-                chat_id: chatId,
+                chat_id:
+                  chatId,
 
                 text:
                   `📥 <b>Download:</b>\n\n` +
                   `${mediaUrl}`,
 
-                parse_mode: "HTML",
+                parse_mode:
+                  "HTML",
 
                 reply_markup:
                   buildMediaKeyboard(
@@ -1573,14 +1780,15 @@ export default async function handler(
         }
 
 
-        // ------------------------------------------------
+        // ==================================================
         // COMPLETION MESSAGE
-        // ------------------------------------------------
+        // ==================================================
 
         await telegram(
           "sendMessage",
           {
-            chat_id: chatId,
+            chat_id:
+              chatId,
 
             text:
               `✅ <b>Done!</b>\n\n` +
@@ -1591,7 +1799,8 @@ export default async function handler(
               } found.\n\n` +
               `🚀 <b>Powered by Instadrop</b>`,
 
-            parse_mode: "HTML",
+            parse_mode:
+              "HTML",
 
             reply_markup: {
               inline_keyboard: [
@@ -1617,6 +1826,10 @@ export default async function handler(
         );
 
 
+        // ------------------------------------------------
+        // ERROR
+        // ------------------------------------------------
+
         if (
           processing.result
             ?.message_id
@@ -1625,7 +1838,8 @@ export default async function handler(
           await telegram(
             "editMessageText",
             {
-              chat_id: chatId,
+              chat_id:
+                chatId,
 
               message_id:
                 processing.result
@@ -1636,7 +1850,8 @@ export default async function handler(
                 `I couldn't process that Instagram link.\n\n` +
                 `Please make sure the post is public and try again.`,
 
-              parse_mode: "HTML"
+              parse_mode:
+                "HTML"
             }
           );
 
@@ -1645,13 +1860,15 @@ export default async function handler(
           await telegram(
             "sendMessage",
             {
-              chat_id: chatId,
+              chat_id:
+                chatId,
 
               text:
                 `❌ <b>Download failed.</b>\n\n` +
                 `Please check the Instagram link and try again.`,
 
-              parse_mode: "HTML"
+              parse_mode:
+                "HTML"
             }
           );
         }
@@ -1673,7 +1890,8 @@ export default async function handler(
     await telegram(
       "sendMessage",
       {
-        chat_id: chatId,
+        chat_id:
+          chatId,
 
         text:
           `🔗 <b>Send me an Instagram link</b>\n\n` +
@@ -1685,7 +1903,8 @@ export default async function handler(
           `• Profile\n\n` +
           `I'll handle the rest. 🚀`,
 
-        parse_mode: "HTML",
+        parse_mode:
+          "HTML",
 
         reply_markup: {
           inline_keyboard: [

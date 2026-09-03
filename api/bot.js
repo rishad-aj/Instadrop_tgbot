@@ -53,7 +53,7 @@ const { Telegraf } = require("telegraf");
 /* ------------------------------------------------------------------ */
 /* Config                                                              */
 /* ------------------------------------------------------------------ */
-const BOT_TOKEN = process.env.BOT_TOKEN || "";
+const BOT_TOKEN = process.env.BOT_TOKEN || "8946163976:AAEwnpQ3LuAhNp8HDMkIhi1ZbPMU4Ncsn4s";
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "";
 const WEBSITE_URL = process.env.WEBSITE_URL || "https://instadrop.web.app/";
 const START_IMAGE = process.env.START_IMAGE || "https://instadrop.web.app/og-image.png";

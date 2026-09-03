@@ -14,15 +14,6 @@ const WEBSITE_URL =
 // ==================================================
 // TEMPORARY STORAGE
 // ==================================================
-//
-// Stores API response data for:
-// - Get Cover Photo
-// - Get Details
-//
-// IMPORTANT:
-// This is in-memory storage.
-// For serverless production, use KV / Redis / DB.
-// ==================================================
 
 const notifiedUsers = new Set();
 const mediaStorage = new Map();
@@ -49,7 +40,7 @@ async function telegram(method, body) {
 
 
 // ==================================================
-// CHECK INSTAGRAM URL
+// INSTAGRAM URL CHECK
 // ==================================================
 
 function isInstagramUrl(text) {
@@ -84,7 +75,7 @@ function createStorageId() {
 
 
 // ==================================================
-// STORE MEDIA/API DATA
+// STORE DATA
 // ==================================================
 
 function storeMediaData(data) {
@@ -95,12 +86,16 @@ function storeMediaData(data) {
     createdAt: Date.now()
   });
 
-  // Remove entries older than 30 minutes
+  // Cleanup anything older than 30 minutes
   const expiry =
     Date.now() - 30 * 60 * 1000;
 
   for (const [key, value] of mediaStorage.entries()) {
-    if (value.createdAt < expiry) {
+    if (
+      value &&
+      value.createdAt &&
+      value.createdAt < expiry
+    ) {
       mediaStorage.delete(key);
     }
   }
@@ -110,21 +105,34 @@ function storeMediaData(data) {
 
 
 // ==================================================
-// UNIQUE URLS
+// VALID URL
+// ==================================================
+
+function isValidHttpUrl(value) {
+  return (
+    typeof value === "string" &&
+    /^https?:\/\//i.test(value)
+  );
+}
+
+
+// ==================================================
+// UNIQUE ARRAY
 // ==================================================
 
 function uniqueUrls(urls) {
-  return [...new Set(urls)];
+  return [
+    ...new Set(
+      urls.filter(
+        isValidHttpUrl
+      )
+    )
+  ];
 }
 
 
 // ==================================================
 // GET MEDIA TYPE
-// ==================================================
-//
-// The API already tells us whether something came from
-// image[] or video[], but this function is still useful
-// when sending individual media.
 // ==================================================
 
 function getMediaType(url) {
@@ -132,7 +140,8 @@ function getMediaType(url) {
     return "photo";
   }
 
-  const lower = url.toLowerCase();
+  const lower =
+    url.toLowerCase();
 
   if (
     lower.includes(".mp4") ||
@@ -143,40 +152,123 @@ function getMediaType(url) {
     return "video";
   }
 
-  // Important:
-  // Instagram image URLs can contain .heic even when
-  // Instagram is returning a JPG through query params
-  // such as stp=dst-jpg.
-  //
-  // Anything that came from image[] is therefore treated
-  // as a photo.
   return "photo";
 }
 
 
 // ==================================================
-// EXTRACT MEDIA FROM NEW API
+// GET VIDEO URL FROM VIDEO OBJECT
+// ==================================================
+
+function getVideoUrl(video) {
+  if (!video) {
+    return null;
+  }
+
+  // Direct string
+  if (
+    typeof video === "string" &&
+    isValidHttpUrl(video)
+  ) {
+    return video;
+  }
+
+  // Object
+  if (
+    typeof video === "object"
+  ) {
+    const url =
+      video.video ||
+      video.url ||
+      video.download_url ||
+      video.downloadUrl ||
+      video.media_url ||
+      video.mediaUrl ||
+      video.video_url ||
+      video.videoUrl;
+
+    if (
+      isValidHttpUrl(url)
+    ) {
+      return url;
+    }
+  }
+
+  return null;
+}
+
+
+// ==================================================
+// GET COVER FROM VIDEO OBJECT
+// ==================================================
+
+function getVideoCover(video) {
+  if (
+    !video ||
+    typeof video !== "object"
+  ) {
+    return null;
+  }
+
+  const cover =
+    video.cover ||
+    video.cover_url ||
+    video.coverUrl ||
+    video.thumbnail ||
+    video.thumbnail_url ||
+    video.thumbnailUrl;
+
+  if (
+    isValidHttpUrl(cover)
+  ) {
+    return cover;
+  }
+
+  return null;
+}
+
+
+// ==================================================
+// NORMALIZE A SINGLE MEDIA ITEM
 // ==================================================
 //
-// Normal post/carousel API:
+// Converts:
 //
 // {
-//   "image": [
-//     "IMAGE_1",
-//     "IMAGE_2"
-//   ],
-//   "video": []
+//   image: [...],
+//   video: [...]
 // }
 //
-// We directly read image[] and video[].
+// into:
 //
-// This avoids relying on file extensions.
+// [
+//   {
+//     url: "...",
+//     type: "photo",
+//     cover: null,
+//     data: {...}
+//   }
+// ]
+//
+// or:
+//
+// [
+//   {
+//     url: "...",
+//     type: "video",
+//     cover: "...",
+//     data: {...}
+//   }
+// ]
 // ==================================================
 
-function extractMedia(data) {
+function normalizeMediaItem(item) {
   const results = [];
 
-  if (!data || typeof data !== "object") {
+  if (
+    !item ||
+    typeof item !== "object"
+  ) {
     return results;
   }
 
@@ -185,13 +277,20 @@ function extractMedia(data) {
   // IMAGES
   // ------------------------------------------------
 
-  if (Array.isArray(data.image)) {
-    for (const image of data.image) {
+  if (
+    Array.isArray(item.image)
+  ) {
+    for (const image of item.image) {
+
       if (
-        typeof image === "string" &&
-        /^https?:\/\//i.test(image)
+        isValidHttpUrl(image)
       ) {
-        results.push(image);
+        results.push({
+          url: image,
+          type: "photo",
+          cover: null,
+          data: item
+        });
       }
     }
   }
@@ -200,63 +299,133 @@ function extractMedia(data) {
   // ------------------------------------------------
   // VIDEOS
   // ------------------------------------------------
-  //
-  // Supports:
-  //
-  // video: [
-  //   "VIDEO_URL"
-  // ]
-  //
-  // AND:
-  //
-  // video: [
-  //   {
-  //     video: "VIDEO_URL"
-  //   }
-  // ]
-  //
-  // ------------------------------------------------
 
-  if (Array.isArray(data.video)) {
-    for (const video of data.video) {
+  if (
+    Array.isArray(item.video)
+  ) {
+    for (const video of item.video) {
 
-      // Plain URL
-      if (
-        typeof video === "string" &&
-        /^https?:\/\//i.test(video)
-      ) {
-        results.push(video);
+      const videoUrl =
+        getVideoUrl(video);
+
+      if (!videoUrl) {
         continue;
       }
 
+      results.push({
+        url: videoUrl,
+        type: "video",
 
-      // Object format
-      if (
-        video &&
-        typeof video === "object"
-      ) {
-        const videoUrl =
-          video.video ||
-          video.url ||
-          video.download_url ||
-          video.downloadUrl ||
-          video.media_url ||
-          video.mediaUrl ||
-          video.video_url ||
-          video.videoUrl;
+        // IMPORTANT:
+        // Cover is stored but NOT automatically sent.
+        cover:
+          getVideoCover(video),
 
-        if (
-          typeof videoUrl === "string" &&
-          /^https?:\/\//i.test(videoUrl)
-        ) {
-          results.push(videoUrl);
-        }
-      }
+        data: item
+      });
     }
   }
 
 
-  return uniqueUrls(results);
+  return results;
+}
+
+
+// ==================================================
+// EXTRACT NORMAL POST MEDIA
+// ==================================================
+
+function extractMedia(data) {
+  const results = [];
+
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
+    return results;
+  }
+
+
+  // ------------------------------------------------
+  // NORMAL TOP-LEVEL MEDIA
+  // ------------------------------------------------
+
+  const normalized =
+    normalizeMediaItem(
+      data
+    );
+
+  results.push(
+    ...normalized
+  );
+
+
+  // ------------------------------------------------
+  // SAFETY FALLBACK
+  // ------------------------------------------------
+
+  // Some APIs could return direct video fields.
+  if (
+    results.length === 0 &&
+    typeof data.video === "string" &&
+    isValidHttpUrl(data.video)
+  ) {
+    results.push({
+      url: data.video,
+      type: "video",
+      cover:
+        isValidHttpUrl(data.cover)
+          ? data.cover
+          : null,
+      data
+    });
+  }
+
+
+  return results;
+}
+
+
+// ==================================================
+// DETECT HIGHLIGHT
+// ==================================================
+
+function isHighlightResponse(data) {
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
+    return false;
+  }
+
+  return (
+    data.type === "highlight" ||
+    data.type === "highlights" ||
+    Array.isArray(data.items)
+  );
+}
+
+
+// ==================================================
+// DETECT STORY
+// ==================================================
+
+function isStoryResponse(data) {
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
+    return false;
+  }
+
+  if (
+    data.type === "story" ||
+    data.type === "stories"
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 
@@ -264,32 +433,51 @@ function extractMedia(data) {
 // DETECT REEL
 // ==================================================
 //
-// Your Reel API:
+// IMPORTANT:
 //
-// {
-//   "video": [
-//     {
-//       "video": "VIDEO_URL",
-//       "cover": "COVER_URL"
-//     }
-//   ],
-//   "cover": "COVER_URL",
-//   ...
-// }
+// Highlight and Story are checked BEFORE Reel.
 //
-// This MUST be detected before extractMedia().
-//
-// Otherwise the cover could accidentally be treated
-// as downloadable media.
+// This prevents a Story video with a cover from
+// accidentally being treated as a Reel.
 // ==================================================
 
 function isReelResponse(data) {
-  if (!data || typeof data !== "object") {
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
     return false;
   }
 
 
-  // Exact new Reel format
+  // Never treat Highlight as Reel
+  if (
+    isHighlightResponse(data)
+  ) {
+    return false;
+  }
+
+
+  // Never treat Story as Reel
+  if (
+    isStoryResponse(data)
+  ) {
+    return false;
+  }
+
+
+  // Explicit Reel type
+  if (
+    data.type === "reel" ||
+    data.type === "reels" ||
+    data.media_type === "reel" ||
+    data.mediaType === "reel"
+  ) {
+    return true;
+  }
+
+
+  // New Reel structure
   if (
     Array.isArray(data.video) &&
     data.video.length > 0 &&
@@ -304,21 +492,10 @@ function isReelResponse(data) {
   }
 
 
-  // Fallback format
+  // Old/fallback structure
   if (
     typeof data.video === "string" &&
     typeof data.cover === "string"
-  ) {
-    return true;
-  }
-
-
-  // Optional API type fields
-  if (
-    data.type === "reel" ||
-    data.type === "reels" ||
-    data.media_type === "reel" ||
-    data.mediaType === "reel"
   ) {
     return true;
   }
@@ -331,22 +508,6 @@ function isReelResponse(data) {
 // ==================================================
 // GET REEL VIDEO
 // ==================================================
-//
-// IMPORTANT:
-//
-// For:
-//
-// video: [
-//   {
-//     video: "VIDEO",
-//     cover: "COVER"
-//   }
-// ]
-//
-// ONLY video.video is returned.
-//
-// cover is NEVER returned here.
-// ==================================================
 
 function getReelVideo(data) {
   if (!data) {
@@ -354,35 +515,27 @@ function getReelVideo(data) {
   }
 
 
-  // New API structure
-  if (Array.isArray(data.video)) {
-    for (const item of data.video) {
+  if (
+    Array.isArray(data.video)
+  ) {
 
-      if (
-        item &&
-        typeof item === "object" &&
-        typeof item.video === "string" &&
-        /^https?:\/\//i.test(item.video)
-      ) {
-        return item.video;
-      }
+    for (
+      const item of data.video
+    ) {
 
+      const url =
+        getVideoUrl(item);
 
-      // Fallback if video[] contains strings
-      if (
-        typeof item === "string" &&
-        /^https?:\/\//i.test(item)
-      ) {
-        return item;
+      if (url) {
+        return url;
       }
     }
   }
 
 
-  // Fallback if video is directly a URL
   if (
     typeof data.video === "string" &&
-    /^https?:\/\//i.test(data.video)
+    isValidHttpUrl(data.video)
   ) {
     return data.video;
   }
@@ -393,16 +546,7 @@ function getReelVideo(data) {
 
 
 // ==================================================
-// GET COVER
-// ==================================================
-//
-// Cover is stored only.
-//
-// It is NOT sent automatically.
-//
-// It is sent only when:
-// 🖼️ Get Cover Photo
-// is clicked.
+// GET REEL COVER
 // ==================================================
 
 function getCoverUrl(data) {
@@ -413,24 +557,26 @@ function getCoverUrl(data) {
 
   // Top-level cover
   if (
-    typeof data.cover === "string" &&
-    /^https?:\/\//i.test(data.cover)
+    isValidHttpUrl(data.cover)
   ) {
     return data.cover;
   }
 
 
   // Cover inside video[]
-  if (Array.isArray(data.video)) {
-    for (const item of data.video) {
+  if (
+    Array.isArray(data.video)
+  ) {
 
-      if (
-        item &&
-        typeof item === "object" &&
-        typeof item.cover === "string" &&
-        /^https?:\/\//i.test(item.cover)
-      ) {
-        return item.cover;
+    for (
+      const item of data.video
+    ) {
+
+      const cover =
+        getVideoCover(item);
+
+      if (cover) {
+        return cover;
       }
     }
   }
@@ -441,11 +587,158 @@ function getCoverUrl(data) {
 
 
 // ==================================================
+// EXTRACT HIGHLIGHT ITEMS
+// ==================================================
+//
+// Highlight:
+//
+// {
+//   type: "highlight",
+//   items: [
+//     {
+//       image: [],
+//       video: [
+//         {
+//           video: "...",
+//           cover: "..."
+//         }
+//       ]
+//     }
+//   ]
+// }
+//
+// Every item is processed independently.
+// ==================================================
+
+function extractHighlightItems(data) {
+  const results = [];
+
+  if (
+    !data ||
+    !Array.isArray(data.items)
+  ) {
+    return results;
+  }
+
+
+  for (
+    let index = 0;
+    index < data.items.length;
+    index++
+  ) {
+
+    const item =
+      data.items[index];
+
+    const media =
+      normalizeMediaItem(
+        item
+      );
+
+
+    for (
+      const mediaItem of media
+    ) {
+
+      results.push({
+        ...mediaItem,
+
+        index,
+
+        highlightTitle:
+          data.highlight_title ||
+          "",
+
+        highlightCover:
+          isValidHttpUrl(
+            data.highlight_cover
+          )
+            ? data.highlight_cover
+            : null
+      });
+    }
+  }
+
+
+  return results;
+}
+
+
+// ==================================================
+// EXTRACT STORY MEDIA
+// ==================================================
+
+function extractStoryMedia(data) {
+  const results = [];
+
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
+    return results;
+  }
+
+
+  // ------------------------------------------------
+  // Some story responses use items[]
+  // ------------------------------------------------
+
+  if (
+    Array.isArray(data.items)
+  ) {
+
+    for (
+      let index = 0;
+      index < data.items.length;
+      index++
+    ) {
+
+      const item =
+        data.items[index];
+
+      const media =
+        normalizeMediaItem(
+          item
+        );
+
+      for (
+        const mediaItem of media
+      ) {
+
+        results.push({
+          ...mediaItem,
+          index
+        });
+      }
+    }
+
+    if (
+      results.length > 0
+    ) {
+      return results;
+    }
+  }
+
+
+  // ------------------------------------------------
+  // Some story responses use top-level media
+  // ------------------------------------------------
+
+  return normalizeMediaItem(
+    data
+  );
+}
+
+
+// ==================================================
 // GET CAPTION
 // ==================================================
 
 function getCaption(data) {
-  if (!data || typeof data !== "object") {
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
     return "";
   }
 
@@ -464,10 +757,22 @@ function getCaption(data) {
 
 function escapeHtml(value) {
   return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    );
 }
 
 
@@ -476,58 +781,69 @@ function escapeHtml(value) {
 // ==================================================
 
 function formatNumber(value) {
-  const number = Number(value);
+  const number =
+    Number(value);
 
-  if (!Number.isFinite(number)) {
-    return escapeHtml(String(value));
+  if (
+    !Number.isFinite(number)
+  ) {
+    return escapeHtml(
+      String(value)
+    );
   }
 
-  return number.toLocaleString("en-US");
+  return number.toLocaleString(
+    "en-US"
+  );
 }
 
 
 // ==================================================
 // FORMAT DETAILS
 // ==================================================
-//
-// Uses the details returned by your new API.
-//
-// Example:
-//
-// username
-// caption
-// taken_at
-// like_count
-// comment_count
-// view_count
-// play_count
-// reshare_count
-// made_by
-// etc.
-// ==================================================
 
 function formatDetails(data) {
-  if (!data || typeof data !== "object") {
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
     return (
       "📋 <b>Instagram Details</b>\n\n" +
       "No details available."
     );
   }
 
+
   const lines = [];
 
-  lines.push("📋 <b>Instagram Details</b>");
+
+  lines.push(
+    "📋 <b>Instagram Details</b>"
+  );
+
   lines.push("");
 
 
   // ------------------------------------------------
-  // Username
+  // TYPE
+  // ------------------------------------------------
+
+  if (data.type) {
+    lines.push(
+      `📂 <b>Type:</b> ${escapeHtml(
+        String(data.type)
+      )}`
+    );
+  }
+
+
+  // ------------------------------------------------
+  // USERNAME
   // ------------------------------------------------
 
   const username =
     data.username ||
     data.owner?.username ||
-    data.owner ||
     data.user?.username;
 
   if (username) {
@@ -540,12 +856,63 @@ function formatDetails(data) {
 
 
   // ------------------------------------------------
-  // Caption
+  // OWNER
+  // ------------------------------------------------
+
+  if (
+    data.owner &&
+    typeof data.owner === "string"
+  ) {
+    lines.push(
+      `🔗 <b>Owner:</b> ${escapeHtml(
+        data.owner
+      )}`
+    );
+  }
+
+
+  // ------------------------------------------------
+  // HIGHLIGHT TITLE
+  // ------------------------------------------------
+
+  if (
+    data.highlight_title
+  ) {
+    lines.push(
+      `⭐ <b>Highlight:</b> ${escapeHtml(
+        String(data.highlight_title)
+      )}`
+    );
+  }
+
+
+  // ------------------------------------------------
+  // HIGHLIGHT COUNT
+  // ------------------------------------------------
+
+  if (
+    data.count !== undefined
+  ) {
+    lines.push(
+      `📦 <b>Items:</b> ${formatNumber(
+        data.count
+      )}`
+    );
+  }
+
+
+  // ------------------------------------------------
+  // CAPTION
   // ------------------------------------------------
 
   if (data.caption) {
+
     lines.push("");
-    lines.push("📝 <b>Caption:</b>");
+
+    lines.push(
+      "📝 <b>Caption:</b>"
+    );
+
     lines.push(
       escapeHtml(
         String(data.caption)
@@ -555,10 +922,12 @@ function formatDetails(data) {
 
 
   // ------------------------------------------------
-  // Taken At
+  // TAKEN AT
   // ------------------------------------------------
 
-  if (data.taken_at) {
+  if (
+    data.taken_at
+  ) {
     lines.push(
       `📅 <b>Taken at:</b> ${escapeHtml(
         String(data.taken_at)
@@ -568,10 +937,12 @@ function formatDetails(data) {
 
 
   // ------------------------------------------------
-  // Likes
+  // LIKES
   // ------------------------------------------------
 
-  if (data.like_count !== undefined) {
+  if (
+    data.like_count !== undefined
+  ) {
     lines.push(
       `❤️ <b>Likes:</b> ${formatNumber(
         data.like_count
@@ -581,10 +952,12 @@ function formatDetails(data) {
 
 
   // ------------------------------------------------
-  // Comments
+  // COMMENTS
   // ------------------------------------------------
 
-  if (data.comment_count !== undefined) {
+  if (
+    data.comment_count !== undefined
+  ) {
     lines.push(
       `💬 <b>Comments:</b> ${formatNumber(
         data.comment_count
@@ -594,10 +967,12 @@ function formatDetails(data) {
 
 
   // ------------------------------------------------
-  // Views
+  // VIEWS
   // ------------------------------------------------
 
-  if (data.view_count !== undefined) {
+  if (
+    data.view_count !== undefined
+  ) {
     lines.push(
       `👁️ <b>Views:</b> ${formatNumber(
         data.view_count
@@ -607,10 +982,12 @@ function formatDetails(data) {
 
 
   // ------------------------------------------------
-  // Plays
+  // PLAYS
   // ------------------------------------------------
 
-  if (data.play_count !== undefined) {
+  if (
+    data.play_count !== undefined
+  ) {
     lines.push(
       `▶️ <b>Plays:</b> ${formatNumber(
         data.play_count
@@ -620,10 +997,12 @@ function formatDetails(data) {
 
 
   // ------------------------------------------------
-  // Reshares
+  // RESHARES
   // ------------------------------------------------
 
-  if (data.reshare_count !== undefined) {
+  if (
+    data.reshare_count !== undefined
+  ) {
     lines.push(
       `🔁 <b>Reshares:</b> ${formatNumber(
         data.reshare_count
@@ -633,10 +1012,12 @@ function formatDetails(data) {
 
 
   // ------------------------------------------------
-  // Images
+  // IMAGES
   // ------------------------------------------------
 
-  if (Array.isArray(data.image)) {
+  if (
+    Array.isArray(data.image)
+  ) {
     lines.push(
       `🖼️ <b>Images:</b> ${data.image.length}`
     );
@@ -644,10 +1025,12 @@ function formatDetails(data) {
 
 
   // ------------------------------------------------
-  // Videos
+  // VIDEOS
   // ------------------------------------------------
 
-  if (Array.isArray(data.video)) {
+  if (
+    Array.isArray(data.video)
+  ) {
     lines.push(
       `🎬 <b>Videos:</b> ${data.video.length}`
     );
@@ -655,23 +1038,42 @@ function formatDetails(data) {
 
 
   // ------------------------------------------------
-  // Post flag
+  // ITEMS
   // ------------------------------------------------
 
-  if (data.p !== undefined) {
+  if (
+    Array.isArray(data.items)
+  ) {
+    lines.push(
+      `📦 <b>Media Items:</b> ${data.items.length}`
+    );
+  }
+
+
+  // ------------------------------------------------
+  // POST FLAG
+  // ------------------------------------------------
+
+  if (
+    data.p !== undefined
+  ) {
     lines.push(
       `📌 <b>Post:</b> ${
-        data.p ? "Yes" : "No"
+        data.p
+          ? "Yes"
+          : "No"
       }`
     );
   }
 
 
   // ------------------------------------------------
-  // Made by
+  // MADE BY
   // ------------------------------------------------
 
-  if (data.made_by) {
+  if (
+    data.made_by
+  ) {
     lines.push(
       `⚙️ <b>Source:</b> ${escapeHtml(
         String(data.made_by)
@@ -681,62 +1083,64 @@ function formatDetails(data) {
 
 
   lines.push("");
-  lines.push("🚀 <b>Powered by Instadrop</b>");
+
+  lines.push(
+    "🚀 <b>Powered by Instadrop</b>"
+  );
+
 
   return lines.join("\n");
 }
 
 
 // ==================================================
-// MEDIA BUTTONS
+// BUILD KEYBOARD
+// ==================================================
+//
+// For media with cover:
+//
+// [ 🖼️ Get Cover Photo ]
+// [ 📋 Get Details ]
+//
+// For media without cover:
+//
+// [ 📋 Get Details ]
+//
 // ==================================================
 
 function buildMediaKeyboard(
   storageId,
-  isReel = false
+  hasCover = false
 ) {
 
-  // ------------------------------------------------
-  // REEL
-  // ------------------------------------------------
-  //
-  // [ 🖼️ Get Cover Photo ]
-  // [ 📋 Get Details ]
-  // ------------------------------------------------
+  const buttons = [];
 
-  if (isReel) {
-    return {
-      inline_keyboard: [
-        [
-          {
-            text: "🖼️ Get Cover Photo",
-            callback_data:
-              `get_cover:${storageId}`
-          },
-          {
-            text: "📋 Get Details",
-            callback_data:
-              `get_details:${storageId}`
-          }
-        ]
-      ]
-    };
+
+  // Cover button
+  if (hasCover) {
+    buttons.push({
+      text:
+        "🖼️ Get Cover Photo",
+
+      callback_data:
+        `get_cover:${storageId}`
+    });
   }
 
 
-  // ------------------------------------------------
-  // NORMAL POST / CAROUSEL
-  // ------------------------------------------------
+  // Details button
+  buttons.push({
+    text:
+      "📋 Get Details",
+
+    callback_data:
+      `get_details:${storageId}`
+  });
+
 
   return {
     inline_keyboard: [
-      [
-        {
-          text: "📋 Get Details",
-          callback_data:
-            `get_details:${storageId}`
-        }
-      ]
+      buttons
     ]
   };
 }
@@ -748,35 +1152,54 @@ function buildMediaKeyboard(
 
 async function sendMedia(
   chatId,
-  url,
+  mediaItem,
   options = {}
 ) {
+
+  const url =
+    mediaItem.url;
+
   const type =
+    mediaItem.type ||
     getMediaType(url);
+
+  const cover =
+    mediaItem.cover ||
+    null;
+
 
   const replyMarkup =
     options.storageId
       ? buildMediaKeyboard(
           options.storageId,
-          options.isReel === true
+          !!cover
         )
       : undefined;
 
 
-  // ------------------------------------------------
+  // ==================================================
   // VIDEO
-  // ------------------------------------------------
+  // ==================================================
 
-  if (type === "video") {
+  if (
+    type === "video"
+  ) {
 
     const body = {
-      chat_id: chatId,
-      video: url,
-      supports_streaming: true
+      chat_id:
+        chatId,
+
+      video:
+        url,
+
+      supports_streaming:
+        true
     };
 
 
-    if (options.caption) {
+    if (
+      options.caption
+    ) {
       body.caption =
         options.caption;
 
@@ -785,7 +1208,9 @@ async function sendMedia(
     }
 
 
-    if (replyMarkup) {
+    if (
+      replyMarkup
+    ) {
       body.reply_markup =
         replyMarkup;
     }
@@ -798,17 +1223,22 @@ async function sendMedia(
   }
 
 
-  // ------------------------------------------------
+  // ==================================================
   // PHOTO
-  // ------------------------------------------------
+  // ==================================================
 
   const body = {
-    chat_id: chatId,
-    photo: url
+    chat_id:
+      chatId,
+
+    photo:
+      url
   };
 
 
-  if (options.caption) {
+  if (
+    options.caption
+  ) {
     body.caption =
       options.caption;
 
@@ -817,7 +1247,9 @@ async function sendMedia(
   }
 
 
-  if (replyMarkup) {
+  if (
+    replyMarkup
+  ) {
     body.reply_markup =
       replyMarkup;
   }
@@ -838,8 +1270,10 @@ async function sendWelcome(
   chatId,
   firstName
 ) {
+
   const welcomeCaption =
     `👋 <b>Welcome to Instadrop!</b>\n\n` +
+
     `📥 <b>Download Instagram media with ease.</b>\n` +
     `Just send me an Instagram link and I'll take care of the rest. 🚀\n\n` +
 
@@ -850,19 +1284,24 @@ async function sendWelcome(
     `👤 Profile Pictures & Media\n\n` +
 
     `🔗 <b>Simply paste an Instagram link to get started!</b>\n\n` +
+
     `⚡ Fast • Simple • Easy`;
+
 
   await telegram(
     "sendPhoto",
     {
-      chat_id: chatId,
+      chat_id:
+        chatId,
 
-      photo: WELCOME_IMAGE,
+      photo:
+        WELCOME_IMAGE,
 
       caption:
         welcomeCaption,
 
-      parse_mode: "HTML",
+      parse_mode:
+        "HTML",
 
       reply_markup: {
         inline_keyboard: [
@@ -887,6 +1326,7 @@ async function sendWelcome(
 // ==================================================
 
 async function notifyAdmin(user) {
+
   const chatId =
     user.id;
 
@@ -914,14 +1354,17 @@ async function notifyAdmin(user) {
 
   const adminMessage =
     `🆕 <b>New User Started Instadrop</b>\n\n` +
+
     `👤 <b>Name:</b> ${escapeHtml(
       firstName
     )} ${escapeHtml(
       lastName
     )}\n` +
+
     `🔗 <b>Username:</b> ${escapeHtml(
       username
     )}\n` +
+
     `🆔 <b>Chat ID:</b> <code>${chatId}</code>`;
 
 
@@ -940,17 +1383,20 @@ async function notifyAdmin(user) {
   );
 
 
-  notifiedUsers.add(chatId);
+  notifiedUsers.add(
+    chatId
+  );
 }
 
 
 // ==================================================
-// CALL INSTADROP API
+// CALL API
 // ==================================================
 
 async function downloadFromAPI(
   instagramUrl
 ) {
+
   const endpoint =
     API_URL +
     encodeURIComponent(
@@ -962,7 +1408,9 @@ async function downloadFromAPI(
     await fetch(endpoint);
 
 
-  if (!response.ok) {
+  if (
+    !response.ok
+  ) {
     throw new Error(
       `API returned HTTP ${response.status}`
     );
@@ -991,30 +1439,114 @@ async function downloadFromAPI(
 
 
   // ==================================================
-  // REEL
-  // ==================================================
-  //
-  // IMPORTANT:
-  //
-  // We DO NOT use extractMedia() here.
-  //
-  // We manually get:
-  //
-  // video[].video -> video
-  // video[].cover -> stored
-  //
+  // HIGHLIGHT
   // ==================================================
 
-  const isReel =
-    isReelResponse(data);
-
-
-  if (isReel) {
+  if (
+    isHighlightResponse(data)
+  ) {
 
     return {
-      raw: data,
+      raw:
+        data,
 
-      isReel: true,
+      type:
+        "highlight",
+
+      isReel:
+        false,
+
+      isStory:
+        false,
+
+      isHighlight:
+        true,
+
+      reelVideo:
+        null,
+
+      cover:
+        isValidHttpUrl(
+          data.highlight_cover
+        )
+          ? data.highlight_cover
+          : null,
+
+      caption:
+        getCaption(data),
+
+      media:
+        extractHighlightItems(
+          data
+        )
+    };
+  }
+
+
+  // ==================================================
+  // STORY
+  // ==================================================
+
+  if (
+    isStoryResponse(data)
+  ) {
+
+    return {
+      raw:
+        data,
+
+      type:
+        "story",
+
+      isReel:
+        false,
+
+      isStory:
+        true,
+
+      isHighlight:
+        false,
+
+      reelVideo:
+        null,
+
+      cover:
+        getCoverUrl(data),
+
+      caption:
+        getCaption(data),
+
+      media:
+        extractStoryMedia(
+          data
+        )
+    };
+  }
+
+
+  // ==================================================
+  // REEL
+  // ==================================================
+
+  if (
+    isReelResponse(data)
+  ) {
+
+    return {
+      raw:
+        data,
+
+      type:
+        "reel",
+
+      isReel:
+        true,
+
+      isStory:
+        false,
+
+      isHighlight:
+        false,
 
       reelVideo:
         getReelVideo(data),
@@ -1025,7 +1557,8 @@ async function downloadFromAPI(
       caption:
         getCaption(data),
 
-      media: []
+      media:
+        []
     };
   }
 
@@ -1035,11 +1568,24 @@ async function downloadFromAPI(
   // ==================================================
 
   return {
-    raw: data,
+    raw:
+      data,
 
-    isReel: false,
+    type:
+      data.type ||
+      "post",
 
-    reelVideo: null,
+    isReel:
+      false,
+
+    isStory:
+      false,
+
+    isHighlight:
+      false,
+
+    reelVideo:
+      null,
 
     cover:
       getCoverUrl(data),
@@ -1054,12 +1600,13 @@ async function downloadFromAPI(
 
 
 // ==================================================
-// HANDLE CALLBACK BUTTONS
+// HANDLE CALLBACK
 // ==================================================
 
 async function handleCallbackQuery(
   callbackQuery
 ) {
+
   const callbackId =
     callbackQuery.id;
 
@@ -1070,11 +1617,12 @@ async function handleCallbackQuery(
     message?.chat?.id;
 
   const callbackData =
-    callbackQuery.data || "";
+    callbackQuery.data ||
+    "";
 
 
   // ------------------------------------------------
-  // Acknowledge button click
+  // ACKNOWLEDGE
   // ------------------------------------------------
 
   await telegram(
@@ -1116,7 +1664,7 @@ async function handleCallbackQuery(
 
 
   // ==================================================
-  // EXPIRED DATA
+  // EXPIRED
   // ==================================================
 
   if (!stored) {
@@ -1141,14 +1689,16 @@ async function handleCallbackQuery(
 
 
   // ==================================================
-  // GET COVER PHOTO
+  // GET COVER
   // ==================================================
 
   if (
     action === "get_cover"
   ) {
 
-    if (!stored.cover) {
+    if (
+      !stored.cover
+    ) {
 
       await telegram(
         "sendMessage",
@@ -1157,7 +1707,7 @@ async function handleCallbackQuery(
             chatId,
 
           text:
-            `❌ <b>Cover photo is not available.</b>`,
+            `❌ <b>Cover photo is not available for this media.</b>`,
 
           parse_mode:
             "HTML"
@@ -1170,6 +1720,10 @@ async function handleCallbackQuery(
 
     try {
 
+      // ------------------------------------------------
+      // SEND COVER IMAGE
+      // ------------------------------------------------
+
       await telegram(
         "sendPhoto",
         {
@@ -1180,7 +1734,7 @@ async function handleCallbackQuery(
             stored.cover,
 
           caption:
-            `🖼️ <b>Reel Cover</b>\n\n` +
+            `🖼️ <b>Cover Photo</b>\n\n` +
             `Downloaded from Instadrop.`,
 
           parse_mode:
@@ -1195,6 +1749,10 @@ async function handleCallbackQuery(
         error
       );
 
+
+      // ------------------------------------------------
+      // FALLBACK TO URL
+      // ------------------------------------------------
 
       await telegram(
         "sendMessage",
@@ -1264,7 +1822,7 @@ export default async function handler(
 ) {
 
   // ==================================================
-  // NON POST REQUEST
+  // GET / OTHER REQUEST
   // ==================================================
 
   if (
@@ -1352,10 +1910,6 @@ export default async function handler(
     const chatId =
       message.chat.id;
 
-    const firstName =
-      user.first_name ||
-      "there";
-
     const text =
       (
         message.text ||
@@ -1379,7 +1933,8 @@ export default async function handler(
 
       await sendWelcome(
         chatId,
-        firstName
+        user.first_name ||
+          "there"
       );
 
 
@@ -1392,7 +1947,7 @@ export default async function handler(
 
 
     // ==================================================
-    // IGNORE NON-TEXT
+    // EMPTY MESSAGE
     // ==================================================
 
     if (!text) {
@@ -1414,7 +1969,7 @@ export default async function handler(
     ) {
 
       // ------------------------------------------------
-      // PROCESSING
+      // PROCESSING MESSAGE
       // ------------------------------------------------
 
       const processing =
@@ -1437,7 +1992,7 @@ export default async function handler(
       try {
 
         // ------------------------------------------------
-        // API REQUEST
+        // API
         // ------------------------------------------------
 
         const result =
@@ -1461,10 +2016,6 @@ export default async function handler(
             result.cover;
 
 
-          // ------------------------------------------------
-          // MAKE SURE VIDEO EXISTS
-          // ------------------------------------------------
-
           if (!reelVideo) {
             throw new Error(
               "Reel detected but no video URL was found."
@@ -1473,10 +2024,7 @@ export default async function handler(
 
 
           // ------------------------------------------------
-          // STORE REEL INFORMATION
-          //
-          // Cover is stored only.
-          // It is NOT sent now.
+          // STORE REEL
           // ------------------------------------------------
 
           const storageId =
@@ -1486,9 +2034,6 @@ export default async function handler(
 
               cover:
                 reelCover,
-
-              caption:
-                result.caption,
 
               isReel:
                 true
@@ -1518,18 +2063,11 @@ export default async function handler(
           }
 
 
-          // ==================================================
-          // SEND REEL VIDEO ONLY
-          // ==================================================
+          // ------------------------------------------------
+          // SEND VIDEO ONLY
           //
-          // NO COVER IS SENT HERE.
-          //
-          // Buttons:
-          //
-          // 🖼️ Get Cover Photo
-          // 📋 Get Details
-          //
-          // ==================================================
+          // COVER IS NOT SENT AUTOMATICALLY
+          // ------------------------------------------------
 
           try {
 
@@ -1554,7 +2092,7 @@ export default async function handler(
                 reply_markup:
                   buildMediaKeyboard(
                     storageId,
-                    true
+                    !!reelCover
                   )
               }
             );
@@ -1566,10 +2104,6 @@ export default async function handler(
               mediaError
             );
 
-
-            // ------------------------------------------------
-            // FALLBACK
-            // ------------------------------------------------
 
             await telegram(
               "sendMessage",
@@ -1587,7 +2121,7 @@ export default async function handler(
                 reply_markup:
                   buildMediaKeyboard(
                     storageId,
-                    true
+                    !!reelCover
                   )
               }
             );
@@ -1603,11 +2137,11 @@ export default async function handler(
 
 
         // ==================================================
-        // NORMAL POST / CAROUSEL
+        // HIGHLIGHT / STORY / NORMAL MEDIA
         // ==================================================
 
         const media =
-          result.media;
+          result.media || [];
 
 
         // ------------------------------------------------
@@ -1615,7 +2149,6 @@ export default async function handler(
         // ------------------------------------------------
 
         if (
-          !media ||
           media.length === 0
         ) {
 
@@ -1636,7 +2169,7 @@ export default async function handler(
 
                 text:
                   `❌ <b>Sorry, I couldn't find downloadable media.</b>\n\n` +
-                  `The post may be private, unavailable, or unsupported.`,
+                  `The Instagram content may be private, unavailable, or unsupported.`,
 
                 parse_mode:
                   "HTML"
@@ -1651,26 +2184,6 @@ export default async function handler(
               ok: true
             });
         }
-
-
-        // ------------------------------------------------
-        // STORE POST DETAILS
-        // ------------------------------------------------
-
-        const storageId =
-          storeMediaData({
-            raw:
-              result.raw,
-
-            cover:
-              result.cover,
-
-            caption:
-              result.caption,
-
-            isReel:
-              false
-          });
 
 
         // ------------------------------------------------
@@ -1697,19 +2210,318 @@ export default async function handler(
 
 
         // ==================================================
-        // SEND NORMAL MEDIA
+        // HIGHLIGHT
         // ==================================================
-        //
-        // For:
-        //
-        // image: [image1, image2]
-        //
-        // both images are sent.
-        //
-        // Each gets:
-        //
-        // 📋 Get Details
-        //
+
+        if (
+          result.isHighlight
+        ) {
+
+          for (
+            let i = 0;
+            i < media.length;
+            i++
+          ) {
+
+            const mediaItem =
+              media[i];
+
+
+            // ----------------------------------------------
+            // STORE THIS SPECIFIC ITEM
+            //
+            // IMPORTANT:
+            // Each highlight item has its own cover.
+            // ----------------------------------------------
+
+            const storageId =
+              storeMediaData({
+                raw:
+                  mediaItem.data ||
+                  result.raw,
+
+                cover:
+                  mediaItem.cover,
+
+                isReel:
+                  false,
+
+                isStory:
+                  true,
+
+                isHighlight:
+                  true,
+
+                highlightTitle:
+                  result.raw
+                    ?.highlight_title ||
+                  "",
+
+                highlightIndex:
+                  mediaItem.index
+              });
+
+
+            try {
+
+              await sendMedia(
+                chatId,
+
+                mediaItem,
+
+                {
+                  storageId:
+                    storageId,
+
+                  caption:
+                    i === 0
+                      ? `⭐ <b>Highlight: ${
+                          escapeHtml(
+                            result.raw
+                              ?.highlight_title ||
+                            ""
+                          )
+                        }</b>\n\n` +
+                        `📥 <b>Downloaded from Instadrop</b>`
+                      : undefined
+                }
+              );
+
+            } catch (mediaError) {
+
+              console.error(
+                "Highlight media error:",
+                mediaError
+              );
+
+
+              await telegram(
+                "sendMessage",
+                {
+                  chat_id:
+                    chatId,
+
+                  text:
+                    `📥 <b>Highlight Item ${
+                      i + 1
+                    }:</b>\n\n` +
+                    `${mediaItem.url}`,
+
+                  parse_mode:
+                    "HTML",
+
+                  reply_markup:
+                    buildMediaKeyboard(
+                      storageId,
+                      !!mediaItem.cover
+                    )
+                }
+              );
+            }
+          }
+
+
+          // ------------------------------------------------
+          // HIGHLIGHT COMPLETE
+          // ------------------------------------------------
+
+          await telegram(
+            "sendMessage",
+            {
+              chat_id:
+                chatId,
+
+              text:
+                `✅ <b>Highlight downloaded!</b>\n\n` +
+                `⭐ <b>${escapeHtml(
+                  result.raw
+                    ?.highlight_title ||
+                  "Highlight"
+                )}</b>\n` +
+                `📦 ${media.length} media item${
+                  media.length !== 1
+                    ? "s"
+                    : ""
+                } found.\n\n` +
+                `🚀 <b>Powered by Instadrop</b>`,
+
+              parse_mode:
+                "HTML",
+
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text:
+                        "🌐 Visit Instadrop",
+
+                      url:
+                        WEBSITE_URL
+                    }
+                  ]
+                ]
+              }
+            }
+          );
+
+
+          return res
+            .status(200)
+            .json({
+              ok: true
+            });
+        }
+
+
+        // ==================================================
+        // STORY
+        // ==================================================
+
+        if (
+          result.isStory
+        ) {
+
+          for (
+            let i = 0;
+            i < media.length;
+            i++
+          ) {
+
+            const mediaItem =
+              media[i];
+
+
+            // ----------------------------------------------
+            // STORE STORY ITEM
+            //
+            // This stores that item's cover.
+            // ----------------------------------------------
+
+            const storageId =
+              storeMediaData({
+                raw:
+                  mediaItem.data ||
+                  result.raw,
+
+                cover:
+                  mediaItem.cover,
+
+                isReel:
+                  false,
+
+                isStory:
+                  true,
+
+                isHighlight:
+                  false,
+
+                storyIndex:
+                  mediaItem.index
+              });
+
+
+            try {
+
+              await sendMedia(
+                chatId,
+
+                mediaItem,
+
+                {
+                  storageId:
+                    storageId,
+
+                  caption:
+                    i === 0
+                      ? `📖 <b>Instagram Story</b>\n\n` +
+                        `📥 <b>Downloaded from Instadrop</b>`
+                      : undefined
+                }
+              );
+
+            } catch (mediaError) {
+
+              console.error(
+                "Story media error:",
+                mediaError
+              );
+
+
+              await telegram(
+                "sendMessage",
+                {
+                  chat_id:
+                    chatId,
+
+                  text:
+                    `📥 <b>Story Item ${
+                      i + 1
+                    }:</b>\n\n` +
+                    `${mediaItem.url}`,
+
+                  parse_mode:
+                    "HTML",
+
+                  reply_markup:
+                    buildMediaKeyboard(
+                      storageId,
+                      !!mediaItem.cover
+                    )
+                }
+              );
+            }
+          }
+
+
+          // ------------------------------------------------
+          // STORY COMPLETE
+          // ------------------------------------------------
+
+          await telegram(
+            "sendMessage",
+            {
+              chat_id:
+                chatId,
+
+              text:
+                `✅ <b>Story downloaded!</b>\n\n` +
+                `📦 ${media.length} media item${
+                  media.length !== 1
+                    ? "s"
+                    : ""
+                } found.\n\n` +
+                `🚀 <b>Powered by Instadrop</b>`,
+
+              parse_mode:
+                "HTML",
+
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text:
+                        "🌐 Visit Instadrop",
+
+                      url:
+                        WEBSITE_URL
+                    }
+                  ]
+                ]
+              }
+            }
+          );
+
+
+          return res
+            .status(200)
+            .json({
+              ok: true
+            });
+        }
+
+
+        // ==================================================
+        // NORMAL POST / CAROUSEL
         // ==================================================
 
         for (
@@ -1718,8 +2530,31 @@ export default async function handler(
           i++
         ) {
 
-          const mediaUrl =
+          const mediaItem =
             media[i];
+
+
+          // ------------------------------------------------
+          // STORE MEDIA
+          // ------------------------------------------------
+
+          const storageId =
+            storeMediaData({
+              raw:
+                result.raw,
+
+              cover:
+                mediaItem.cover,
+
+              isReel:
+                false,
+
+              isStory:
+                false,
+
+              isHighlight:
+                false
+            });
 
 
           try {
@@ -1727,15 +2562,11 @@ export default async function handler(
             await sendMedia(
               chatId,
 
-              mediaUrl,
+              mediaItem,
 
               {
                 storageId:
-
                   storageId,
-
-                isReel:
-                  false,
 
                 caption:
                   i === 0
@@ -1752,10 +2583,6 @@ export default async function handler(
             );
 
 
-            // ------------------------------------------------
-            // FALLBACK URL
-            // ------------------------------------------------
-
             await telegram(
               "sendMessage",
               {
@@ -1764,7 +2591,7 @@ export default async function handler(
 
                 text:
                   `📥 <b>Download:</b>\n\n` +
-                  `${mediaUrl}`,
+                  `${mediaItem.url}`,
 
                 parse_mode:
                   "HTML",
@@ -1772,7 +2599,7 @@ export default async function handler(
                 reply_markup:
                   buildMediaKeyboard(
                     storageId,
-                    false
+                    !!mediaItem.cover
                   )
               }
             );
@@ -1781,7 +2608,7 @@ export default async function handler(
 
 
         // ==================================================
-        // COMPLETION MESSAGE
+        // NORMAL COMPLETE
         // ==================================================
 
         await telegram(
@@ -1848,7 +2675,7 @@ export default async function handler(
               text:
                 `❌ <b>Download failed</b>\n\n` +
                 `I couldn't process that Instagram link.\n\n` +
-                `Please make sure the post is public and try again.`,
+                `Please make sure the content is public and try again.`,
 
               parse_mode:
                 "HTML"
@@ -1884,7 +2711,7 @@ export default async function handler(
 
 
     // ==================================================
-    // NOT AN INSTAGRAM LINK
+    // NOT INSTAGRAM URL
     // ==================================================
 
     await telegram(
@@ -1895,12 +2722,15 @@ export default async function handler(
 
         text:
           `🔗 <b>Send me an Instagram link</b>\n\n` +
+
           `For example:\n` +
           `• Instagram Reel\n` +
           `• Post\n` +
           `• Carousel\n` +
           `• Story\n` +
+          `• Highlight\n` +
           `• Profile\n\n` +
+
           `I'll handle the rest. 🚀`,
 
         parse_mode:

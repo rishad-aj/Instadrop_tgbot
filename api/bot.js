@@ -2,9 +2,12 @@
 const TELEGRAM_BOT_TOKEN = "8946163976:AAEwnpQ3LuAhNp8HDMkIhi1ZbPMU4Ncsn4s";
 const ADMIN_CHAT_ID = "7216371031";
 
-// Temporary in-memory storage.
-// NOTE: This resets when the server/serverless instance restarts.
-// For production, replace this with Vercel KV, Redis, MongoDB, etc.
+const WELCOME_IMAGE = "https://instadrop.web.app/og-image.png";
+const WEBSITE_URL = "https://instadrop.web.app/";
+
+// Temporary storage for users who have already been reported.
+// IMPORTANT: This resets when a serverless instance restarts.
+// For permanent tracking, use a database/KV/Redis.
 const notifiedUsers = new Set();
 
 export default async function handler(req, res) {
@@ -35,18 +38,18 @@ export default async function handler(req, res) {
 
     const text = message.text || "";
 
-    // =========================
-    // /START COMMAND
-    // =========================
+    // ==========================================
+    // START COMMAND
+    // ==========================================
     if (text === "/start" || text.startsWith("/start ")) {
 
-      // Notify admin ONLY the first time
+      // Notify admin ONLY for first-time users
       if (!notifiedUsers.has(chatId)) {
         const adminMessage =
-          `🆕 New User Started The Bot\n\n` +
-          `👤 Name: ${firstName} ${lastName}\n` +
-          `🔗 Username: ${username}\n` +
-          `🆔 Chat ID: ${chatId}`;
+          `🆕 <b>New User Started Instadrop</b>\n\n` +
+          `👤 <b>Name:</b> ${firstName} ${lastName}\n` +
+          `🔗 <b>Username:</b> ${username}\n` +
+          `🆔 <b>Chat ID:</b> <code>${chatId}</code>`;
 
         await fetch(
           `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
@@ -57,20 +60,23 @@ export default async function handler(req, res) {
             },
             body: JSON.stringify({
               chat_id: ADMIN_CHAT_ID,
-              text: adminMessage
+              text: adminMessage,
+              parse_mode: "HTML"
             })
           }
         );
 
-        // Mark user as notified
+        // Mark user as already notified
         notifiedUsers.add(chatId);
       }
 
-      // Send welcome message to user
-      const welcomeMessage =
+      // ==========================================
+      // WELCOME MESSAGE WITH IMAGE + BUTTON
+      // ==========================================
+      const welcomeCaption =
         `👋 <b>Welcome to Instadrop!</b>\n\n` +
-        `📥 Download Instagram media with ease.\n` +
-        `Just send me an Instagram link and I'll take care of the rest. 🚀\n\n` +
+        `📥 <b>Download Instagram media with ease.</b>\n` +
+        `Just send me an Instagram link, and I'll take care of the rest. 🚀\n\n` +
 
         `✨ <b>What I can download:</b>\n` +
         `🎬 Reels & Videos\n` +
@@ -82,7 +88,7 @@ export default async function handler(req, res) {
         `⚡ Fast • Simple • Easy`;
 
       await fetch(
-        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`,
         {
           method: "POST",
           headers: {
@@ -90,8 +96,19 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({
             chat_id: chatId,
-            text: welcomeMessage,
-            parse_mode: "HTML"
+            photo: WELCOME_IMAGE,
+            caption: welcomeCaption,
+            parse_mode: "HTML",
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "🌐 Visit Instadrop",
+                    url: WEBSITE_URL
+                  }
+                ]
+              ]
+            }
           })
         }
       );
@@ -99,7 +116,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // Ignore all other messages for now
+    // ==========================================
+    // OTHER MESSAGES
+    // ==========================================
     return res.status(200).json({ ok: true });
 
   } catch (error) {

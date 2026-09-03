@@ -5,19 +5,16 @@ const API_URL = "https://instadrop.rishu-rishad2019.workers.dev/?url=";
 const WELCOME_IMAGE = "https://instadrop.web.app/og-image.png";
 const WEBSITE_URL = "https://instadrop.web.app/";
 
-// Temporary in-memory storage.
-// Replace with a database/KV for permanent storage.
+// --------------------------------------------------
+// IMPORTANT:
+// This is temporary in-memory storage.
+// For permanent first-user tracking, use a database/KV.
+// --------------------------------------------------
 const notifiedUsers = new Set();
 
-// Store Reel information temporarily for button callbacks.
-// For production, use Redis/KV/database instead.
-const reelCache = new Map();
-
-
-// ==================================================
-// TELEGRAM API HELPER
-// ==================================================
-
+// --------------------------------------------------
+// Telegram API helper
+// --------------------------------------------------
 async function telegram(method, body) {
   const response = await fetch(
     `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`,
@@ -33,11 +30,9 @@ async function telegram(method, body) {
   return await response.json();
 }
 
-
-// ==================================================
-// INSTAGRAM URL CHECK
-// ==================================================
-
+// --------------------------------------------------
+// Check Instagram URL
+// --------------------------------------------------
 function isInstagramUrl(text) {
   if (!text) return false;
 
@@ -54,39 +49,135 @@ function isInstagramUrl(text) {
   }
 }
 
+// --------------------------------------------------
+// Find media URLs recursively inside API response
+// --------------------------------------------------
+function extractMedia(data, results = []) {
+  if (!data) return results;
 
-// ==================================================
-// API REQUEST
-// ==================================================
+  if (typeof data === "string") {
+    if (
+      data.startsWith("http://") ||
+      data.startsWith("https://")
+    ) {
+      const lower = data.toLowerCase();
 
-async function downloadFromAPI(instagramUrl) {
-  const endpoint =
-    API_URL + encodeURIComponent(instagramUrl);
+      if (
+        lower.includes(".mp4") ||
+        lower.includes(".mov") ||
+        lower.includes(".webm") ||
+        lower.includes(".jpg") ||
+        lower.includes(".jpeg") ||
+        lower.includes(".png") ||
+        lower.includes(".webp") ||
+        lower.includes("video") ||
+        lower.includes("image")
+      ) {
+        results.push(data);
+      }
+    }
 
-  const response = await fetch(endpoint);
-
-  if (!response.ok) {
-    throw new Error(
-      `API returned HTTP ${response.status}`
-    );
+    return results;
   }
 
-  const contentType =
-    response.headers.get("content-type") || "";
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      extractMedia(item, results);
+    }
 
-  if (!contentType.includes("application/json")) {
-    throw new Error("API did not return JSON");
+    return results;
   }
 
-  return await response.json();
+  if (typeof data === "object") {
+    // Prioritize common media URL properties
+    const preferredKeys = [
+      "url",
+      "download_url",
+      "downloadUrl",
+      "media_url",
+      "mediaUrl",
+      "video_url",
+      "videoUrl",
+      "image_url",
+      "imageUrl",
+      "src",
+      "source",
+      "thumbnail"
+    ];
+
+    for (const key of preferredKeys) {
+      if (typeof data[key] === "string") {
+        const value = data[key];
+
+        if (
+          value.startsWith("http://") ||
+          value.startsWith("https://")
+        ) {
+          results.push(value);
+        }
+      }
+    }
+
+    // Recursively inspect everything else
+    for (const [key, value] of Object.entries(data)) {
+      if (!preferredKeys.includes(key)) {
+        extractMedia(value, results);
+      }
+    }
+  }
+
+  return results;
 }
 
+// --------------------------------------------------
+// Remove duplicate URLs
+// --------------------------------------------------
+function uniqueUrls(urls) {
+  return [...new Set(urls)];
+}
 
-// ==================================================
-// WELCOME MESSAGE
-// ==================================================
+// --------------------------------------------------
+// Guess media type
+// --------------------------------------------------
+function getMediaType(url) {
+  const lower = url.toLowerCase();
 
-async function sendWelcome(chatId) {
+  if (
+    lower.includes(".mp4") ||
+    lower.includes(".mov") ||
+    lower.includes(".webm") ||
+    lower.includes("video")
+  ) {
+    return "video";
+  }
+
+  return "photo";
+}
+
+// --------------------------------------------------
+// Send media to Telegram
+// --------------------------------------------------
+async function sendMedia(chatId, url) {
+  const type = getMediaType(url);
+
+  if (type === "video") {
+    return await telegram("sendVideo", {
+      chat_id: chatId,
+      video: url,
+      supports_streaming: true
+    });
+  }
+
+  return await telegram("sendPhoto", {
+    chat_id: chatId,
+    photo: url
+  });
+}
+
+// --------------------------------------------------
+// Send welcome message
+// --------------------------------------------------
+async function sendWelcome(chatId, firstName) {
   const welcomeCaption =
     `👋 <b>Welcome to Instadrop!</b>\n\n` +
     `📥 <b>Download Instagram media with ease.</b>\n` +
@@ -119,14 +210,13 @@ async function sendWelcome(chatId) {
   });
 }
 
-
-// ==================================================
-// ADMIN NOTIFICATION
-// ==================================================
-
+// --------------------------------------------------
+// Notify admin about a new user
+// --------------------------------------------------
 async function notifyAdmin(user) {
   const chatId = user.id;
 
+  // Already notified
   if (notifiedUsers.has(chatId)) {
     return;
   }
@@ -153,289 +243,48 @@ async function notifyAdmin(user) {
   notifiedUsers.add(chatId);
 }
 
+// --------------------------------------------------
+// Call Instadrop API
+// --------------------------------------------------
+async function downloadFromAPI(instagramUrl) {
+  const endpoint =
+    API_URL + encodeURIComponent(instagramUrl);
 
-// ==================================================
-// REEL HANDLER
-// ==================================================
+  const response = await fetch(endpoint);
 
-async function sendReel(chatId, data) {
-  if (
-    !data.video ||
-    !Array.isArray(data.video) ||
-    !data.video[0] ||
-    !data.video[0].video
-  ) {
-    throw new Error("Reel video not found");
-  }
-
-  const reel = data.video[0];
-
-  const videoUrl = reel.video;
-  const coverUrl = reel.cover || null;
-
-  // Create unique ID for button callbacks
-  const reelId =
-    `${chatId}_${Date.now()}_${Math.random()
-      .toString(36)
-      .slice(2, 8)}`;
-
-  // Save Reel data for button actions
-  reelCache.set(reelId, {
-    cover: coverUrl,
-    caption: data.caption || "",
-    username: data.username || "Unknown",
-    taken_at: data.taken_at || null,
-    like_count: data.like_count || 0,
-    comment_count: data.comment_count || 0,
-    view_count: data.view_count || 0,
-    play_count: data.play_count || 0,
-    reshare_count: data.reshare_count || 0
-  });
-
-  // Keep cache from growing forever
-  setTimeout(() => {
-    reelCache.delete(reelId);
-  }, 30 * 60 * 1000);
-
-
-  // --------------------------------------------------
-  // VIDEO CAPTION
-  // --------------------------------------------------
-
-  let caption = "";
-
-  if (data.caption) {
-    caption =
-      `🎬 <b>Instagram Reel</b>\n\n` +
-      `${data.caption}\n\n` +
-      `📥 Downloaded from @instadrop_tgbot`;
-  } else {
-    caption =
-      `🎬 <b>Instagram Reel</b>\n\n` +
-      `📥 Downloaded from @instadrop_tgbot`;
-  }
-
-  // Telegram caption limit protection
-  if (caption.length > 1024) {
-    caption =
-      `🎬 <b>Instagram Reel</b>\n\n` +
-      `${data.caption.slice(0, 850)}...\n\n` +
-      `📥 Downloaded from @instadrop_tgbot`;
-  }
-
-
-  // --------------------------------------------------
-  // BUTTONS
-  // --------------------------------------------------
-
-  const buttons = [];
-
-  if (coverUrl) {
-    buttons.push({
-      text: "🖼️ Download Cover",
-      callback_data: `cover:${reelId}`
-    });
-  }
-
-  buttons.push({
-    text: "📊 Post Details",
-    callback_data: `details:${reelId}`
-  });
-
-
-  // --------------------------------------------------
-  // SEND REEL VIDEO
-  // --------------------------------------------------
-
-  const result = await telegram("sendVideo", {
-    chat_id: chatId,
-    video: videoUrl,
-    caption: caption,
-    parse_mode: "HTML",
-    supports_streaming: true,
-    reply_markup: {
-      inline_keyboard: [
-        buttons
-      ]
-    }
-  });
-
-  if (!result.ok) {
+  if (!response.ok) {
     throw new Error(
-      result.description || "Telegram failed to send Reel"
+      `API returned HTTP ${response.status}`
     );
   }
-}
 
+  const contentType =
+    response.headers.get("content-type") || "";
 
-// ==================================================
-// POST DETAILS
-// ==================================================
-
-function formatNumber(number) {
-  if (!number) return "0";
-
-  return Number(number).toLocaleString("en-US");
-}
-
-
-function formatDate(date) {
-  if (!date) return "Unknown";
-
-  try {
-    return new Date(date).toLocaleString("en-IN", {
-      dateStyle: "medium",
-      timeStyle: "short"
-    });
-  } catch {
-    return date;
-  }
-}
-
-
-async function sendPostDetails(query, reel) {
-  const details =
-    `📊 <b>Instagram Reel Details</b>\n\n` +
-
-    `👤 <b>Username:</b> @${reel.username.replace(/^@/, "")}\n` +
-
-    `❤️ <b>Likes:</b> ${formatNumber(reel.like_count)}\n` +
-
-    `💬 <b>Comments:</b> ${formatNumber(reel.comment_count)}\n` +
-
-    `👁️ <b>Views:</b> ${formatNumber(reel.view_count)}\n` +
-
-    `▶️ <b>Plays:</b> ${formatNumber(reel.play_count)}\n` +
-
-    `🔄 <b>Reshares:</b> ${formatNumber(reel.reshare_count)}\n` +
-
-    `📅 <b>Published:</b> ${formatDate(reel.taken_at)}\n\n` +
-
-    `📝 <b>Caption:</b>\n` +
-    `${reel.caption || "No caption"}\n\n` +
-
-    `📥 <b>Downloaded from @instadrop_tgbot</b>`;
-
-  await telegram("sendMessage", {
-    chat_id: query.message.chat.id,
-    text: details,
-    parse_mode: "HTML"
-  });
-}
-
-
-// ==================================================
-// SEND REEL COVER
-// ==================================================
-
-async function sendReelCover(query, reel) {
-  if (!reel.cover) {
-    await telegram("answerCallbackQuery", {
-      callback_query_id: query.id,
-      text: "❌ Cover image is not available.",
-      show_alert: true
-    });
-
-    return;
+  if (!contentType.includes("application/json")) {
+    throw new Error("API did not return JSON");
   }
 
-  await telegram("answerCallbackQuery", {
-    callback_query_id: query.id,
-    text: "🖼️ Sending cover..."
-  });
+  const data = await response.json();
 
-  await telegram("sendPhoto", {
-    chat_id: query.message.chat.id,
-    photo: reel.cover,
-    caption:
-      `🖼️ <b>Reel Cover</b>\n\n` +
-      `📥 Downloaded from @instadrop_tgbot`,
-    parse_mode: "HTML"
-  });
+  return {
+    raw: data,
+    media: uniqueUrls(extractMedia(data))
+  };
 }
 
-
-// ==================================================
-// CALLBACK QUERY HANDLER
-// ==================================================
-
-async function handleCallbackQuery(query) {
-  const data = query.data || "";
-
-  if (
-    !data.startsWith("cover:") &&
-    !data.startsWith("details:")
-  ) {
-    return;
-  }
-
-  const [action, reelId] = data.split(":");
-
-  const reel = reelCache.get(reelId);
-
-  if (!reel) {
-    await telegram("answerCallbackQuery", {
-      callback_query_id: query.id,
-      text:
-        "⏳ This Reel data has expired. Please download the Reel again.",
-      show_alert: true
-    });
-
-    return;
-  }
-
-  if (action === "cover") {
-    await sendReelCover(query, reel);
-    return;
-  }
-
-  if (action === "details") {
-    await telegram("answerCallbackQuery", {
-      callback_query_id: query.id
-    });
-
-    await sendPostDetails(query, reel);
-  }
-}
-
-
-// ==================================================
-// MAIN HANDLER
-// ==================================================
-
+// --------------------------------------------------
+// Main handler
+// --------------------------------------------------
 export default async function handler(req, res) {
-
   if (req.method !== "POST") {
-    return res
-      .status(200)
-      .send("Instadrop Bot is running 🚀");
+    return res.status(200).send("Instadrop Bot is running 🚀");
   }
 
   try {
-
     const update = req.body;
 
-    // ==================================================
-    // CALLBACK BUTTON
-    // ==================================================
-
-    if (update.callback_query) {
-
-      await handleCallbackQuery(
-        update.callback_query
-      );
-
-      return res.status(200).json({
-        ok: true
-      });
-    }
-
-
-    // ==================================================
-    // MESSAGE
-    // ==================================================
-
-    if (!update.message) {
+    if (!update || !update.message) {
       return res.status(200).json({
         ok: true
       });
@@ -451,212 +300,113 @@ export default async function handler(req, res) {
     }
 
     const chatId = message.chat.id;
+    const firstName = user.first_name || "there";
     const text = (message.text || "").trim();
-
 
     // ==================================================
     // /START
     // ==================================================
-
     if (
       text === "/start" ||
       text.startsWith("/start ")
     ) {
-
-      // Admin only gets first-time notification
+      // Notify admin only for first start
       await notifyAdmin(user);
 
-      // User gets welcome message
-      await sendWelcome(chatId);
+      // Welcome user every time they use /start
+      await sendWelcome(chatId, firstName);
 
       return res.status(200).json({
         ok: true
       });
     }
 
-
     // ==================================================
-    // IGNORE EMPTY MESSAGES
+    // IGNORE NON-TEXT MESSAGES
     // ==================================================
-
     if (!text) {
       return res.status(200).json({
         ok: true
       });
     }
 
-
     // ==================================================
-    // INSTAGRAM URL
+    // INSTAGRAM LINK
     // ==================================================
-
     if (isInstagramUrl(text)) {
-
-      const processing =
-        await telegram("sendMessage", {
-          chat_id: chatId,
-          text:
-            `⏳ <b>Processing your Instagram link...</b>\n\n` +
-            `Please wait a moment 🚀`,
-          parse_mode: "HTML"
-        });
-
+      // Processing message
+      const processing = await telegram("sendMessage", {
+        chat_id: chatId,
+        text: "⏳ <b>Processing your Instagram link...</b>\n\nPlease wait a moment 🚀",
+        parse_mode: "HTML"
+      });
 
       try {
+        // Call API
+        const result = await downloadFromAPI(text);
 
-        // Call your API
-        const data =
-          await downloadFromAPI(text);
+        const media = result.media;
 
-
-        // ==================================================
-        // REEL DETECTION
-        // ==================================================
-
-        const isReel =
-          Array.isArray(data.video) &&
-          data.video.length > 0 &&
-          data.video[0] &&
-          data.video[0].video;
-
-
-        if (isReel) {
-
-          // Delete processing message
+        // No media found
+        if (!media || media.length === 0) {
           if (processing.result?.message_id) {
-            await telegram("deleteMessage", {
+            await telegram("editMessageText", {
               chat_id: chatId,
-              message_id:
-                processing.result.message_id
+              message_id: processing.result.message_id,
+              text:
+                "❌ <b>Sorry, I couldn't find downloadable media.</b>\n\n" +
+                "The post may be private, unavailable, or unsupported.",
+              parse_mode: "HTML"
             });
           }
-
-          // Send Reel
-          await sendReel(
-            chatId,
-            data
-          );
 
           return res.status(200).json({
             ok: true
           });
         }
-
-
-        // ==================================================
-        // OTHER MEDIA
-        // ==================================================
-
-        // Your existing non-Reel handling can remain here.
-        // This section does NOT change Reel behavior.
-
-        const mediaUrls = [];
-
-        if (Array.isArray(data.image)) {
-          for (const item of data.image) {
-
-            if (typeof item === "string") {
-              mediaUrls.push(item);
-            }
-
-            if (
-              item &&
-              typeof item.image === "string"
-            ) {
-              mediaUrls.push(item.image);
-            }
-
-            if (
-              item &&
-              typeof item.url === "string"
-            ) {
-              mediaUrls.push(item.url);
-            }
-          }
-        }
-
-
-        // Video fallback for non-Reel responses
-        if (Array.isArray(data.video)) {
-          for (const item of data.video) {
-
-            if (
-              item &&
-              typeof item.video === "string"
-            ) {
-              mediaUrls.push(item.video);
-            }
-          }
-        }
-
-
-        // Remove duplicates
-        const uniqueMedia =
-          [...new Set(mediaUrls)];
-
 
         // Delete processing message
         if (processing.result?.message_id) {
           await telegram("deleteMessage", {
             chat_id: chatId,
-            message_id:
-              processing.result.message_id
+            message_id: processing.result.message_id
           });
         }
 
-
-        // No media
-        if (uniqueMedia.length === 0) {
-
-          await telegram("sendMessage", {
-            chat_id: chatId,
-            text:
-              `❌ <b>No downloadable media found.</b>\n\n` +
-              `The Instagram post may be private, unavailable, or unsupported.`,
-            parse_mode: "HTML"
-          });
-
-          return res.status(200).json({
-            ok: true
-          });
-        }
-
-
+        // --------------------------------------------------
         // Send media
-        for (const mediaUrl of uniqueMedia) {
+        // --------------------------------------------------
 
-          const lower =
-            mediaUrl.toLowerCase();
+        // Telegram albums can contain max 10 media items.
+        // Send individually to keep compatibility with all results.
+        for (const mediaUrl of media) {
+          try {
+            await sendMedia(chatId, mediaUrl);
+          } catch (mediaError) {
+            console.error(
+              "Media send error:",
+              mediaError
+            );
 
-          if (
-            lower.includes(".mp4") ||
-            lower.includes("video")
-          ) {
-
-            await telegram("sendVideo", {
+            // If Telegram cannot send the media directly,
+            // provide the downloadable URL.
+            await telegram("sendMessage", {
               chat_id: chatId,
-              video: mediaUrl,
-              supports_streaming: true
-            });
-
-          } else {
-
-            await telegram("sendPhoto", {
-              chat_id: chatId,
-              photo: mediaUrl
+              text:
+                `📥 <b>Download:</b>\n${mediaUrl}`,
+              parse_mode: "HTML",
+              disable_web_page_preview: false
             });
           }
         }
 
-
-        // Done message
+        // Completion message
         await telegram("sendMessage", {
           chat_id: chatId,
           text:
             `✅ <b>Done!</b>\n\n` +
-            `📦 ${uniqueMedia.length} media file` +
-            `${uniqueMedia.length > 1 ? "s" : ""} found.\n\n` +
-            `📥 <b>Downloaded from @instadrop_tgbot</b>`,
+            `📦 ${media.length} media file${media.length > 1 ? "s" : ""} found.\n\n` +
+            `🚀 <b>Powered by Instadrop</b>`,
           parse_mode: "HTML",
           reply_markup: {
             inline_keyboard: [
@@ -670,30 +420,23 @@ export default async function handler(req, res) {
           }
         });
 
-
       } catch (error) {
-
         console.error(
           "Download error:",
           error
         );
 
-
         if (processing.result?.message_id) {
-
           await telegram("editMessageText", {
             chat_id: chatId,
-            message_id:
-              processing.result.message_id,
+            message_id: processing.result.message_id,
             text:
               `❌ <b>Download failed</b>\n\n` +
               `I couldn't process that Instagram link.\n\n` +
               `Please make sure the post is public and try again.`,
             parse_mode: "HTML"
           });
-
         } else {
-
           await telegram("sendMessage", {
             chat_id: chatId,
             text:
@@ -704,25 +447,24 @@ export default async function handler(req, res) {
         }
       }
 
-
       return res.status(200).json({
         ok: true
       });
     }
 
-
     // ==================================================
-    // NOT AN INSTAGRAM URL
+    // NOT AN INSTAGRAM LINK
     // ==================================================
-
     await telegram("sendMessage", {
       chat_id: chatId,
       text:
         `🔗 <b>Send me an Instagram link</b>\n\n` +
-        `🎬 Reel\n` +
-        `🖼️ Post\n` +
-        `📚 Carousel\n` +
-        `📖 Story\n\n` +
+        `For example:\n` +
+        `• Instagram Reel\n` +
+        `• Post\n` +
+        `• Carousel\n` +
+        `• Story\n` +
+        `• Profile\n\n` +
         `I'll handle the rest. 🚀`,
       parse_mode: "HTML",
       reply_markup: {
@@ -737,14 +479,11 @@ export default async function handler(req, res) {
       }
     });
 
-
     return res.status(200).json({
       ok: true
     });
 
-
   } catch (error) {
-
     console.error(
       "Webhook error:",
       error

@@ -1,8 +1,5 @@
 {
-  "name": "instadrop-telegram-bot",
+  "name": "telegram-bot",
   "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "grammy": "^1.38.4"
-  }
+  "type": "module"
 }

@@ -163,7 +163,6 @@ function getResponseType(data) {
       ""
   ).toLowerCase();
 
-
   // Highlight
   if (
     type === "highlight" ||
@@ -171,7 +170,6 @@ function getResponseType(data) {
   ) {
     return "highlight";
   }
-
 
   // Story
   if (
@@ -181,7 +179,6 @@ function getResponseType(data) {
     return "story";
   }
 
-
   // Reel
   if (
     type === "reel" ||
@@ -190,13 +187,11 @@ function getResponseType(data) {
     return "reel";
   }
 
-
   // A response containing items is treated
   // as a collection instead of a reel.
   if (Array.isArray(data.items)) {
     return "collection";
   }
-
 
   return "post";
 }
@@ -218,7 +213,6 @@ function isReelResponse(data) {
       ""
   ).toLowerCase();
 
-
   // NEVER classify highlights/stories as reels.
   if (
     type === "highlight" ||
@@ -229,12 +223,10 @@ function isReelResponse(data) {
     return false;
   }
 
-
   // Collections are not reels.
   if (Array.isArray(data.items)) {
     return false;
   }
-
 
   if (
     type === "reel" ||
@@ -242,7 +234,6 @@ function isReelResponse(data) {
   ) {
     return true;
   }
-
 
   // Current Reel API format.
   if (
@@ -260,14 +251,12 @@ function isReelResponse(data) {
     return true;
   }
 
-
   if (
     typeof data.video === "string" &&
     typeof data.cover === "string"
   ) {
     return true;
   }
-
 
   return false;
 }
@@ -325,11 +314,9 @@ function getCoverFromObject(item) {
 function getReelVideo(data) {
   if (!data) return null;
 
-
   // Array of videos
   if (Array.isArray(data.video)) {
     for (const item of data.video) {
-
       if (typeof item === "string") {
         if (isValidUrl(item)) {
           return item;
@@ -350,7 +337,6 @@ function getReelVideo(data) {
     }
   }
 
-
   // Single video object
   if (
     data.video &&
@@ -366,7 +352,6 @@ function getReelVideo(data) {
     }
   }
 
-
   // Single video string
   if (
     typeof data.video === "string" &&
@@ -375,14 +360,12 @@ function getReelVideo(data) {
     return data.video;
   }
 
-
   return null;
 }
 
 
 function getCoverUrl(data) {
   if (!data) return null;
-
 
   if (isValidUrl(data.cover)) {
     return data.cover;
@@ -396,7 +379,6 @@ function getCoverUrl(data) {
     return data.coverUrl;
   }
 
-
   // Video array
   if (Array.isArray(data.video)) {
     for (const item of data.video) {
@@ -408,7 +390,6 @@ function getCoverUrl(data) {
       }
     }
   }
-
 
   // Single video object
   if (
@@ -425,7 +406,6 @@ function getCoverUrl(data) {
     }
   }
 
-
   return null;
 }
 
@@ -440,7 +420,6 @@ function getCollectionCover(
 ) {
   if (!data) return null;
 
-
   // Highlight cover
   if (
     responseType === "highlight"
@@ -453,7 +432,6 @@ function getCollectionCover(
       ? cover
       : null;
   }
-
 
   // Story cover
   if (
@@ -469,28 +447,12 @@ function getCollectionCover(
       : null;
   }
 
-
   return null;
 }
 
 
 // ==================================================
 // MEDIA EXTRACTION
-//
-// This is the important part for stories/highlights.
-//
-// Supports:
-//   image: []
-//   image: "url"
-//   image: {}
-//   video: []
-//   video: "url"
-//   video: {}
-//   items: []
-//   nested items
-//
-// Media type comes from the API field itself.
-// We do NOT guess based on .heic/.webp/etc.
 // ==================================================
 
 function extractMediaItems(data) {
@@ -502,7 +464,6 @@ function extractMediaItems(data) {
   ) {
     return results;
   }
-
 
   // ----------------------------------------------
   // NESTED ITEMS
@@ -526,14 +487,12 @@ function extractMediaItems(data) {
     }
   }
 
-
   // ----------------------------------------------
   // IMAGE ARRAY
   // ----------------------------------------------
 
   if (Array.isArray(data.image)) {
     for (const image of data.image) {
-
       // image: "https://..."
       if (typeof image === "string") {
         if (isValidUrl(image)) {
@@ -546,7 +505,6 @@ function extractMediaItems(data) {
 
         continue;
       }
-
 
       // image: { url: "..." }
       if (
@@ -572,7 +530,6 @@ function extractMediaItems(data) {
     }
   }
 
-
   // ----------------------------------------------
   // SINGLE IMAGE STRING
   // ----------------------------------------------
@@ -587,7 +544,6 @@ function extractMediaItems(data) {
       cover: getCoverUrl(data)
     });
   }
-
 
   // ----------------------------------------------
   // SINGLE IMAGE OBJECT
@@ -615,14 +571,12 @@ function extractMediaItems(data) {
     }
   }
 
-
   // ----------------------------------------------
   // VIDEO ARRAY
   // ----------------------------------------------
 
   if (Array.isArray(data.video)) {
     for (const video of data.video) {
-
       // video: "https://..."
       if (typeof video === "string") {
         if (isValidUrl(video)) {
@@ -635,7 +589,6 @@ function extractMediaItems(data) {
 
         continue;
       }
-
 
       // video: { video: "...", cover: "..." }
       if (
@@ -657,11 +610,8 @@ function extractMediaItems(data) {
     }
   }
 
-
   // ----------------------------------------------
   // SINGLE VIDEO OBJECT
-  //
-  // Important for some story APIs.
   // ----------------------------------------------
 
   if (
@@ -686,7 +636,6 @@ function extractMediaItems(data) {
     }
   }
 
-
   // ----------------------------------------------
   // SINGLE VIDEO STRING
   // ----------------------------------------------
@@ -701,7 +650,6 @@ function extractMediaItems(data) {
       cover: getCoverUrl(data)
     });
   }
-
 
   return results;
 }
@@ -780,9 +728,6 @@ function buildMediaKeyboard(
 
 // ==================================================
 // DETAILS
-//
-// IMPORTANT:
-// owner is deliberately NOT displayed.
 // ==================================================
 
 function formatDetails(
@@ -836,6 +781,62 @@ function formatDetails(
     lines.push(
       `👤 Username: ${username}`
     );
+  }
+
+  // Full name (for profile)
+  if (data.full_name) {
+    lines.push(
+      `📛 Name: ${data.full_name}`
+    );
+  }
+
+  // Bio (for profile)
+  if (data.bio) {
+    lines.push("");
+    lines.push("📝 Bio:");
+    lines.push(
+      truncate(data.bio, 1000)
+    );
+  }
+
+  // Follower count (for profile)
+  if (
+    data.follower_count !== undefined &&
+    data.follower_count !== null
+  ) {
+    lines.push(
+      `👥 Followers: ${data.follower_count}`
+    );
+  }
+
+  // Following count (for profile)
+  if (
+    data.following_count !== undefined &&
+    data.following_count !== null
+  ) {
+    lines.push(
+      `👤 Following: ${data.following_count}`
+    );
+  }
+
+  // Post count (for profile)
+  if (
+    data.post_count !== undefined &&
+    data.post_count !== null
+  ) {
+    lines.push(
+      `📦 Posts: ${data.post_count}`
+    );
+  }
+
+  // Verified (for profile)
+  if (data.is_verified) {
+    lines.push("✅ Verified");
+  }
+
+  // Private (for profile)
+  if (data.is_private) {
+    lines.push("🔒 Private Account");
   }
 
 
@@ -953,10 +954,6 @@ function formatDetails(
       `⚙️ ${data.made_by}`
     );
   }
-
-
-  // NOTE:
-  // data.owner is intentionally ignored.
 
 
   return truncate(
@@ -1176,9 +1173,6 @@ async function sendCollectionHeader(
 
   // ----------------------------------------------
   // COLLECTION COVER
-  //
-  // We do NOT automatically send it.
-  // It is only available through the button.
   // ----------------------------------------------
 
   const collectionCover =
@@ -1206,6 +1200,21 @@ async function sendCollectionHeader(
         storageId,
         true
       );
+  } else {
+    // No cover — still add a details button
+    const storageId =
+      storeMedia({
+        cover: null,
+        data,
+        parent: null,
+        kind: "collection"
+      });
+
+    replyMarkup =
+      buildMediaKeyboard(
+        storageId,
+        false
+      );
   }
 
 
@@ -1214,12 +1223,7 @@ async function sendCollectionHeader(
     {
       chat_id: chatId,
       text: lines.join("\n"),
-      ...(replyMarkup
-        ? {
-            reply_markup:
-              replyMarkup
-          }
-        : {})
+      reply_markup: replyMarkup
     }
   );
 }
@@ -1433,7 +1437,9 @@ async function handleCallback(
         "sendPhoto",
         {
           chat_id: chatId,
-          photo: stored.cover
+          photo: stored.cover,
+          caption:
+            "🖼️ Cover Photo"
         }
       );
     } catch (error) {
@@ -1449,7 +1455,9 @@ async function handleCallback(
           "sendDocument",
           {
             chat_id: chatId,
-            document: stored.cover
+            document: stored.cover,
+            caption:
+              "🖼️ Cover Photo"
           }
         );
       } catch (fallbackError) {
@@ -1629,7 +1637,7 @@ async function processInstagramUrl(
       data,
       null,
       2
-    )
+    ).slice(0, 2000)
   );
 
 
@@ -1640,13 +1648,17 @@ async function processInstagramUrl(
       data
     );
 
+    const errorMsg =
+      data?.error ||
+      data?.message ||
+      "The download failed. Please try again.";
 
     await telegram(
       "sendMessage",
       {
         chat_id: chatId,
         text:
-          "❌ The download failed. Please try again."
+          `❌ ${errorMsg}`
       }
     );
 
@@ -1670,6 +1682,25 @@ async function processInstagramUrl(
         chat_id: chatId,
         text:
           `❌ ${message}`
+      }
+    );
+
+    return;
+  }
+
+
+  // Check for error field without p field
+  if (
+    data &&
+    data.error &&
+    !data.p
+  ) {
+    await telegram(
+      "sendMessage",
+      {
+        chat_id: chatId,
+        text:
+          `❌ ${data.error}`
       }
     );
 
@@ -1745,7 +1776,7 @@ async function processInstagramUrl(
     );
 
 
-    // Header with optional highlight cover button.
+    // Header with highlight cover button.
     await sendCollectionHeader(
       chatId,
       data,
@@ -1779,7 +1810,6 @@ async function processInstagramUrl(
 
 
     // ------------------------------------------------
-    // IMPORTANT:
     // Each highlight item has its own data.
     // This preserves its individual cover/details.
     // ------------------------------------------------
@@ -1839,7 +1869,7 @@ async function processInstagramUrl(
     );
 
 
-    // Header with optional story cover button.
+    // Header with story cover button.
     await sendCollectionHeader(
       chatId,
       data,
@@ -1906,6 +1936,85 @@ async function processInstagramUrl(
           media,
           data,
           data
+        );
+      }
+    }
+
+
+    return;
+  }
+
+
+  // ==================================================
+  // COLLECTION (fallback for items without type)
+  // ==================================================
+
+  if (
+    responseType === "collection"
+  ) {
+    console.log(
+      "Processing collection..."
+    );
+
+
+    await sendCollectionHeader(
+      chatId,
+      data,
+      "collection"
+    );
+
+
+    const mediaItems =
+      extractMediaItems(data);
+
+
+    if (!mediaItems.length) {
+      await telegram(
+        "sendMessage",
+        {
+          chat_id: chatId,
+          text:
+            "❌ This collection contains no downloadable media."
+        }
+      );
+
+      return;
+    }
+
+
+    if (
+      Array.isArray(data.items) &&
+      data.items.length > 0
+    ) {
+      for (
+        const item of data.items
+      ) {
+        const itemMedia =
+          extractMediaItems(
+            item
+          );
+
+
+        for (
+          const media of itemMedia
+        ) {
+          await sendMedia(
+            chatId,
+            media,
+            item,
+            data
+          );
+        }
+      }
+    } else {
+      for (
+        const media of mediaItems
+      ) {
+        await sendMedia(
+          chatId,
+          media,
+          data,
+          null
         );
       }
     }

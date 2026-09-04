@@ -738,7 +738,7 @@ function formatDetails(
     !data ||
     typeof data !== "object"
   ) {
-    return "No details available.";
+    return "ℹ️ No additional details are available for this media.";
   }
 
   const lines = [];
@@ -998,7 +998,7 @@ async function sendMedia(
 
 
   const caption =
-    "📥 Downloaded from Instadrop";
+    "✅ Download ready!\n\n📥 Delivered by InstaDrop";
 
 
   // ----------------------------------------------
@@ -1094,7 +1094,7 @@ async function sendMedia(
         {
           chat_id: chatId,
           text:
-            "❌ Telegram could not send this media."
+            "⚠️ I found the media, but Telegram couldn't deliver it.\n\nPlease try the Instagram link again."
         }
       );
     }
@@ -1263,7 +1263,7 @@ async function notifyAdmin(
 
 
   const lines = [
-    "👤 New Instadrop user",
+    "👤 New InstaDrop user",
     "",
     `Chat ID: ${chatId}`,
     `Name: ${firstName}`
@@ -1301,14 +1301,25 @@ async function notifyAdmin(
 async function sendWelcome(
   chatId
 ) {
+  const welcomeCaption =
+    "🚀 Welcome to InstaDrop!\n\n" +
+    "Your simple Instagram media downloader.\n\n" +
+    "📥 Send me an Instagram:\n" +
+    "• Post\n" +
+    "• Carousel\n" +
+    "• Reel\n" +
+    "• Story\n" +
+    "• Highlight\n\n" +
+    "I'll fetch the available media and send it right here.\n\n" +
+    "✨ Fast. Simple. No complicated steps.";
+
   try {
     await telegram(
       "sendPhoto",
       {
         chat_id: chatId,
         photo: WELCOME_IMAGE,
-        caption:
-          "🚀 Welcome to InstaDrop!\n\nSend me an Instagram post, carousel, reel, story, or highlight link and I'll download the media for you.",
+        caption: welcomeCaption,
         reply_markup: {
           inline_keyboard: [
             [
@@ -1333,8 +1344,7 @@ async function sendWelcome(
       "sendMessage",
       {
         chat_id: chatId,
-        text:
-          "🚀 Welcome to InstaDrop!\n\nSend me an Instagram post, carousel, reel, story, or highlight link and I'll download the media for you.",
+        text: welcomeCaption,
         reply_markup: {
           inline_keyboard: [
             [
@@ -1424,7 +1434,7 @@ async function handleCallback(
         {
           chat_id: chatId,
           text:
-            "❌ Sorry, this cover is no longer available."
+            "⏰ Sorry, this cover has expired.\n\nPlease send the Instagram link again to generate a fresh copy."
         }
       );
 
@@ -1439,7 +1449,7 @@ async function handleCallback(
           chat_id: chatId,
           photo: stored.cover,
           caption:
-            "🖼️ Cover Photo"
+            "🖼️ Cover Photo\n\n✨ Here is the cover image you requested."
         }
       );
     } catch (error) {
@@ -1457,7 +1467,7 @@ async function handleCallback(
             chat_id: chatId,
             document: stored.cover,
             caption:
-              "🖼️ Cover Photo"
+              "🖼️ Cover Photo\n\n✨ Here is the cover image you requested."
           }
         );
       } catch (fallbackError) {
@@ -1472,7 +1482,7 @@ async function handleCallback(
           {
             chat_id: chatId,
             text:
-              "❌ Unable to send the cover image."
+              "❌ I couldn't send the cover image right now.\n\nPlease try again."
           }
         );
       }
@@ -1513,7 +1523,7 @@ async function handleCallback(
         {
           chat_id: chatId,
           text:
-            "❌ Sorry, these details are no longer available."
+            "⏰ Sorry, these details have expired.\n\nPlease send the Instagram link again to get fresh information."
         }
       );
 
@@ -1532,7 +1542,8 @@ async function handleCallback(
       "sendMessage",
       {
         chat_id: chatId,
-        text: details
+        text:
+          `📋 Media Details\n\n${details}`
       }
     );
 
@@ -1555,7 +1566,7 @@ async function processInstagramUrl(
     {
       chat_id: chatId,
       text:
-        "⏳ Downloading..."
+        "⏳ Working on it...\n\n🔎 Reading the Instagram link and preparing your media."
     }
   );
 
@@ -1599,7 +1610,7 @@ async function processInstagramUrl(
       {
         chat_id: chatId,
         text:
-          "❌ Could not connect to the download API. Please try again."
+          "❌ I couldn't reach the download service.\n\nPlease check the Instagram link and try again in a moment."
       }
     );
 
@@ -1623,7 +1634,7 @@ async function processInstagramUrl(
       {
         chat_id: chatId,
         text:
-          "❌ The download API returned an invalid response."
+          "⚠️ The download service returned an unexpected response.\n\nPlease try the link again."
       }
     );
 
@@ -1651,14 +1662,14 @@ async function processInstagramUrl(
     const errorMsg =
       data?.error ||
       data?.message ||
-      "The download failed. Please try again.";
+      "The download could not be completed.";
 
     await telegram(
       "sendMessage",
       {
         chat_id: chatId,
         text:
-          `❌ ${errorMsg}`
+          `❌ ${errorMsg}\n\nPlease try again with a valid Instagram link.`
       }
     );
 
@@ -1681,7 +1692,7 @@ async function processInstagramUrl(
       {
         chat_id: chatId,
         text:
-          `❌ ${message}`
+          `❌ ${message}\n\n💡 Make sure the post is available and the link is correct.`
       }
     );
 
@@ -1700,7 +1711,7 @@ async function processInstagramUrl(
       {
         chat_id: chatId,
         text:
-          `❌ ${data.error}`
+          `❌ ${data.error}\n\nPlease try another Instagram link.`
       }
     );
 
@@ -1736,7 +1747,7 @@ async function processInstagramUrl(
         {
           chat_id: chatId,
           text:
-            "❌ No reel video was found."
+            "❌ I couldn't find a downloadable video in this reel.\n\nPlease try the reel link again."
         }
       );
 
@@ -1801,7 +1812,7 @@ async function processInstagramUrl(
         {
           chat_id: chatId,
           text:
-            "❌ This highlight contains no downloadable media."
+            "❌ This highlight doesn't contain any downloadable media.\n\nPlease try another highlight."
         }
       );
 
@@ -1893,7 +1904,7 @@ async function processInstagramUrl(
         {
           chat_id: chatId,
           text:
-            "❌ This story contains no downloadable media."
+            "❌ I couldn't find any downloadable media in this story.\n\nPlease try the story link again."
         }
       );
 
@@ -1974,7 +1985,7 @@ async function processInstagramUrl(
         {
           chat_id: chatId,
           text:
-            "❌ This collection contains no downloadable media."
+            "❌ This collection doesn't contain any downloadable media.\n\nPlease try another Instagram link."
         }
       );
 
@@ -2044,7 +2055,7 @@ async function processInstagramUrl(
       {
         chat_id: chatId,
         text:
-          "❌ No downloadable media was found."
+          "❌ I couldn't find any downloadable media in that Instagram post.\n\nPlease check the link and try again."
       }
     );
 
@@ -2196,7 +2207,15 @@ export default async function handler(
         {
           chat_id: chatId,
           text:
-            "📥 Send me an Instagram post, carousel, reel, story, or highlight link and I'll download it for you."
+            "📚 InstaDrop Help\n\n" +
+            "Just send me an Instagram link and I'll handle the rest.\n\n" +
+            "✅ Posts\n" +
+            "✅ Carousels\n" +
+            "✅ Reels\n" +
+            "✅ Stories\n" +
+            "✅ Highlights\n\n" +
+            "💡 Tip: Copy the Instagram URL and paste it directly into this chat.\n\n" +
+            "🚀 No extra commands are required."
         }
       );
 
@@ -2223,7 +2242,10 @@ export default async function handler(
         {
           chat_id: chatId,
           text:
-            "📎 Please send a valid Instagram link."
+            "📎 I need an Instagram link to get started.\n\n" +
+            "Copy the link to a post, carousel, reel, story, or highlight and paste it here.\n\n" +
+            "Example:\n" +
+            "https://instagram.com/..."
         }
       );
 
@@ -2269,7 +2291,7 @@ export default async function handler(
           {
             chat_id: chatId,
             text:
-              "❌ Something went wrong while processing your request. Please try again."
+              "⚠️ Something unexpected happened while processing your request.\n\nPlease try the Instagram link again. If the problem continues, try again a little later."
           }
         );
       }
@@ -2290,4 +2312,3 @@ export default async function handler(
       });
   }
 }
-

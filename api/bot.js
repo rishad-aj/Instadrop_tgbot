@@ -1,5 +1,4 @@
 const TELEGRAM_BOT_TOKEN = "8946163976:AAHci0KAZ1bPgqXlgNYC3LJzjd8TuiBjjd4";
-
 const ADMIN_CHAT_ID = "7216371031";
 
 const API_URL =
@@ -11,6 +10,10 @@ const WELCOME_IMAGE =
 const WEBSITE_URL =
   "https://instadrop.web.app/";
 
+
+// ==================================================
+// TEMPORARY STORAGE
+// ==================================================
 
 const mediaStorage = new Map();
 
@@ -996,7 +999,7 @@ async function sendMedia(
 
   const caption =
     "✅ *Download ready!*\n\n" +
-    "📥 Delivered by *instadrop*";
+    "📥 Delivered by *InstaDrop*";
 
 
   // ----------------------------------------------
@@ -1268,7 +1271,7 @@ async function notifyAdmin(
 
 
   const lines = [
-    "👤 *New instadrop user*",
+    "👤 *New InstaDrop user*",
     "",
     `Chat ID: ${chatId}`,
     `Name: ${firstName}`
@@ -1308,22 +1311,40 @@ async function sendWelcome(
   chatId
 ) {
   const welcomeCaption =
-    "<b>Welcome to instadrop!</b>\n\n" +
+    "🚀 *Welcome to InstaDrop!*\n\n" +
 
-    "Your simple and fast Instagram downloader.\n\n" +
+    "Your simple and fast Instagram downloader. ⚡\n\n" +
 
-    "<b>What can I download?</b>\n" +
-    "<blockquote>• Posts\n• Carousels\n• Reels\n• Stories\n• Highlights\n• Profile pictures</blockquote>\n\n" +
+    "📥 *What can I download?*\n" +
+    "• 📸 Posts\n" +
+    "• 🖼️ Carousels\n" +
+    "• 🎬 Reels\n" +
+    "• 📖 Stories\n" +
+    "• ✨ Highlights\n" +
 
-    "<b>Media details</b>\n" +
-    "<blockquote>• Username\n• Caption\n• Upload date\n• Likes\n• Comments\n• Views\n• Plays\n• Reshares</blockquote>\n\n" +
+    "\n👤 *Profile support*\n" +
+    "• 🖼️ Profile picture\n" +
+    "• 📋 Account details\n" +
+    "• 👥 Followers & following\n" +
+    "• 📦 Post count\n" +
+    "• 📛 Name & bio\n" +
+    "• ✅ Verification status\n" +
+    "• 🔒 Private account status\n" +
 
-    "<b>Profile support</b>\n" +
-    "<blockquote>• Profile picture\n• Account details\n• Followers and following\n• Post count\n• Name and bio\n• Verification status</blockquote>\n\n" +
+    "\n📋 *Media details*\n" +
+    "• 👤 Username\n" +
+    "• 📝 Caption\n" +
+    "• 📅 Upload date\n" +
+    "• ❤️ Likes\n" +
+    "• 💬 Comments\n" +
+    "• 👀 Views\n" +
+    "• ▶️ Plays\n" +
+    "• 🔁 Reshares\n\n" +
 
-    "<b>How to use</b>\n" +
-    "Just copy an Instagram link and send it here.\n" +
-    "No complicated steps — just send the link.";
+    "💡 *How to use:*\n" +
+    "Just copy an Instagram link and send it here.\n\n" +
+
+    "✨ *No complicated steps. Just send the link!*";
 
   try {
     await telegram(
@@ -1332,13 +1353,13 @@ async function sendWelcome(
         chat_id: chatId,
         photo: WELCOME_IMAGE,
         caption: welcomeCaption,
-        parse_mode: "HTML",
+        parse_mode: "Markdown",
         reply_markup: {
           inline_keyboard: [
             [
               {
                 text:
-                  "🌐 Open instadrop",
+                  "🌐 Open InstaDrop",
                 url: WEBSITE_URL
               }
             ]
@@ -1358,13 +1379,13 @@ async function sendWelcome(
       {
         chat_id: chatId,
         text: welcomeCaption,
-        parse_mode: "HTML",
+        parse_mode: "Markdown",
         reply_markup: {
           inline_keyboard: [
             [
               {
                 text:
-                  "🌐 Open instadrop",
+                  "🌐 Open InstaDrop",
                 url: WEBSITE_URL
               }
             ]
@@ -2282,7 +2303,7 @@ export default async function handler(
       .json({
         ok: true,
         message:
-          "instadrop Telegram bot is running."
+          "InstaDrop Telegram bot is running."
       });
   }
 
@@ -2396,7 +2417,7 @@ export default async function handler(
         {
           chat_id: chatId,
           text:
-            "📚 *instadrop Help*\n\n" +
+            "📚 *InstaDrop Help*\n\n" +
 
             "Just send me an Instagram link and I'll handle the rest.\n\n" +
 
@@ -2523,4 +2544,3 @@ export default async function handler(
         ok: true
       });
   }
-}

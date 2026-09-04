@@ -1,5 +1,4 @@
 const TELEGRAM_BOT_TOKEN = "8946163976:AAGL2njGh43hQdyuM5_mDwKLmIAst-qZEVU";
-
 const ADMIN_CHAT_ID = "7216371031";
 
 const API_URL =
@@ -1000,7 +999,7 @@ async function sendMedia(
 
   const caption =
     "✅ *Download ready!*\n\n" +
-    "📥 Delivered by *InstaDrop*";
+    "📥 Delivered by *instadrop*";
 
 
   // ----------------------------------------------
@@ -1272,7 +1271,7 @@ async function notifyAdmin(
 
 
   const lines = [
-    "👤 *New InstaDrop user*",
+    "👤 *New instadrop user*",
     "",
     `Chat ID: ${chatId}`,
     `Name: ${firstName}`
@@ -1312,40 +1311,41 @@ async function sendWelcome(
   chatId
 ) {
   const welcomeCaption =
-    "🚀 *Welcome to InstaDrop!*\n\n" +
+    "🚀 *Welcome to instadrop!*\n\n" +
 
-    "Your simple and fast Instagram downloader. ⚡\n\n" +
+    "Your simple and fast Instagram downloader.\n\n" +
 
-    "📥 *What can I download?*\n" +
-    "• 📸 Posts\n" +
-    "• 🖼️ Carousels\n" +
-    "• 🎬 Reels\n" +
-    "• 📖 Stories\n" +
-    "• ✨ Highlights\n" +
+    "*What can I download?*\n" +
+    "• \"Posts\"\n" +
+    "• \"Carousels\"\n" +
+    "• \"Reels\"\n" +
+    "• \"Stories\"\n" +
+    "• \"Highlights\"\n" +
+    "• \"Profiles\"\n\n" +
 
-    "\n👤 *Profile support*\n" +
-    "• 🖼️ Profile picture\n" +
-    "• 📋 Account details\n" +
-    "• 👥 Followers & following\n" +
-    "• 📦 Post count\n" +
-    "• 📛 Name & bio\n" +
-    "• ✅ Verification status\n" +
-    "• 🔒 Private account status\n" +
+    "*Profile support*\n" +
+    "• Profile picture\n" +
+    "• Account details\n" +
+    "• Followers & following\n" +
+    "• Post count\n" +
+    "• Name & bio\n" +
+    "• Verification status\n" +
+    "• Private account status\n\n" +
 
-    "\n📋 *Media details*\n" +
-    "• 👤 Username\n" +
-    "• 📝 Caption\n" +
-    "• 📅 Upload date\n" +
-    "• ❤️ Likes\n" +
-    "• 💬 Comments\n" +
-    "• 👀 Views\n" +
-    "• ▶️ Plays\n" +
-    "• 🔁 Reshares\n\n" +
+    "*Media details*\n" +
+    "• Username\n" +
+    "• Caption\n" +
+    "• Upload date\n" +
+    "• Likes\n" +
+    "• Comments\n" +
+    "• Views\n" +
+    "• Plays\n" +
+    "• Reshares\n\n" +
 
-    "💡 *How to use:*\n" +
+    "*How to use:*\n" +
     "Just copy an Instagram link and send it here.\n\n" +
 
-    "✨ *No complicated steps. Just send the link!*";
+    "No complicated steps. Just send the link!";
 
   try {
     await telegram(
@@ -1360,7 +1360,7 @@ async function sendWelcome(
             [
               {
                 text:
-                  "🌐 Open InstaDrop",
+                  "🌐 Open instadrop",
                 url: WEBSITE_URL
               }
             ]
@@ -1386,7 +1386,7 @@ async function sendWelcome(
             [
               {
                 text:
-                  "🌐 Open InstaDrop",
+                  "🌐 Open instadrop",
                 url: WEBSITE_URL
               }
             ]
@@ -1757,7 +1757,7 @@ async function processInstagramUrl(
 
 
   console.log(
-    "Instadrop API response:",
+    "instadrop API response:",
     JSON.stringify(
       data,
       null,
@@ -2304,7 +2304,7 @@ export default async function handler(
       .json({
         ok: true,
         message:
-          "InstaDrop Telegram bot is running."
+          "instadrop Telegram bot is running."
       });
   }
 
@@ -2418,27 +2418,27 @@ export default async function handler(
         {
           chat_id: chatId,
           text:
-            "📚 *InstaDrop Help*\n\n" +
+            "*instadrop Help*\n\n" +
 
             "Just send me an Instagram link and I'll handle the rest.\n\n" +
 
-            "📥 *Supported content*\n" +
-            "• 📸 Posts\n" +
-            "• 🖼️ Carousels\n" +
-            "• 🎬 Reels\n" +
-            "• 📖 Stories\n" +
-            "• ✨ Highlights\n" +
-            "• 👤 Profiles\n\n" +
+            "*Supported content*\n" +
+            "• \"Posts\"\n" +
+            "• \"Carousels\"\n" +
+            "• \"Reels\"\n" +
+            "• \"Stories\"\n" +
+            "• \"Highlights\"\n" +
+            "• \"Profiles\"\n\n" +
 
-            "🖼️ *Profile support*\n" +
+            "*Profile support*\n" +
             "Profile picture and available account information are supported.\n\n" +
 
-            "📋 *Details*\n" +
+            "*Details*\n" +
             "Available media and account information can be viewed using the *Get Details* button.\n\n" +
 
-            "💡 *Tip:* Copy the Instagram URL and paste it directly into this chat.\n\n" +
+            "*Tip:* Copy the Instagram URL and paste it directly into this chat.\n\n" +
 
-            "🚀 No extra commands are required.",
+            "No extra commands are required.",
           parse_mode: "Markdown"
         }
       );

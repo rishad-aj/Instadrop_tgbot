@@ -1,4 +1,5 @@
-const TELEGRAM_BOT_TOKEN = "8946163976:AAHci0KAZ1bPgqXlgNYC3LJzjd8TuiBjjd4";
+const TELEGRAM_BOT_TOKEN = "8946163976:AAGL2njGh43hQdyuM5_mDwKLmIAst-qZEVU";
+
 const ADMIN_CHAT_ID = "7216371031";
 
 const API_URL =
@@ -2544,3 +2545,4 @@ export default async function handler(
         ok: true
       });
   }
+}

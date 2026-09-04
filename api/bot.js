@@ -1,4 +1,5 @@
 const TELEGRAM_BOT_TOKEN = "8946163976:AAEwnpQ3LuAhNp8HDMkIhi1ZbPMU4Ncsn4s";
+
 const ADMIN_CHAT_ID = "7216371031";
 
 const API_URL =
@@ -143,6 +144,35 @@ function cleanupStorage() {
     ) {
       mediaStorage.delete(id);
     }
+  }
+}
+
+
+// ==================================================
+// DELETE TELEGRAM MESSAGE
+// ==================================================
+
+async function deleteTelegramMessage(
+  chatId,
+  messageId
+) {
+  if (!chatId || !messageId) {
+    return;
+  }
+
+  try {
+    await telegram(
+      "deleteMessage",
+      {
+        chat_id: chatId,
+        message_id: messageId
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Temporary message deletion failed:",
+      error.message
+    );
   }
 }
 
@@ -403,6 +433,101 @@ function getCoverUrl(data) {
 
     if (cover) {
       return cover;
+    }
+  }
+
+  return null;
+}
+
+
+// ==================================================
+// PROFILE PICTURE HELPERS
+// ==================================================
+
+function getProfilePicture(data) {
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
+    return null;
+  }
+
+  const possibleProfilePictures = [
+    data.profile_pic,
+    data.profile_picture,
+    data.profilePicture,
+    data.profile_pic_url,
+    data.profilePicUrl,
+    data.profile_picture_url,
+    data.profilePictureUrl,
+    data.avatar,
+    data.avatar_url,
+    data.avatarUrl,
+    data.user_pic,
+    data.userPic,
+    data.user_picture,
+    data.userPicture,
+    data.user_avatar,
+    data.userAvatar,
+    data.photo,
+    data.photo_url,
+    data.photoUrl
+  ];
+
+  for (
+    const profilePicture
+      of possibleProfilePictures
+  ) {
+    if (
+      isValidUrl(
+        profilePicture
+      )
+    ) {
+      return profilePicture;
+    }
+  }
+
+  // Check common nested user/author objects.
+  const nestedUsers = [
+    data.user,
+    data.author,
+    data.owner,
+    data.account,
+    data.profile
+  ];
+
+  for (
+    const nested
+      of nestedUsers
+  ) {
+    if (
+      !nested ||
+      typeof nested !== "object"
+    ) {
+      continue;
+    }
+
+    const nestedPicture =
+      nested.profile_pic ||
+      nested.profile_picture ||
+      nested.profilePicture ||
+      nested.profile_pic_url ||
+      nested.profilePicUrl ||
+      nested.profile_picture_url ||
+      nested.profilePictureUrl ||
+      nested.avatar ||
+      nested.avatar_url ||
+      nested.avatarUrl ||
+      nested.photo ||
+      nested.photo_url ||
+      nested.photoUrl;
+
+    if (
+      isValidUrl(
+        nestedPicture
+      )
+    ) {
+      return nestedPicture;
     }
   }
 
@@ -744,7 +869,30 @@ function formatDetails(
   const lines = [];
 
 
-  // Parent highlight
+  // ----------------------------------------------
+  // CONTENT TYPE
+  // ----------------------------------------------
+
+  const responseType =
+    getResponseType(data);
+
+  if (responseType === "reel") {
+    lines.push("🎬 Type: Reel");
+  } else if (responseType === "story") {
+    lines.push("📖 Type: Story");
+  } else if (responseType === "highlight") {
+    lines.push("✨ Type: Highlight");
+  } else if (responseType === "collection") {
+    lines.push("📦 Type: Collection");
+  } else {
+    lines.push("📸 Type: Post");
+  }
+
+
+  // ----------------------------------------------
+  // PARENT HIGHLIGHT
+  // ----------------------------------------------
+
   if (
     parent &&
     getResponseType(parent) ===
@@ -759,7 +907,10 @@ function formatDetails(
   }
 
 
-  // Parent story
+  // ----------------------------------------------
+  // PARENT STORY
+  // ----------------------------------------------
+
   if (
     parent &&
     getResponseType(parent) ===
@@ -769,28 +920,45 @@ function formatDetails(
   }
 
 
-  // Username
+  // ----------------------------------------------
+  // ACCOUNT DETAILS
+  // ----------------------------------------------
+
   const username =
     normalizeUsername(
       data.username ||
-        data.user ||
-        data.author
+        (
+          data.user &&
+          typeof data.user === "object"
+            ? data.user.username
+            : data.user
+        ) ||
+        (
+          data.author &&
+          typeof data.author === "object"
+            ? data.author.username
+            : data.author
+        )
     );
 
   if (username) {
+    lines.push("");
+    lines.push("👤 Account");
     lines.push(
-      `👤 Username: ${username}`
+      `Username: ${username}`
     );
   }
 
-  // Full name (for profile)
+
+  // Full name
   if (data.full_name) {
     lines.push(
       `📛 Name: ${data.full_name}`
     );
   }
 
-  // Bio (for profile)
+
+  // Bio
   if (data.bio) {
     lines.push("");
     lines.push("📝 Bio:");
@@ -799,7 +967,8 @@ function formatDetails(
     );
   }
 
-  // Follower count (for profile)
+
+  // Followers
   if (
     data.follower_count !== undefined &&
     data.follower_count !== null
@@ -809,7 +978,8 @@ function formatDetails(
     );
   }
 
-  // Following count (for profile)
+
+  // Following
   if (
     data.following_count !== undefined &&
     data.following_count !== null
@@ -819,7 +989,8 @@ function formatDetails(
     );
   }
 
-  // Post count (for profile)
+
+  // Posts
   if (
     data.post_count !== undefined &&
     data.post_count !== null
@@ -829,18 +1000,23 @@ function formatDetails(
     );
   }
 
-  // Verified (for profile)
+
+  // Verified
   if (data.is_verified) {
-    lines.push("✅ Verified");
+    lines.push("✅ Verified Account");
   }
 
-  // Private (for profile)
+
+  // Private
   if (data.is_private) {
     lines.push("🔒 Private Account");
   }
 
 
-  // Caption
+  // ----------------------------------------------
+  // MEDIA DETAILS
+  // ----------------------------------------------
+
   if (data.caption) {
     lines.push("");
     lines.push("📝 Caption:");
@@ -964,6 +1140,63 @@ function formatDetails(
 
 
 // ==================================================
+// SEND PROFILE PICTURE
+// ==================================================
+
+async function sendProfilePicture(
+  chatId,
+  data
+) {
+  const profilePicture =
+    getProfilePicture(data);
+
+  if (!profilePicture) {
+    return false;
+  }
+
+  try {
+    await telegram(
+      "sendPhoto",
+      {
+        chat_id: chatId,
+        photo: profilePicture,
+        caption:
+          "👤 Profile Picture\n\n✨ Here is the account profile picture."
+      }
+    );
+
+    return true;
+  } catch (error) {
+    console.error(
+      "Profile picture sendPhoto failed:",
+      error.message
+    );
+
+    try {
+      await telegram(
+        "sendDocument",
+        {
+          chat_id: chatId,
+          document: profilePicture,
+          caption:
+            "👤 Profile Picture"
+        }
+      );
+
+      return true;
+    } catch (fallbackError) {
+      console.error(
+        "Profile picture fallback failed:",
+        fallbackError.message
+      );
+
+      return false;
+    }
+  }
+}
+
+
+// ==================================================
 // SEND MEDIA
 // ==================================================
 
@@ -998,7 +1231,8 @@ async function sendMedia(
 
 
   const caption =
-    "✅ Download ready!\n\n📥 Delivered by InstaDrop";
+    "✅ Download ready!\n\n" +
+    "📥 Delivered by InstaDrop";
 
 
   // ----------------------------------------------
@@ -1531,6 +1765,13 @@ async function handleCallback(
     }
 
 
+    // Send profile picture if available.
+    await sendProfilePicture(
+      chatId,
+      stored.data
+    );
+
+
     const details =
       formatDetails(
         stored.data,
@@ -1543,7 +1784,7 @@ async function handleCallback(
       {
         chat_id: chatId,
         text:
-          `📋 Media Details\n\n${details}`
+          `📋 Media & Account Details\n\n${details}`
       }
     );
 
@@ -1561,14 +1802,30 @@ async function processInstagramUrl(
   chatId,
   instagramUrl
 ) {
-  await telegram(
-    "sendMessage",
-    {
-      chat_id: chatId,
-      text:
-        "⏳ Working on it...\n\n🔎 Reading the Instagram link and preparing your media."
-    }
-  );
+  let progressMessage = null;
+
+
+  // ==================================================
+  // TEMPORARY PROGRESS MESSAGE
+  // ==================================================
+
+  try {
+    progressMessage =
+      await telegram(
+        "sendMessage",
+        {
+          chat_id: chatId,
+          text:
+            "⏳ Working on it...\n\n" +
+            "🔎 Reading the Instagram link and preparing your media."
+        }
+      );
+  } catch (error) {
+    console.error(
+      "Progress message failed:",
+      error.message
+    );
+  }
 
 
   let response;
@@ -1605,12 +1862,19 @@ async function processInstagramUrl(
     );
 
 
+    await deleteTelegramMessage(
+      chatId,
+      progressMessage?.result?.message_id
+    );
+
+
     await telegram(
       "sendMessage",
       {
         chat_id: chatId,
         text:
-          "❌ I couldn't reach the download service.\n\nPlease check the Instagram link and try again in a moment."
+          "❌ I couldn't reach the download service.\n\n" +
+          "Please check the Instagram link and try again in a moment."
       }
     );
 
@@ -1629,12 +1893,19 @@ async function processInstagramUrl(
     data =
       await response.json();
   } catch {
+    await deleteTelegramMessage(
+      chatId,
+      progressMessage?.result?.message_id
+    );
+
+
     await telegram(
       "sendMessage",
       {
         chat_id: chatId,
         text:
-          "⚠️ The download service returned an unexpected response.\n\nPlease try the link again."
+          "⚠️ The download service returned an unexpected response.\n\n" +
+          "Please try the link again."
       }
     );
 
@@ -1664,12 +1935,20 @@ async function processInstagramUrl(
       data?.message ||
       "The download could not be completed.";
 
+
+    await deleteTelegramMessage(
+      chatId,
+      progressMessage?.result?.message_id
+    );
+
+
     await telegram(
       "sendMessage",
       {
         chat_id: chatId,
         text:
-          `❌ ${errorMsg}\n\nPlease try again with a valid Instagram link.`
+          `❌ ${errorMsg}\n\n` +
+          "Please try again with a valid Instagram link."
       }
     );
 
@@ -1687,12 +1966,19 @@ async function processInstagramUrl(
       "Unable to download this Instagram content.";
 
 
+    await deleteTelegramMessage(
+      chatId,
+      progressMessage?.result?.message_id
+    );
+
+
     await telegram(
       "sendMessage",
       {
         chat_id: chatId,
         text:
-          `❌ ${message}\n\n💡 Make sure the post is available and the link is correct.`
+          `❌ ${message}\n\n` +
+          "💡 Make sure the post is available and the link is correct."
       }
     );
 
@@ -1706,12 +1992,19 @@ async function processInstagramUrl(
     data.error &&
     !data.p
   ) {
+    await deleteTelegramMessage(
+      chatId,
+      progressMessage?.result?.message_id
+    );
+
+
     await telegram(
       "sendMessage",
       {
         chat_id: chatId,
         text:
-          `❌ ${data.error}\n\nPlease try another Instagram link.`
+          `❌ ${data.error}\n\n` +
+          "Please try another Instagram link."
       }
     );
 
@@ -1742,12 +2035,19 @@ async function processInstagramUrl(
 
 
     if (!videoUrl) {
+      await deleteTelegramMessage(
+        chatId,
+        progressMessage?.result?.message_id
+      );
+
+
       await telegram(
         "sendMessage",
         {
           chat_id: chatId,
           text:
-            "❌ I couldn't find a downloadable video in this reel.\n\nPlease try the reel link again."
+            "❌ I couldn't find a downloadable video in this reel.\n\n" +
+            "Please try the reel link again."
         }
       );
 
@@ -1757,6 +2057,12 @@ async function processInstagramUrl(
 
     const cover =
       getCoverUrl(data);
+
+
+    await deleteTelegramMessage(
+      chatId,
+      progressMessage?.result?.message_id
+    );
 
 
     await sendMedia(
@@ -1787,6 +2093,12 @@ async function processInstagramUrl(
     );
 
 
+    await deleteTelegramMessage(
+      chatId,
+      progressMessage?.result?.message_id
+    );
+
+
     // Header with highlight cover button.
     await sendCollectionHeader(
       chatId,
@@ -1812,7 +2124,8 @@ async function processInstagramUrl(
         {
           chat_id: chatId,
           text:
-            "❌ This highlight doesn't contain any downloadable media.\n\nPlease try another highlight."
+            "❌ This highlight doesn't contain any downloadable media.\n\n" +
+            "Please try another highlight."
         }
       );
 
@@ -1880,6 +2193,12 @@ async function processInstagramUrl(
     );
 
 
+    await deleteTelegramMessage(
+      chatId,
+      progressMessage?.result?.message_id
+    );
+
+
     // Header with story cover button.
     await sendCollectionHeader(
       chatId,
@@ -1904,7 +2223,8 @@ async function processInstagramUrl(
         {
           chat_id: chatId,
           text:
-            "❌ I couldn't find any downloadable media in this story.\n\nPlease try the story link again."
+            "❌ I couldn't find any downloadable media in this story.\n\n" +
+            "Please try the story link again."
         }
       );
 
@@ -1957,7 +2277,7 @@ async function processInstagramUrl(
 
 
   // ==================================================
-  // COLLECTION (fallback for items without type)
+  // COLLECTION
   // ==================================================
 
   if (
@@ -1965,6 +2285,12 @@ async function processInstagramUrl(
   ) {
     console.log(
       "Processing collection..."
+    );
+
+
+    await deleteTelegramMessage(
+      chatId,
+      progressMessage?.result?.message_id
     );
 
 
@@ -1985,7 +2311,8 @@ async function processInstagramUrl(
         {
           chat_id: chatId,
           text:
-            "❌ This collection doesn't contain any downloadable media.\n\nPlease try another Instagram link."
+            "❌ This collection doesn't contain any downloadable media.\n\n" +
+            "Please try another Instagram link."
         }
       );
 
@@ -2049,13 +2376,20 @@ async function processInstagramUrl(
   );
 
 
+  await deleteTelegramMessage(
+    chatId,
+    progressMessage?.result?.message_id
+  );
+
+
   if (!mediaItems.length) {
     await telegram(
       "sendMessage",
       {
         chat_id: chatId,
         text:
-          "❌ I couldn't find any downloadable media in that Instagram post.\n\nPlease check the link and try again."
+          "❌ I couldn't find any downloadable media in that Instagram post.\n\n" +
+          "Please check the link and try again."
       }
     );
 
@@ -2156,13 +2490,6 @@ export default async function handler(
     }
 
 
-    // Notify admin once.
-    await notifyAdmin(
-      chatId,
-      message.from
-    );
-
-
     const text =
       message.text ||
       message.caption ||
@@ -2179,6 +2506,21 @@ export default async function handler(
         "/start "
       )
     ) {
+      // Notify admin ONLY on the user's first /start.
+      const userKey =
+        String(chatId);
+
+
+      if (
+        !notifiedUsers.has(userKey)
+      ) {
+        await notifyAdmin(
+          chatId,
+          message.from
+        );
+      }
+
+
       await sendWelcome(
         chatId
       );
@@ -2291,7 +2633,8 @@ export default async function handler(
           {
             chat_id: chatId,
             text:
-              "⚠️ Something unexpected happened while processing your request.\n\nPlease try the Instagram link again. If the problem continues, try again a little later."
+              "⚠️ Something unexpected happened while processing your request.\n\n" +
+              "Please try the Instagram link again. If the problem continues, try again a little later."
           }
         );
       }

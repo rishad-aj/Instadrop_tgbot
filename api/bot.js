@@ -12,10 +12,6 @@ const WEBSITE_URL =
   "https://instadrop.web.app/";
 
 
-// ==================================================
-// TEMPORARY STORAGE
-// ==================================================
-
 const mediaStorage = new Map();
 
 const notifiedUsers = new Set();
@@ -1000,7 +996,7 @@ async function sendMedia(
 
   const caption =
     "✅ *Download ready!*\n\n" +
-    "📥 Delivered by *InstaDrop*";
+    "📥 Delivered by *instadrop*";
 
 
   // ----------------------------------------------
@@ -1272,7 +1268,7 @@ async function notifyAdmin(
 
 
   const lines = [
-    "👤 *New InstaDrop user*",
+    "👤 *New instadrop user*",
     "",
     `Chat ID: ${chatId}`,
     `Name: ${firstName}`
@@ -1312,40 +1308,22 @@ async function sendWelcome(
   chatId
 ) {
   const welcomeCaption =
-    "🚀 *Welcome to InstaDrop!*\n\n" +
+    "<b>Welcome to instadrop!</b>\n\n" +
 
-    "Your simple and fast Instagram downloader. ⚡\n\n" +
+    "Your simple and fast Instagram downloader.\n\n" +
 
-    "📥 *What can I download?*\n" +
-    "• 📸 Posts\n" +
-    "• 🖼️ Carousels\n" +
-    "• 🎬 Reels\n" +
-    "• 📖 Stories\n" +
-    "• ✨ Highlights\n" +
+    "<b>What can I download?</b>\n" +
+    "<blockquote>• Posts\n• Carousels\n• Reels\n• Stories\n• Highlights\n• Profile pictures</blockquote>\n\n" +
 
-    "\n👤 *Profile support*\n" +
-    "• 🖼️ Profile picture\n" +
-    "• 📋 Account details\n" +
-    "• 👥 Followers & following\n" +
-    "• 📦 Post count\n" +
-    "• 📛 Name & bio\n" +
-    "• ✅ Verification status\n" +
-    "• 🔒 Private account status\n" +
+    "<b>Media details</b>\n" +
+    "<blockquote>• Username\n• Caption\n• Upload date\n• Likes\n• Comments\n• Views\n• Plays\n• Reshares</blockquote>\n\n" +
 
-    "\n📋 *Media details*\n" +
-    "• 👤 Username\n" +
-    "• 📝 Caption\n" +
-    "• 📅 Upload date\n" +
-    "• ❤️ Likes\n" +
-    "• 💬 Comments\n" +
-    "• 👀 Views\n" +
-    "• ▶️ Plays\n" +
-    "• 🔁 Reshares\n\n" +
+    "<b>Profile support</b>\n" +
+    "<blockquote>• Profile picture\n• Account details\n• Followers and following\n• Post count\n• Name and bio\n• Verification status</blockquote>\n\n" +
 
-    "💡 *How to use:*\n" +
-    "Just copy an Instagram link and send it here.\n\n" +
-
-    "✨ *No complicated steps. Just send the link!*";
+    "<b>How to use</b>\n" +
+    "Just copy an Instagram link and send it here.\n" +
+    "No complicated steps — just send the link.";
 
   try {
     await telegram(
@@ -1354,13 +1332,13 @@ async function sendWelcome(
         chat_id: chatId,
         photo: WELCOME_IMAGE,
         caption: welcomeCaption,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: {
           inline_keyboard: [
             [
               {
                 text:
-                  "🌐 Open InstaDrop",
+                  "🌐 Open instadrop",
                 url: WEBSITE_URL
               }
             ]
@@ -1380,13 +1358,13 @@ async function sendWelcome(
       {
         chat_id: chatId,
         text: welcomeCaption,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: {
           inline_keyboard: [
             [
               {
                 text:
-                  "🌐 Open InstaDrop",
+                  "🌐 Open instadrop",
                 url: WEBSITE_URL
               }
             ]
@@ -2304,7 +2282,7 @@ export default async function handler(
       .json({
         ok: true,
         message:
-          "InstaDrop Telegram bot is running."
+          "instadrop Telegram bot is running."
       });
   }
 
@@ -2418,7 +2396,7 @@ export default async function handler(
         {
           chat_id: chatId,
           text:
-            "📚 *InstaDrop Help*\n\n" +
+            "📚 *instadrop Help*\n\n" +
 
             "Just send me an Instagram link and I'll handle the rest.\n\n" +
 

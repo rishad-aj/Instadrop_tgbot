@@ -1355,8 +1355,15 @@ async function sendWelcome(
 ) {
 
   /*
-   * Telegram HTML blockquotes are used here
-   * for the three information sections.
+   * Compact HTML blockquotes.
+   *
+   * Nothing has been removed:
+   * - 6 download types
+   * - 7 profile features
+   * - 8 media details
+   *
+   * Items are grouped onto fewer lines to
+   * reduce the overall height of the message.
    */
 
   const welcomeCaption =
@@ -1366,36 +1373,24 @@ async function sendWelcome(
 
     "<blockquote>" +
     "<b>📥 What can I download?</b>\n" +
-    "• Posts\n" +
-    "• Carousels\n" +
-    "• Reels\n" +
-    "• Stories\n" +
-    "• Highlights\n" +
-    "• Profiles" +
-    "</blockquote>\n" +
+    "• Posts · • Carousels · • Reels\n" +
+    "• Stories · • Highlights · • Profiles" +
+    "</blockquote>" +
 
     "<blockquote>" +
     "<b>👤 Profile support</b>\n" +
-    "• Profile picture\n" +
-    "• Account details\n" +
-    "• Followers &amp; following\n" +
-    "• Post count\n" +
-    "• Name &amp; bio\n" +
-    "• Verification status\n" +
+    "• Profile picture · • Account details\n" +
+    "• Followers &amp; following · • Post count\n" +
+    "• Name &amp; bio · • Verification status\n" +
     "• Private account status" +
-    "</blockquote>\n" +
+    "</blockquote>" +
 
     "<blockquote>" +
     "<b>🖼️ Media details</b>\n" +
-    "• Username\n" +
-    "• Caption\n" +
-    "• Upload date\n" +
-    "• Likes\n" +
-    "• Comments\n" +
-    "• Views\n" +
-    "• Plays\n" +
-    "• Reshares" +
-    "</blockquote>\n\n" +
+    "• Username · • Caption · • Upload date\n" +
+    "• Likes · • Comments · • Views\n" +
+    "• Plays · • Reshares" +
+    "</blockquote>\n" +
 
     "<b>How to use:</b>\n" +
     "Just copy an Instagram link and send it here.\n\n" +

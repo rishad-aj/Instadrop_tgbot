@@ -1,5 +1,10 @@
 // ==================================================
-// ENVIRONMENT VARIABLES
+// INSTADROP TELEGRAM BOT
+// VERCEL SERVERLESS FUNCTION
+// ==================================================
+
+// ==================================================
+// CONFIGURATION
 // ==================================================
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -168,7 +173,6 @@ function getResponseType(data) {
       ""
   ).toLowerCase();
 
-  // Highlight
   if (
     type === "highlight" ||
     type === "highlights"
@@ -176,7 +180,6 @@ function getResponseType(data) {
     return "highlight";
   }
 
-  // Story
   if (
     type === "story" ||
     type === "stories"
@@ -184,7 +187,6 @@ function getResponseType(data) {
     return "story";
   }
 
-  // Reel
   if (
     type === "reel" ||
     type === "reels"
@@ -192,8 +194,6 @@ function getResponseType(data) {
     return "reel";
   }
 
-  // A response containing items is treated
-  // as a collection instead of a reel.
   if (Array.isArray(data.items)) {
     return "collection";
   }
@@ -218,7 +218,6 @@ function isReelResponse(data) {
       ""
   ).toLowerCase();
 
-  // NEVER classify highlights/stories as reels.
   if (
     type === "highlight" ||
     type === "highlights" ||
@@ -228,7 +227,6 @@ function isReelResponse(data) {
     return false;
   }
 
-  // Collections are not reels.
   if (Array.isArray(data.items)) {
     return false;
   }
@@ -240,7 +238,6 @@ function isReelResponse(data) {
     return true;
   }
 
-  // Current Reel API format.
   if (
     Array.isArray(data.video) &&
     data.video.some(
@@ -319,9 +316,9 @@ function getCoverFromObject(item) {
 function getReelVideo(data) {
   if (!data) return null;
 
-  // Array of videos
   if (Array.isArray(data.video)) {
     for (const item of data.video) {
+
       if (typeof item === "string") {
         if (isValidUrl(item)) {
           return item;
@@ -342,7 +339,6 @@ function getReelVideo(data) {
     }
   }
 
-  // Single video object
   if (
     data.video &&
     typeof data.video === "object"
@@ -357,7 +353,6 @@ function getReelVideo(data) {
     }
   }
 
-  // Single video string
   if (
     typeof data.video === "string" &&
     isValidUrl(data.video)
@@ -384,7 +379,6 @@ function getCoverUrl(data) {
     return data.coverUrl;
   }
 
-  // Video array
   if (Array.isArray(data.video)) {
     for (const item of data.video) {
       const cover =
@@ -396,7 +390,6 @@ function getCoverUrl(data) {
     }
   }
 
-  // Single video object
   if (
     data.video &&
     typeof data.video === "object"
@@ -425,7 +418,6 @@ function getCollectionCover(
 ) {
   if (!data) return null;
 
-  // Highlight cover
   if (
     responseType === "highlight"
   ) {
@@ -438,7 +430,6 @@ function getCollectionCover(
       : null;
   }
 
-  // Story cover
   if (
     responseType === "story"
   ) {
@@ -470,12 +461,9 @@ function extractMediaItems(data) {
     return results;
   }
 
-  // ----------------------------------------------
-  // NESTED ITEMS
-  // ----------------------------------------------
-
   if (Array.isArray(data.items)) {
     for (const item of data.items) {
+
       if (
         !item ||
         typeof item !== "object"
@@ -492,14 +480,14 @@ function extractMediaItems(data) {
     }
   }
 
-  // ----------------------------------------------
+
   // IMAGE ARRAY
-  // ----------------------------------------------
 
   if (Array.isArray(data.image)) {
     for (const image of data.image) {
-      // image: "https://..."
+
       if (typeof image === "string") {
+
         if (isValidUrl(image)) {
           results.push({
             url: image,
@@ -511,11 +499,11 @@ function extractMediaItems(data) {
         continue;
       }
 
-      // image: { url: "..." }
       if (
         image &&
         typeof image === "object"
       ) {
+
         const imageUrl =
           image.image ||
           image.url ||
@@ -524,41 +512,44 @@ function extractMediaItems(data) {
           image.src;
 
         if (isValidUrl(imageUrl)) {
+
           results.push({
             url: imageUrl,
             type: "photo",
             cover:
               getCoverFromObject(image)
           });
+
         }
       }
     }
   }
 
-  // ----------------------------------------------
-  // SINGLE IMAGE STRING
-  // ----------------------------------------------
+
+  // SINGLE IMAGE
 
   if (
     typeof data.image === "string" &&
     isValidUrl(data.image)
   ) {
+
     results.push({
       url: data.image,
       type: "photo",
       cover: getCoverUrl(data)
     });
+
   }
 
-  // ----------------------------------------------
-  // SINGLE IMAGE OBJECT
-  // ----------------------------------------------
+
+  // IMAGE OBJECT
 
   if (
     data.image &&
     typeof data.image === "object" &&
     !Array.isArray(data.image)
   ) {
+
     const imageUrl =
       data.image.image ||
       data.image.url ||
@@ -567,69 +558,80 @@ function extractMediaItems(data) {
       data.image.src;
 
     if (isValidUrl(imageUrl)) {
+
       results.push({
         url: imageUrl,
         type: "photo",
         cover:
-          getCoverFromObject(data.image)
+          getCoverFromObject(
+            data.image
+          )
       });
+
     }
   }
 
-  // ----------------------------------------------
+
   // VIDEO ARRAY
-  // ----------------------------------------------
 
   if (Array.isArray(data.video)) {
+
     for (const video of data.video) {
-      // video: "https://..."
+
       if (typeof video === "string") {
+
         if (isValidUrl(video)) {
+
           results.push({
             url: video,
             type: "video",
             cover: null
           });
+
         }
 
         continue;
       }
 
-      // video: { video: "...", cover: "..." }
+
       if (
         video &&
         typeof video === "object"
       ) {
+
         const videoUrl =
           getVideoUrlFromObject(video);
 
         if (videoUrl) {
+
           results.push({
             url: videoUrl,
             type: "video",
             cover:
               getCoverFromObject(video)
           });
+
         }
       }
     }
   }
 
-  // ----------------------------------------------
-  // SINGLE VIDEO OBJECT
-  // ----------------------------------------------
+
+  // VIDEO OBJECT
 
   if (
     data.video &&
     typeof data.video === "object" &&
     !Array.isArray(data.video)
   ) {
+
     const videoUrl =
       getVideoUrlFromObject(
         data.video
       );
 
     if (videoUrl) {
+
       results.push({
         url: videoUrl,
         type: "video",
@@ -638,23 +640,26 @@ function extractMediaItems(data) {
             data.video
           )
       });
+
     }
   }
 
-  // ----------------------------------------------
-  // SINGLE VIDEO STRING
-  // ----------------------------------------------
+
+  // VIDEO STRING
 
   if (
     typeof data.video === "string" &&
     isValidUrl(data.video)
   ) {
+
     results.push({
       url: data.video,
       type: "video",
       cover: getCoverUrl(data)
     });
+
   }
+
 
   return results;
 }
@@ -670,12 +675,14 @@ function storeMedia({
   parent = null,
   kind = "media"
 }) {
+
   cleanupStorage();
 
   const id =
     createStorageId();
 
   mediaStorage.set(id, {
+
     cover:
       isValidUrl(cover)
         ? cover
@@ -688,6 +695,7 @@ function storeMedia({
     kind,
 
     createdAt: Date.now()
+
   });
 
   return id;
@@ -702,10 +710,11 @@ function buildMediaKeyboard(
   storageId,
   hasCover
 ) {
+
   const buttons = [];
 
-
   if (hasCover) {
+
     buttons.push([
       {
         text: "🖼️ Get Cover Photo",
@@ -713,8 +722,8 @@ function buildMediaKeyboard(
           `get_cover:${storageId}`
       }
     ]);
-  }
 
+  }
 
   buttons.push([
     {
@@ -723,7 +732,6 @@ function buildMediaKeyboard(
         `get_details:${storageId}`
     }
   ]);
-
 
   return {
     inline_keyboard: buttons
@@ -739,6 +747,7 @@ function formatDetails(
   data,
   parent = null
 ) {
+
   if (
     !data ||
     typeof data !== "object"
@@ -749,32 +758,33 @@ function formatDetails(
   const lines = [];
 
 
-  // Parent highlight
   if (
     parent &&
     getResponseType(parent) ===
       "highlight"
   ) {
+
     lines.push(
       `✨ Highlight: ${
         parent.highlight_title ||
         "Untitled"
       }`
     );
+
   }
 
 
-  // Parent story
   if (
     parent &&
     getResponseType(parent) ===
       "story"
   ) {
+
     lines.push("📖 Story");
+
   }
 
 
-  // Username
   const username =
     normalizeUsername(
       data.username ||
@@ -783,70 +793,82 @@ function formatDetails(
     );
 
   if (username) {
+
     lines.push(
       `👤 Username: ${username}`
     );
+
   }
 
-  // Full name (for profile)
+
   if (data.full_name) {
+
     lines.push(
       `📛 Name: ${data.full_name}`
     );
+
   }
 
-  // Bio (for profile)
+
   if (data.bio) {
+
     lines.push("");
     lines.push("📝 Bio:");
     lines.push(
       truncate(data.bio, 1000)
     );
+
   }
 
-  // Follower count (for profile)
+
   if (
     data.follower_count !== undefined &&
     data.follower_count !== null
   ) {
+
     lines.push(
       `👥 Followers: ${data.follower_count}`
     );
+
   }
 
-  // Following count (for profile)
+
   if (
     data.following_count !== undefined &&
     data.following_count !== null
   ) {
+
     lines.push(
       `👤 Following: ${data.following_count}`
     );
+
   }
 
-  // Post count (for profile)
+
   if (
     data.post_count !== undefined &&
     data.post_count !== null
   ) {
+
     lines.push(
       `📦 Posts: ${data.post_count}`
     );
+
   }
 
-  // Verified (for profile)
+
   if (data.is_verified) {
     lines.push("✅ Verified");
   }
 
-  // Private (for profile)
+
   if (data.is_private) {
     lines.push("🔒 Private Account");
   }
 
 
-  // Caption
   if (data.caption) {
+
     lines.push("");
     lines.push("📝 Caption:");
     lines.push(
@@ -855,109 +877,113 @@ function formatDetails(
         2500
       )
     );
+
   }
 
 
-  // Taken date
   if (data.taken_at) {
+
     lines.push("");
     lines.push(
       `📅 Taken: ${data.taken_at}`
     );
+
   }
 
 
-  // Likes
   if (
-    data.like_count !==
-      undefined &&
+    data.like_count !== undefined &&
     data.like_count !== null
   ) {
+
     lines.push(
       `❤️ Likes: ${data.like_count}`
     );
+
   }
 
 
-  // Comments
   if (
-    data.comment_count !==
-      undefined &&
+    data.comment_count !== undefined &&
     data.comment_count !== null
   ) {
+
     lines.push(
       `💬 Comments: ${data.comment_count}`
     );
+
   }
 
 
-  // Views
   if (
-    data.view_count !==
-      undefined &&
+    data.view_count !== undefined &&
     data.view_count !== null &&
     Number(data.view_count) > 0
   ) {
+
     lines.push(
       `👀 Views: ${data.view_count}`
     );
+
   }
 
 
-  // Plays
   if (
-    data.play_count !==
-      undefined &&
+    data.play_count !== undefined &&
     data.play_count !== null &&
     Number(data.play_count) > 0
   ) {
+
     lines.push(
       `▶️ Plays: ${data.play_count}`
     );
+
   }
 
 
-  // Reshares
   if (
-    data.reshare_count !==
-      undefined &&
+    data.reshare_count !== undefined &&
     data.reshare_count !== null &&
     Number(data.reshare_count) > 0
   ) {
+
     lines.push(
       `🔁 Reshares: ${data.reshare_count}`
     );
+
   }
 
 
-  // Highlight item count
   if (
     parent &&
     getResponseType(parent) ===
       "highlight" &&
-    parent.count !==
-      undefined
+    parent.count !== undefined
   ) {
+
     lines.push(
       `📦 Highlight Items: ${parent.count}`
     );
+
   }
 
 
-  // Collection item count
   if (Array.isArray(data.items)) {
+
     lines.push(
       `📦 Items: ${data.items.length}`
     );
+
   }
 
 
-  // API watermark
   if (data.made_by) {
+
     lines.push("");
     lines.push(
       `⚙️ ${data.made_by}`
     );
+
   }
 
 
@@ -978,6 +1004,7 @@ async function sendMedia(
   data,
   parent = null
 ) {
+
   if (
     !media ||
     !isValidUrl(media.url)
@@ -1007,14 +1034,12 @@ async function sendMedia(
     "📥 Delivered by *instadrop*";
 
 
-  // ----------------------------------------------
-  // VIDEO
-  // ----------------------------------------------
-
   if (
     media.type === "video"
   ) {
+
     try {
+
       await telegram(
         "sendVideo",
         {
@@ -1028,15 +1053,16 @@ async function sendMedia(
       );
 
       return;
+
     } catch (error) {
+
       console.error(
         "sendVideo failed:",
         error.message
       );
 
-
-      // Fallback
       try {
+
         await telegram(
           "sendDocument",
           {
@@ -1049,21 +1075,21 @@ async function sendMedia(
         );
 
         return;
+
       } catch (fallbackError) {
+
         console.error(
           "Video document fallback failed:",
           fallbackError.message
         );
+
       }
     }
   }
 
 
-  // ----------------------------------------------
-  // PHOTO
-  // ----------------------------------------------
-
   try {
+
     await telegram(
       "sendPhoto",
       {
@@ -1074,15 +1100,17 @@ async function sendMedia(
         reply_markup: keyboard
       }
     );
+
   } catch (error) {
+
     console.error(
       "sendPhoto failed:",
       error.message
     );
 
 
-    // Fallback for formats such as WEBP/HEIC.
     try {
+
       await telegram(
         "sendDocument",
         {
@@ -1093,7 +1121,9 @@ async function sendMedia(
           reply_markup: keyboard
         }
       );
+
     } catch (fallbackError) {
+
       console.error(
         "Photo document fallback failed:",
         fallbackError.message
@@ -1123,69 +1153,66 @@ async function sendCollectionHeader(
   data,
   responseType
 ) {
+
   const lines = [];
 
-
-  // ----------------------------------------------
-  // HIGHLIGHT
-  // ----------------------------------------------
 
   if (
     responseType === "highlight"
   ) {
+
     lines.push(
       `✨ *Highlight:* ${
         data.highlight_title ||
         "Untitled"
       }`
     );
+
   }
 
-
-  // ----------------------------------------------
-  // STORY
-  // ----------------------------------------------
 
   if (
     responseType === "story"
   ) {
+
     lines.push("📖 *Story*");
+
   }
 
 
-  // Username
   const username =
     normalizeUsername(
       data.username
     );
 
   if (username) {
+
     lines.push(
       `👤 ${username}`
     );
+
   }
 
 
-  // Count
   if (
     data.count !== undefined &&
     data.count !== null
   ) {
+
     lines.push(
       `📦 *Items:* ${data.count}`
     );
+
   } else if (
     Array.isArray(data.items)
   ) {
+
     lines.push(
       `📦 *Items:* ${data.items.length}`
     );
+
   }
 
-
-  // ----------------------------------------------
-  // COLLECTION COVER
-  // ----------------------------------------------
 
   const collectionCover =
     getCollectionCover(
@@ -1198,6 +1225,7 @@ async function sendCollectionHeader(
 
 
   if (collectionCover) {
+
     const storageId =
       storeMedia({
         cover: collectionCover,
@@ -1212,8 +1240,9 @@ async function sendCollectionHeader(
         storageId,
         true
       );
+
   } else {
-    // No cover — still add a details button
+
     const storageId =
       storeMedia({
         cover: null,
@@ -1222,11 +1251,13 @@ async function sendCollectionHeader(
         kind: "collection"
       });
 
+
     replyMarkup =
       buildMediaKeyboard(
         storageId,
         false
       );
+
   }
 
 
@@ -1250,6 +1281,7 @@ async function notifyAdmin(
   chatId,
   user
 ) {
+
   const key =
     String(chatId);
 
@@ -1284,13 +1316,16 @@ async function notifyAdmin(
 
 
   if (username) {
+
     lines.push(
       `Username: ${username}`
     );
+
   }
 
 
   try {
+
     await telegram(
       "sendMessage",
       {
@@ -1299,11 +1334,14 @@ async function notifyAdmin(
         parse_mode: "Markdown"
       }
     );
+
   } catch (error) {
+
     console.error(
       "Admin notification failed:",
       error.message
     );
+
   }
 }
 
@@ -1315,29 +1353,40 @@ async function notifyAdmin(
 async function sendWelcome(
   chatId
 ) {
+
+  /*
+   * Telegram HTML blockquotes are used here
+   * for the three information sections.
+   */
+
   const welcomeCaption =
-    "🚀 *Welcome to instadrop!*\n\n" +
+    "🚀 <b>Welcome to instadrop!</b>\n\n" +
 
     "Your simple and fast Instagram downloader.\n\n" +
 
-    "*What can I download?*\n" +
-    "• \"Posts\"\n" +
-    "• \"Carousels\"\n" +
-    "• \"Reels\"\n" +
-    "• \"Stories\"\n" +
-    "• \"Highlights\"\n" +
-    "• \"Profiles\"\n\n" +
+    "<blockquote>" +
+    "<b>What can I download?</b>\n" +
+    "• Posts\n" +
+    "• Carousels\n" +
+    "• Reels\n" +
+    "• Stories\n" +
+    "• Highlights\n" +
+    "• Profiles" +
+    "</blockquote>\n" +
 
-    "*Profile support*\n" +
+    "<blockquote>" +
+    "<b>Profile support</b>\n" +
     "• Profile picture\n" +
     "• Account details\n" +
-    "• Followers & following\n" +
+    "• Followers &amp; following\n" +
     "• Post count\n" +
-    "• Name & bio\n" +
+    "• Name &amp; bio\n" +
     "• Verification status\n" +
-    "• Private account status\n\n" +
+    "• Private account status" +
+    "</blockquote>\n" +
 
-    "*Media details*\n" +
+    "<blockquote>" +
+    "<b>Media details</b>\n" +
     "• Username\n" +
     "• Caption\n" +
     "• Upload date\n" +
@@ -1345,21 +1394,28 @@ async function sendWelcome(
     "• Comments\n" +
     "• Views\n" +
     "• Plays\n" +
-    "• Reshares\n\n" +
+    "• Reshares" +
+    "</blockquote>\n\n" +
 
-    "*How to use:*\n" +
+    "<b>How to use:</b>\n" +
     "Just copy an Instagram link and send it here.\n\n" +
 
     "No complicated steps. Just send the link!";
 
+
   try {
+
     await telegram(
       "sendPhoto",
       {
         chat_id: chatId,
+
         photo: WELCOME_IMAGE,
+
         caption: welcomeCaption,
-        parse_mode: "Markdown",
+
+        parse_mode: "HTML",
+
         reply_markup: {
           inline_keyboard: [
             [
@@ -1373,7 +1429,9 @@ async function sendWelcome(
         }
       }
     );
+
   } catch (error) {
+
     console.error(
       "Welcome photo failed:",
       error.message
@@ -1384,8 +1442,11 @@ async function sendWelcome(
       "sendMessage",
       {
         chat_id: chatId,
+
         text: welcomeCaption,
-        parse_mode: "Markdown",
+
+        parse_mode: "HTML",
+
         reply_markup: {
           inline_keyboard: [
             [
@@ -1399,6 +1460,7 @@ async function sendWelcome(
         }
       }
     );
+
   }
 }
 
@@ -1410,6 +1472,7 @@ async function sendWelcome(
 async function handleCallback(
   callback
 ) {
+
   const callbackId =
     callback.id;
 
@@ -1420,8 +1483,8 @@ async function handleCallback(
     callback.data || "";
 
 
-  // Stop Telegram loading spinner.
   try {
+
     await telegram(
       "answerCallbackQuery",
       {
@@ -1429,11 +1492,14 @@ async function handleCallback(
           callbackId
       }
     );
+
   } catch (error) {
+
     console.error(
       "answerCallbackQuery failed:",
       error.message
     );
+
   }
 
 
@@ -1451,6 +1517,7 @@ async function handleCallback(
       "get_cover:"
     )
   ) {
+
     const storageId =
       callbackData.slice(
         "get_cover:".length
@@ -1470,6 +1537,7 @@ async function handleCallback(
       !stored ||
       !stored.cover
     ) {
+
       await telegram(
         "sendMessage",
         {
@@ -1486,6 +1554,7 @@ async function handleCallback(
 
 
     try {
+
       await telegram(
         "sendPhoto",
         {
@@ -1497,15 +1566,17 @@ async function handleCallback(
           parse_mode: "Markdown"
         }
       );
+
     } catch (error) {
+
       console.error(
         "Cover sendPhoto failed:",
         error.message
       );
 
 
-      // Fallback
       try {
+
         await telegram(
           "sendDocument",
           {
@@ -1517,7 +1588,9 @@ async function handleCallback(
             parse_mode: "Markdown"
           }
         );
+
       } catch (fallbackError) {
+
         console.error(
           "Cover fallback failed:",
           fallbackError.message
@@ -1534,9 +1607,9 @@ async function handleCallback(
             parse_mode: "Markdown"
           }
         );
+
       }
     }
-
 
     return;
   }
@@ -1551,6 +1624,7 @@ async function handleCallback(
       "get_details:"
     )
   ) {
+
     const storageId =
       callbackData.slice(
         "get_details:".length
@@ -1567,6 +1641,7 @@ async function handleCallback(
 
 
     if (!stored) {
+
       await telegram(
         "sendMessage",
         {
@@ -1599,7 +1674,6 @@ async function handleCallback(
       }
     );
 
-
     return;
   }
 }
@@ -1613,11 +1687,14 @@ async function deleteStatusMessage(
   chatId,
   messageId
 ) {
+
   if (!chatId || !messageId) {
     return;
   }
 
+
   try {
+
     await telegram(
       "deleteMessage",
       {
@@ -1625,11 +1702,14 @@ async function deleteStatusMessage(
         message_id: messageId
       }
     );
+
   } catch (error) {
+
     console.error(
       "Temporary status deletion failed:",
       error.message
     );
+
   }
 }
 
@@ -1642,6 +1722,7 @@ async function processInstagramUrl(
   chatId,
   instagramUrl
 ) {
+
   let statusMessageId = null;
 
 
@@ -1650,6 +1731,7 @@ async function processInstagramUrl(
   // ==================================================
 
   try {
+
     const statusResponse =
       await telegram(
         "sendMessage",
@@ -1662,15 +1744,18 @@ async function processInstagramUrl(
         }
       );
 
+
     statusMessageId =
       statusResponse?.result?.message_id ||
       null;
 
   } catch (error) {
+
     console.error(
       "Status message failed:",
       error.message
     );
+
   }
 
 
@@ -1682,6 +1767,7 @@ async function processInstagramUrl(
   // ==================================================
 
   try {
+
     response = await fetch(
       API_URL +
         encodeURIComponent(
@@ -1693,6 +1779,7 @@ async function processInstagramUrl(
         headers: {
           Accept:
             "application/json",
+
           "X-API-Key": API_KEY
         },
 
@@ -1702,7 +1789,9 @@ async function processInstagramUrl(
           )
       }
     );
+
   } catch (error) {
+
     console.error(
       "API request failed:",
       error.message
@@ -1738,9 +1827,12 @@ async function processInstagramUrl(
 
 
   try {
+
     data =
       await response.json();
+
   } catch {
+
     await deleteStatusMessage(
       chatId,
       statusMessageId
@@ -1773,16 +1865,12 @@ async function processInstagramUrl(
 
 
   if (!response.ok) {
-    console.error(
-      "API HTTP error:",
-      response.status,
-      data
-    );
 
     const errorMsg =
       data?.error ||
       data?.message ||
       "The download could not be completed.";
+
 
     await deleteStatusMessage(
       chatId,
@@ -1809,6 +1897,7 @@ async function processInstagramUrl(
     data &&
     data.p === false
   ) {
+
     const message =
       data.message ||
       data.error ||
@@ -1836,12 +1925,12 @@ async function processInstagramUrl(
   }
 
 
-  // Check for error field without p field
   if (
     data &&
     data.error &&
     !data.p
   ) {
+
     await deleteStatusMessage(
       chatId,
       statusMessageId
@@ -1867,12 +1956,6 @@ async function processInstagramUrl(
     getResponseType(data);
 
 
-  console.log(
-    "Detected response type:",
-    responseType
-  );
-
-
   // ==================================================
   // REEL
   // ==================================================
@@ -1881,11 +1964,13 @@ async function processInstagramUrl(
     responseType === "reel" ||
     isReelResponse(data)
   ) {
+
     const videoUrl =
       getReelVideo(data);
 
 
     if (!videoUrl) {
+
       await deleteStatusMessage(
         chatId,
         statusMessageId
@@ -1928,7 +2013,6 @@ async function processInstagramUrl(
       statusMessageId
     );
 
-
     return;
   }
 
@@ -1940,12 +2024,7 @@ async function processInstagramUrl(
   if (
     responseType === "highlight"
   ) {
-    console.log(
-      "Processing highlight..."
-    );
 
-
-    // Header with highlight cover button.
     await sendCollectionHeader(
       chatId,
       data,
@@ -1953,18 +2032,12 @@ async function processInstagramUrl(
     );
 
 
-    // Extract ALL nested highlight media.
     const mediaItems =
       extractMediaItems(data);
 
 
-    console.log(
-      "Highlight media count:",
-      mediaItems.length
-    );
-
-
     if (!mediaItems.length) {
+
       await deleteStatusMessage(
         chatId,
         statusMessageId
@@ -1986,46 +2059,46 @@ async function processInstagramUrl(
     }
 
 
-    // ------------------------------------------------
-    // Each highlight item has its own data.
-    // This preserves its individual cover/details.
-    // ------------------------------------------------
-
     if (
       Array.isArray(data.items) &&
       data.items.length > 0
     ) {
+
       for (
         const item of data.items
       ) {
+
         const itemMedia =
-          extractMediaItems(
-            item
-          );
+          extractMediaItems(item);
 
 
         for (
           const media of itemMedia
         ) {
+
           await sendMedia(
             chatId,
             media,
             item,
             data
           );
+
         }
       }
+
     } else {
-      // Fallback if highlight API does not use items.
+
       for (
         const media of mediaItems
       ) {
+
         await sendMedia(
           chatId,
           media,
           data,
           data
         );
+
       }
     }
 
@@ -2034,7 +2107,6 @@ async function processInstagramUrl(
       chatId,
       statusMessageId
     );
-
 
     return;
   }
@@ -2047,12 +2119,7 @@ async function processInstagramUrl(
   if (
     responseType === "story"
   ) {
-    console.log(
-      "Processing story..."
-    );
 
-
-    // Header with story cover button.
     await sendCollectionHeader(
       chatId,
       data,
@@ -2064,13 +2131,8 @@ async function processInstagramUrl(
       extractMediaItems(data);
 
 
-    console.log(
-      "Story media count:",
-      mediaItems.length
-    );
-
-
     if (!mediaItems.length) {
+
       await deleteStatusMessage(
         chatId,
         statusMessageId
@@ -2092,42 +2154,46 @@ async function processInstagramUrl(
     }
 
 
-    // Story with nested items.
     if (
       Array.isArray(data.items) &&
       data.items.length > 0
     ) {
+
       for (
         const item of data.items
       ) {
+
         const itemMedia =
-          extractMediaItems(
-            item
-          );
+          extractMediaItems(item);
 
 
         for (
           const media of itemMedia
         ) {
+
           await sendMedia(
             chatId,
             media,
             item,
             data
           );
+
         }
       }
+
     } else {
-      // Story with direct image/video fields.
+
       for (
         const media of mediaItems
       ) {
+
         await sendMedia(
           chatId,
           media,
           data,
           data
         );
+
       }
     }
 
@@ -2137,22 +2203,17 @@ async function processInstagramUrl(
       statusMessageId
     );
 
-
     return;
   }
 
 
   // ==================================================
-  // COLLECTION (fallback for items without type)
+  // COLLECTION
   // ==================================================
 
   if (
     responseType === "collection"
   ) {
-    console.log(
-      "Processing collection..."
-    );
-
 
     await sendCollectionHeader(
       chatId,
@@ -2166,6 +2227,7 @@ async function processInstagramUrl(
 
 
     if (!mediaItems.length) {
+
       await deleteStatusMessage(
         chatId,
         statusMessageId
@@ -2191,36 +2253,42 @@ async function processInstagramUrl(
       Array.isArray(data.items) &&
       data.items.length > 0
     ) {
+
       for (
         const item of data.items
       ) {
+
         const itemMedia =
-          extractMediaItems(
-            item
-          );
+          extractMediaItems(item);
 
 
         for (
           const media of itemMedia
         ) {
+
           await sendMedia(
             chatId,
             media,
             item,
             data
           );
+
         }
       }
+
     } else {
+
       for (
         const media of mediaItems
       ) {
+
         await sendMedia(
           chatId,
           media,
           data,
           null
         );
+
       }
     }
 
@@ -2229,7 +2297,6 @@ async function processInstagramUrl(
       chatId,
       statusMessageId
     );
-
 
     return;
   }
@@ -2243,13 +2310,8 @@ async function processInstagramUrl(
     extractMediaItems(data);
 
 
-  console.log(
-    "Normal media count:",
-    mediaItems.length
-  );
-
-
   if (!mediaItems.length) {
+
     await deleteStatusMessage(
       chatId,
       statusMessageId
@@ -2271,21 +2333,20 @@ async function processInstagramUrl(
   }
 
 
-  // Send all carousel/normal media.
   for (
     const media of mediaItems
   ) {
+
     await sendMedia(
       chatId,
       media,
       data,
       null
     );
+
   }
 
 
-  // Remove temporary processing message
-  // only after all media has been sent.
   await deleteStatusMessage(
     chatId,
     statusMessageId
@@ -2301,10 +2362,11 @@ export default async function handler(
   req,
   res
 ) {
-  // Health check
+
   if (
     req.method !== "POST"
   ) {
+
     return res
       .status(200)
       .json({
@@ -2312,21 +2374,24 @@ export default async function handler(
         message:
           "instadrop Telegram bot is running."
       });
+
   }
 
 
   try {
+
     const update =
       req.body || {};
 
 
     // ==================================================
-    // CALLBACK QUERY
+    // CALLBACK
     // ==================================================
 
     if (
       update.callback_query
     ) {
+
       await handleCallback(
         update.callback_query
       );
@@ -2337,6 +2402,7 @@ export default async function handler(
         .json({
           ok: true
         });
+
     }
 
 
@@ -2347,11 +2413,13 @@ export default async function handler(
     if (
       !update.message
     ) {
+
       return res
         .status(200)
         .json({
           ok: true
         });
+
     }
 
 
@@ -2364,11 +2432,13 @@ export default async function handler(
 
 
     if (!chatId) {
+
       return res
         .status(200)
         .json({
           ok: true
         });
+
     }
 
 
@@ -2388,8 +2458,7 @@ export default async function handler(
         "/start "
       )
     ) {
-      // Notify admin ONLY on the user's
-      // first /start message.
+
       await notifyAdmin(
         chatId,
         message.from
@@ -2406,6 +2475,7 @@ export default async function handler(
         .json({
           ok: true
         });
+
     }
 
 
@@ -2419,32 +2489,29 @@ export default async function handler(
         "/help "
       )
     ) {
+
       await telegram(
         "sendMessage",
         {
           chat_id: chatId,
+
           text:
             "*instadrop Help*\n\n" +
 
             "Just send me an Instagram link and I'll handle the rest.\n\n" +
 
             "*Supported content*\n" +
-            "• \"Posts\"\n" +
-            "• \"Carousels\"\n" +
-            "• \"Reels\"\n" +
-            "• \"Stories\"\n" +
-            "• \"Highlights\"\n" +
-            "• \"Profiles\"\n\n" +
-
-            "*Profile support*\n" +
-            "Profile picture and available account information are supported.\n\n" +
-
-            "*Details*\n" +
-            "Available media and account information can be viewed using the *Get Details* button.\n\n" +
+            "• Posts\n" +
+            "• Carousels\n" +
+            "• Reels\n" +
+            "• Stories\n" +
+            "• Highlights\n" +
+            "• Profiles\n\n" +
 
             "*Tip:* Copy the Instagram URL and paste it directly into this chat.\n\n" +
 
             "No extra commands are required.",
+
           parse_mode: "Markdown"
         }
       );
@@ -2455,6 +2522,7 @@ export default async function handler(
         .json({
           ok: true
         });
+
     }
 
 
@@ -2467,10 +2535,12 @@ export default async function handler(
 
 
     if (!instagramUrl) {
+
       await telegram(
         "sendMessage",
         {
           chat_id: chatId,
+
           text:
             "📎 *I need an Instagram link to get started.*\n\n" +
 
@@ -2483,6 +2553,7 @@ export default async function handler(
             "👤 Profile\n\n" +
 
             "💡 Just copy the Instagram URL and paste it here.",
+
           parse_mode: "Markdown"
         }
       );
@@ -2493,6 +2564,7 @@ export default async function handler(
         .json({
           ok: true
         });
+
     }
 
 
@@ -2511,7 +2583,9 @@ export default async function handler(
       .json({
         ok: true
       });
+
   } catch (error) {
+
     console.error(
       "Webhook error:",
       error
@@ -2519,36 +2593,43 @@ export default async function handler(
 
 
     try {
+
       const chatId =
         req.body?.message?.chat?.id;
 
 
       if (chatId) {
+
         await telegram(
           "sendMessage",
           {
             chat_id: chatId,
+
             text:
               "⚠️ *Something unexpected happened while processing your request.*\n\n" +
               "Please try the Instagram link again. If the problem continues, try again a little later.",
+
             parse_mode: "Markdown"
           }
         );
+
       }
+
     } catch (telegramError) {
+
       console.error(
         "Failed to send error message:",
         telegramError.message
       );
+
     }
 
 
-    // Always return 200 to Telegram
-    // so it doesn't repeatedly retry the webhook.
     return res
       .status(200)
       .json({
         ok: true
       });
+
   }
 }

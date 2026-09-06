@@ -1377,7 +1377,7 @@ async function sendWelcome(
     "• Stories · • Highlights · • Profiles" +
     "</blockquote>" +
 
-    "<blockquote>" +
+    "\n\n<blockquote>" +
     "<b>👤 Profile support</b>\n" +
     "• Profile picture · • Account details\n" +
     "• Followers &amp; following · • Post count\n" +
@@ -1385,7 +1385,7 @@ async function sendWelcome(
     "• Private account status" +
     "</blockquote>" +
 
-    "<blockquote>" +
+    "\n\n<blockquote>" +
     "<b>🖼️ Media details</b>\n" +
     "• Username · • Caption · • Upload date\n" +
     "• Likes · • Comments · • Views\n" +

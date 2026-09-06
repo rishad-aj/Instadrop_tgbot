@@ -1409,7 +1409,7 @@ async function sendWelcome(
     "</blockquote>\n" +
 
     "<blockquote>" +
-    "<b>🖼️ Media details</b>\n" +
+    "<b>🖼️ Media details　　　　　　　　　</b>\n" +
     "• Username  • Caption\n" +
     "• Upload date  • Likes\n" +
     "• Comments  • Views\n" +

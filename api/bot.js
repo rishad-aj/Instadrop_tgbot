@@ -1,5 +1,10 @@
-const TELEGRAM_BOT_TOKEN = "8946163976:AAGL2njGh43hQdyuM5_mDwKLmIAst-qZEVU";
-const ADMIN_CHAT_ID = "7216371031";
+// ==================================================
+// ENVIRONMENT VARIABLES
+// ==================================================
+
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+const API_KEY = process.env.API_KEY;
 
 const API_URL =
   "https://instadrop.rishu-rishad2019.workers.dev/?url=";
@@ -1687,7 +1692,8 @@ async function processInstagramUrl(
 
         headers: {
           Accept:
-            "application/json"
+            "application/json",
+          "X-API-Key": API_KEY
         },
 
         signal:

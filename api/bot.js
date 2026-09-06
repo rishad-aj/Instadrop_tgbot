@@ -1365,7 +1365,7 @@ async function sendWelcome(
     "Your simple and fast Instagram downloader.\n\n" +
 
     "<blockquote>" +
-    "<b>What can I download?</b>\n" +
+    "<b>📥 What can I download?</b>\n" +
     "• Posts\n" +
     "• Carousels\n" +
     "• Reels\n" +
@@ -1375,7 +1375,7 @@ async function sendWelcome(
     "</blockquote>\n" +
 
     "<blockquote>" +
-    "<b>Profile support</b>\n" +
+    "<b>👤 Profile support</b>\n" +
     "• Profile picture\n" +
     "• Account details\n" +
     "• Followers &amp; following\n" +
@@ -1386,7 +1386,7 @@ async function sendWelcome(
     "</blockquote>\n" +
 
     "<blockquote>" +
-    "<b>Media details</b>\n" +
+    "<b>🖼️ Media details</b>\n" +
     "• Username\n" +
     "• Caption\n" +
     "• Upload date\n" +

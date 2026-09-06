@@ -26,7 +26,6 @@ const WEBSITE_URL =
 // ==================================================
 
 const mediaStorage = new Map();
-
 const notifiedUsers = new Set();
 
 const STORAGE_TTL = 30 * 60 * 1000;
@@ -1355,43 +1354,67 @@ async function sendWelcome(
 ) {
 
   /*
-   * Compact HTML blockquotes.
+   * COMPACT TELEGRAM HTML BLOCKQUOTES
    *
-   * Nothing has been removed:
-   * - 6 download types
-   * - 7 profile features
-   * - 8 media details
+   * Nothing removed.
    *
-   * Items are grouped onto fewer lines to
-   * reduce the overall height of the message.
+   * What can I download?
+   * - Posts
+   * - Carousels
+   * - Reels
+   * - Stories
+   * - Highlights
+   * - Profiles
+   *
+   * Profile support
+   * - Profile picture
+   * - Account details
+   * - Followers & following
+   * - Post count
+   * - Name & bio
+   * - Verification status
+   * - Private account status
+   *
+   * Media details
+   * - Username
+   * - Caption
+   * - Upload date
+   * - Likes
+   * - Comments
+   * - Views
+   * - Plays
+   * - Reshares
+   *
+   * Extra blank lines have been removed
+   * to keep the quote boxes as small as
+   * Telegram allows.
    */
 
   const welcomeCaption =
-    "🚀 <b>Welcome to instadrop!</b>\n\n" +
-
+    "🚀 <b>Welcome to instadrop!</b>\n" +
     "Your simple and fast Instagram downloader.\n\n" +
 
     "<blockquote>" +
     "<b>📥 What can I download?</b>\n" +
-    "○ Posts ○ Carousels ○ Reels\n" +
-    "○ Stories ○ Highlights ○ Profiles\n\n" +
-    "</blockquote>" +
+    "• Posts  • Carousels  • Reels\n" +
+    "• Stories  • Highlights  • Profiles" +
+    "</blockquote>\n" +
 
     "<blockquote>" +
     "<b>👤 Profile support</b>\n" +
-    "○ Profile picture ○ Account details\n" +
-    "○ Followers &amp; following ○ Post count\n" +
-    "○ Name &amp; bio ○ Verification status\n" +
-    "○ Private account status\n\n" +
-    "</blockquote>" +
+    "• Profile picture  • Account details\n" +
+    "• Followers &amp; following  • Post count\n" +
+    "• Name &amp; bio  • Verification status\n" +
+    "• Private account status" +
+    "</blockquote>\n" +
 
     "<blockquote>" +
     "<b>🖼️ Media details</b>\n" +
-    "○ Username ○ Caption\n" +
-    "○ Upload date Likes \n" +
-    "○ Comments ○ Views\n" +
-    "○ Plays ○ Reshares" +
-    "</blockquote>\n" +
+    "• Username  • Caption\n" +
+    "• Upload date  • Likes\n" +
+    "• Comments  • Views\n" +
+    "• Plays  • Reshares" +
+    "</blockquote>\n\n" +
 
     "<b>How to use:</b>\n" +
     "Just copy an Instagram link and send it here.\n\n" +

@@ -102,6 +102,69 @@ function findInstagramUrl(text) {
 }
 
 
+// ==================================================
+// GENERIC LINK DETECTION
+// ==================================================
+
+function findAnyUrl(text) {
+  if (!text) return null;
+
+  const match = text.match(
+    /https?:\/\/[^\s<>"']+/i
+  );
+
+  if (!match) return null;
+
+  return match[0]
+    .trim()
+    .replace(/[)\]}>.,!?]+$/g, "");
+}
+
+
+// ==================================================
+// HEART REACTION
+// ==================================================
+
+async function reactToLink(
+  chatId,
+  messageId
+) {
+
+  if (!chatId || !messageId) {
+    return;
+  }
+
+  try {
+
+    await telegram(
+      "setMessageReaction",
+      {
+        chat_id: chatId,
+
+        message_id: messageId,
+
+        reaction: [
+          {
+            type: "emoji",
+            emoji: "❤"
+          }
+        ],
+
+        is_big: false
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Heart reaction failed:",
+      error.message
+    );
+
+  }
+}
+
+
 function normalizeUsername(username) {
   if (!username) return null;
 
@@ -2214,6 +2277,7 @@ async function processInstagramUrl(
         );
 
       }
+
     }
 
 
@@ -2465,6 +2529,23 @@ export default async function handler(
       message.text ||
       message.caption ||
       "";
+
+
+    // ==================================================
+    // ❤️ REACT TO ANY LINK
+    // ==================================================
+
+    const anyUrl =
+      findAnyUrl(text);
+
+    if (anyUrl) {
+
+      await reactToLink(
+        chatId,
+        message.message_id
+      );
+
+    }
 
 
     // ==================================================

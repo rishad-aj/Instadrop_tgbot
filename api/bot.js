@@ -1374,7 +1374,7 @@ async function sendWelcome(
     "<blockquote>" +
     "<b>📥 What can I download?</b>\n" +
     "✦ Posts ✦ Carousels ✦ Reels\n" +
-    "✦ Stories ✦ Highlights ✦ Profiles" +
+    "✦ Stories ✦ Highlights ✦ Profiles\n\n" +
     "</blockquote>" +
 
     "<blockquote>" +
@@ -1382,7 +1382,7 @@ async function sendWelcome(
     "✦ Profile picture ✦ Account details\n" +
     "✦ Followers &amp; following ✦ Post count\n" +
     "✦ Name &amp; bio ✦ Verification status\n" +
-    "✦ Private account status" +
+    "✦ Private account status\n\n" +
     "</blockquote>" +
 
     "<blockquote>" +

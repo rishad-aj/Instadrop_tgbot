@@ -123,6 +123,19 @@ const TEXT = {
   },
 
 
+  chooseLanguage: {
+    en: "🌍 Choose language",
+    ru: "🌍 Выбрать язык",
+    uz: "🌍 Tilni tanlash",
+    id: "🌍 Pilih bahasa",
+    ar: "🌍 اختر اللغة",
+    uk: "🌍 Обрати мову",
+    fa: "🌍 انتخاب زبان",
+    tr: "🌍 Dil seçin",
+    hi: "🌍 भाषा चुनें"
+  },
+
+
   // ------------------------------------------------
   // WELCOME
   // ------------------------------------------------
@@ -2515,6 +2528,33 @@ async function sendWelcome(
     );
 
 
+  const welcomeKeyboard = {
+    inline_keyboard: [
+      [
+        {
+          text:
+            t(
+              "chooseLanguage",
+              chatId
+            ),
+
+          callback_data:
+            "open_language"
+        }
+      ],
+      [
+        {
+          text:
+            "🌐 Open instadrop",
+
+          url:
+            WEBSITE_URL
+        }
+      ]
+    ]
+  };
+
+
   try {
 
     await telegram(
@@ -2532,19 +2572,8 @@ async function sendWelcome(
         parse_mode:
           "HTML",
 
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text:
-                  "🌐 Open instadrop",
-
-                url:
-                  WEBSITE_URL
-              }
-            ]
-          ]
-        }
+        reply_markup:
+          welcomeKeyboard
       }
     );
 
@@ -2568,19 +2597,8 @@ async function sendWelcome(
         parse_mode:
           "HTML",
 
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text:
-                  "🌐 Open instadrop",
-
-                url:
-                  WEBSITE_URL
-              }
-            ]
-          ]
-        }
+        reply_markup:
+          welcomeKeyboard
       }
     );
 
@@ -2696,6 +2714,36 @@ async function handleCallback(
 
   const callbackData =
     callback.data || "";
+
+
+  // ==================================================
+  // OPEN LANGUAGE MENU
+  // ==================================================
+
+  if (
+    callbackData ===
+    "open_language"
+  ) {
+
+    try {
+
+      await telegram(
+        "answerCallbackQuery",
+        {
+          callback_query_id:
+            callbackId
+        }
+      );
+
+    } catch {}
+
+
+    await sendLanguageMenu(
+      chatId
+    );
+
+    return;
+  }
 
 
   // ==================================================

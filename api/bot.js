@@ -28,7 +28,68 @@ const WEBSITE_URL =
 const mediaStorage = new Map();
 const notifiedUsers = new Set();
 
+// User language preferences.
+// NOTE: Map is temporary on Vercel and can reset after
+// a serverless cold start.
+const userLanguages = new Map();
+
 const STORAGE_TTL = 30 * 60 * 1000;
+
+
+// ==================================================
+// LANGUAGES
+// ==================================================
+
+const DEFAULT_LANGUAGE = "en";
+
+const LANGUAGES = {
+
+  en: {
+    name: "English",
+    flag: "🇬🇧"
+  },
+
+  ru: {
+    name: "Русский",
+    flag: "🇷🇺"
+  },
+
+  uz: {
+    name: "O‘zbek",
+    flag: "🇺🇿"
+  },
+
+  id: {
+    name: "Bahasa Indonesia",
+    flag: "🇮🇩"
+  },
+
+  ar: {
+    name: "العربية",
+    flag: "🇸🇦"
+  },
+
+  uk: {
+    name: "Українська",
+    flag: "🇺🇦"
+  },
+
+  fa: {
+    name: "فارسی",
+    flag: "🇮🇷"
+  },
+
+  tr: {
+    name: "Türkçe",
+    flag: "🇹🇷"
+  },
+
+  hi: {
+    name: "हिन्दी",
+    flag: "🇮🇳"
+  }
+
+};
 
 
 // ==================================================
@@ -36,33 +97,45 @@ const STORAGE_TTL = 30 * 60 * 1000;
 // ==================================================
 
 async function telegram(method, payload) {
+
   const response = await fetch(
     `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`,
     {
       method: "POST",
+
       headers: {
         "Content-Type": "application/json"
       },
+
       body: JSON.stringify(payload)
     }
   );
 
+
   let result;
 
   try {
+
     result = await response.json();
+
   } catch {
+
     throw new Error(
       `Telegram returned invalid JSON (${response.status})`
     );
+
   }
 
+
   if (!response.ok || !result.ok) {
+
     throw new Error(
       result?.description ||
-        `Telegram API error (${response.status})`
+      `Telegram API error (${response.status})`
     );
+
   }
+
 
   return result;
 }
@@ -73,23 +146,28 @@ async function telegram(method, payload) {
 // ==================================================
 
 function isValidUrl(value) {
+
   return (
     typeof value === "string" &&
     /^https?:\/\//i.test(value)
   );
+
 }
 
 
 function cleanInstagramUrl(url) {
+
   if (!url) return null;
 
   return url
     .trim()
     .replace(/[)\]}>.,!?]+$/g, "");
+
 }
 
 
 function findInstagramUrl(text) {
+
   if (!text) return null;
 
   const match = text.match(
@@ -99,6 +177,7 @@ function findInstagramUrl(text) {
   if (!match) return null;
 
   return cleanInstagramUrl(match[0]);
+
 }
 
 
@@ -107,6 +186,7 @@ function findInstagramUrl(text) {
 // ==================================================
 
 function findAnyUrl(text) {
+
   if (!text) return null;
 
   const match = text.match(
@@ -118,6 +198,7 @@ function findAnyUrl(text) {
   return match[0]
     .trim()
     .replace(/[)\]}>.,!?]+$/g, "");
+
 }
 
 
@@ -133,6 +214,7 @@ async function reactToLink(
   if (!chatId || !messageId) {
     return;
   }
+
 
   try {
 
@@ -162,60 +244,463 @@ async function reactToLink(
     );
 
   }
+
 }
 
 
+// ==================================================
+// LANGUAGE HELPERS
+// ==================================================
+
+function getUserLanguage(chatId) {
+
+  return (
+    userLanguages.get(String(chatId)) ||
+    DEFAULT_LANGUAGE
+  );
+
+}
+
+
+function setUserLanguage(
+  chatId,
+  language
+) {
+
+  if (!LANGUAGES[language]) {
+    return false;
+  }
+
+  userLanguages.set(
+    String(chatId),
+    language
+  );
+
+  return true;
+
+}
+
+
+function getLanguageName(language) {
+
+  return (
+    LANGUAGES[language]?.name ||
+    LANGUAGES[DEFAULT_LANGUAGE].name
+  );
+
+}
+
+
+// ==================================================
+// LANGUAGE MENU
+// ==================================================
+
+function buildLanguageKeyboard() {
+
+  return {
+
+    inline_keyboard: [
+
+      [
+        {
+          text: "🇬🇧 English",
+          callback_data: "language:en"
+        }
+      ],
+
+      [
+        {
+          text: "🇷🇺 Русский",
+          callback_data: "language:ru"
+        }
+      ],
+
+      [
+        {
+          text: "🇺🇿 O‘zbek",
+          callback_data: "language:uz"
+        }
+      ],
+
+      [
+        {
+          text: "🇮🇩 Bahasa Indonesia",
+          callback_data: "language:id"
+        }
+      ],
+
+      [
+        {
+          text: "🇸🇦 العربية",
+          callback_data: "language:ar"
+        }
+      ],
+
+      [
+        {
+          text: "🇺🇦 Українська",
+          callback_data: "language:uk"
+        }
+      ],
+
+      [
+        {
+          text: "🇮🇷 فارسی",
+          callback_data: "language:fa"
+        }
+      ],
+
+      [
+        {
+          text: "🇹🇷 Türkçe",
+          callback_data: "language:tr"
+        }
+      ],
+
+      [
+        {
+          text: "🇮🇳 हिन्दी",
+          callback_data: "language:hi"
+        }
+      ]
+
+    ]
+
+  };
+
+}
+
+
+async function sendLanguageMenu(
+  chatId,
+  editMessageId = null
+) {
+
+  const currentLanguage =
+    getUserLanguage(chatId);
+
+
+  const current =
+    LANGUAGES[currentLanguage] ||
+    LANGUAGES[DEFAULT_LANGUAGE];
+
+
+  const text =
+    "🌐 <b>Choose the language.</b>\n\n" +
+    "Выберите язык.\n\n" +
+    `Current: ${current.flag} <b>${current.name}</b>`;
+
+
+  const keyboard =
+    buildLanguageKeyboard();
+
+
+  // ------------------------------------------
+  // EDIT EXISTING MESSAGE
+  // ------------------------------------------
+
+  if (editMessageId) {
+
+    try {
+
+      await telegram(
+        "editMessageText",
+        {
+          chat_id: chatId,
+
+          message_id: editMessageId,
+
+          text,
+
+          parse_mode: "HTML",
+
+          reply_markup: keyboard
+        }
+      );
+
+      return;
+
+    } catch (error) {
+
+      console.error(
+        "Language menu edit failed:",
+        error.message
+      );
+
+    }
+
+  }
+
+
+  // ------------------------------------------
+  // SEND NEW MESSAGE
+  // ------------------------------------------
+
+  await telegram(
+    "sendMessage",
+    {
+      chat_id: chatId,
+
+      text,
+
+      parse_mode: "HTML",
+
+      reply_markup: keyboard
+    }
+  );
+
+}
+
+
+// ==================================================
+// LANGUAGE SELECTION
+// ==================================================
+
+async function handleLanguageSelection(
+  callback
+) {
+
+  const chatId =
+    callback.message?.chat?.id;
+
+
+  if (!chatId) {
+    return;
+  }
+
+
+  const callbackData =
+    callback.data || "";
+
+
+  const language =
+    callbackData.slice(
+      "language:".length
+    );
+
+
+  if (!LANGUAGES[language]) {
+
+    try {
+
+      await telegram(
+        "answerCallbackQuery",
+        {
+          callback_query_id: callback.id,
+
+          text: "Unknown language.",
+
+          show_alert: false
+        }
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Unknown language callback failed:",
+        error.message
+      );
+
+    }
+
+    return;
+  }
+
+
+  // Save language
+
+  setUserLanguage(
+    chatId,
+    language
+  );
+
+
+  const selected =
+    LANGUAGES[language];
+
+
+  // Answer Telegram button
+
+  try {
+
+    await telegram(
+      "answerCallbackQuery",
+      {
+        callback_query_id: callback.id,
+
+        text:
+          `${selected.flag} ${selected.name} selected`,
+
+        show_alert: false
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Language callback answer failed:",
+      error.message
+    );
+
+  }
+
+
+  // Confirmation message
+
+  const confirmation =
+    "✅ <b>Language changed</b>\n\n" +
+
+    `${selected.flag} <b>${selected.name}</b>\n\n` +
+
+    "Your language preference has been saved.";
+
+
+  try {
+
+    await telegram(
+      "editMessageText",
+      {
+        chat_id: chatId,
+
+        message_id:
+          callback.message.message_id,
+
+        text: confirmation,
+
+        parse_mode: "HTML",
+
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "🌐 Change language",
+
+                callback_data:
+                  "language_menu"
+              }
+            ]
+          ]
+        }
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Language confirmation failed:",
+      error.message
+    );
+
+  }
+
+}
+
+
+// ==================================================
+// USERNAME
+// ==================================================
+
 function normalizeUsername(username) {
+
   if (!username) return null;
 
-  const value = String(username).trim();
+  const value =
+    String(username).trim();
+
 
   if (!value) return null;
+
 
   return value.startsWith("@")
     ? value
     : `@${value}`;
+
 }
 
 
+// ==================================================
+// STORAGE ID
+// ==================================================
+
 function createStorageId() {
+
   return (
     Date.now().toString(36) +
+
     Math.random()
       .toString(36)
       .slice(2, 8)
   );
+
 }
 
 
-function truncate(text, maxLength = 3900) {
+// ==================================================
+// TEXT HELPERS
+// ==================================================
+
+function truncate(
+  text,
+  maxLength = 3900
+) {
+
   if (!text) return "";
 
-  const value = String(text);
+  const value =
+    String(text);
 
-  if (value.length <= maxLength) {
+
+  if (
+    value.length <= maxLength
+  ) {
+
     return value;
+
   }
 
+
   return (
-    value.slice(0, maxLength - 3) +
+    value.slice(
+      0,
+      maxLength - 3
+    ) +
     "..."
   );
+
 }
 
 
-function cleanupStorage() {
-  const now = Date.now();
+// ==================================================
+// CLEANUP STORAGE
+// ==================================================
 
-  for (const [id, item] of mediaStorage.entries()) {
+function cleanupStorage() {
+
+  const now =
+    Date.now();
+
+
+  for (
+    const [
+      id,
+      item
+    ]
+    of mediaStorage.entries()
+  ) {
+
     if (
       !item ||
       !item.createdAt ||
-      now - item.createdAt > STORAGE_TTL
+      now - item.createdAt >
+        STORAGE_TTL
     ) {
+
       mediaStorage.delete(id);
+
     }
+
   }
+
 }
 
 
@@ -224,43 +709,67 @@ function cleanupStorage() {
 // ==================================================
 
 function getResponseType(data) {
-  if (!data || typeof data !== "object") {
+
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
+
     return "post";
+
   }
 
-  const type = String(
-    data.type ||
+
+  const type =
+    String(
+      data.type ||
       data.media_type ||
       data.mediaType ||
       ""
-  ).toLowerCase();
+    ).toLowerCase();
+
 
   if (
     type === "highlight" ||
     type === "highlights"
   ) {
+
     return "highlight";
+
   }
+
 
   if (
     type === "story" ||
     type === "stories"
   ) {
+
     return "story";
+
   }
+
 
   if (
     type === "reel" ||
     type === "reels"
   ) {
+
     return "reel";
+
   }
 
-  if (Array.isArray(data.items)) {
+
+  if (
+    Array.isArray(data.items)
+  ) {
+
     return "collection";
+
   }
+
 
   return "post";
+
 }
 
 
@@ -269,16 +778,25 @@ function getResponseType(data) {
 // ==================================================
 
 function isReelResponse(data) {
-  if (!data || typeof data !== "object") {
+
+  if (
+    !data ||
+    typeof data !== "object"
+  ) {
+
     return false;
+
   }
 
-  const type = String(
-    data.type ||
+
+  const type =
+    String(
+      data.type ||
       data.media_type ||
       data.mediaType ||
       ""
-  ).toLowerCase();
+    ).toLowerCase();
+
 
   if (
     type === "highlight" ||
@@ -286,19 +804,30 @@ function isReelResponse(data) {
     type === "story" ||
     type === "stories"
   ) {
+
     return false;
+
   }
 
-  if (Array.isArray(data.items)) {
+
+  if (
+    Array.isArray(data.items)
+  ) {
+
     return false;
+
   }
+
 
   if (
     type === "reel" ||
     type === "reels"
   ) {
+
     return true;
+
   }
+
 
   if (
     Array.isArray(data.video) &&
@@ -312,17 +841,24 @@ function isReelResponse(data) {
         )
     )
   ) {
+
     return true;
+
   }
+
 
   if (
     typeof data.video === "string" &&
     typeof data.cover === "string"
   ) {
+
     return true;
+
   }
 
+
   return false;
+
 }
 
 
@@ -331,9 +867,16 @@ function isReelResponse(data) {
 // ==================================================
 
 function getVideoUrlFromObject(item) {
-  if (!item || typeof item !== "object") {
+
+  if (
+    !item ||
+    typeof item !== "object"
+  ) {
+
     return null;
+
   }
+
 
   const url =
     item.video ||
@@ -346,16 +889,25 @@ function getVideoUrlFromObject(item) {
     item.videoUrl ||
     item.src;
 
+
   return isValidUrl(url)
     ? url
     : null;
+
 }
 
 
 function getCoverFromObject(item) {
-  if (!item || typeof item !== "object") {
+
+  if (
+    !item ||
+    typeof item !== "object"
+  ) {
+
     return null;
+
   }
+
 
   const cover =
     item.cover ||
@@ -369,104 +921,182 @@ function getCoverFromObject(item) {
     item.poster_url ||
     item.posterUrl;
 
+
   return isValidUrl(cover)
     ? cover
     : null;
+
 }
 
 
 function getReelVideo(data) {
+
   if (!data) return null;
 
-  if (Array.isArray(data.video)) {
-    for (const item of data.video) {
 
-      if (typeof item === "string") {
-        if (isValidUrl(item)) {
+  if (
+    Array.isArray(data.video)
+  ) {
+
+    for (
+      const item
+      of data.video
+    ) {
+
+      if (
+        typeof item === "string"
+      ) {
+
+        if (
+          isValidUrl(item)
+        ) {
+
           return item;
+
         }
+
       }
+
 
       if (
         item &&
         typeof item === "object"
       ) {
+
         const url =
-          getVideoUrlFromObject(item);
+          getVideoUrlFromObject(
+            item
+          );
+
 
         if (url) {
+
           return url;
+
         }
+
       }
+
     }
+
   }
+
 
   if (
     data.video &&
     typeof data.video === "object"
   ) {
+
     const url =
       getVideoUrlFromObject(
         data.video
       );
 
+
     if (url) {
+
       return url;
+
     }
+
   }
+
 
   if (
     typeof data.video === "string" &&
     isValidUrl(data.video)
   ) {
+
     return data.video;
+
   }
 
+
   return null;
+
 }
 
 
 function getCoverUrl(data) {
+
   if (!data) return null;
 
-  if (isValidUrl(data.cover)) {
+
+  if (
+    isValidUrl(data.cover)
+  ) {
+
     return data.cover;
+
   }
 
-  if (isValidUrl(data.cover_url)) {
+
+  if (
+    isValidUrl(data.cover_url)
+  ) {
+
     return data.cover_url;
+
   }
 
-  if (isValidUrl(data.coverUrl)) {
+
+  if (
+    isValidUrl(data.coverUrl)
+  ) {
+
     return data.coverUrl;
+
   }
 
-  if (Array.isArray(data.video)) {
-    for (const item of data.video) {
+
+  if (
+    Array.isArray(data.video)
+  ) {
+
+    for (
+      const item
+      of data.video
+    ) {
+
       const cover =
-        getCoverFromObject(item);
+        getCoverFromObject(
+          item
+        );
+
 
       if (cover) {
+
         return cover;
+
       }
+
     }
+
   }
+
 
   if (
     data.video &&
     typeof data.video === "object"
   ) {
+
     const cover =
       getCoverFromObject(
         data.video
       );
 
+
     if (cover) {
+
       return cover;
+
     }
+
   }
 
+
   return null;
+
 }
 
 
@@ -478,34 +1108,45 @@ function getCollectionCover(
   data,
   responseType
 ) {
+
   if (!data) return null;
+
 
   if (
     responseType === "highlight"
   ) {
+
     const cover =
       data.highlight_cover ||
       data.highlightCover;
 
+
     return isValidUrl(cover)
       ? cover
       : null;
+
   }
+
 
   if (
     responseType === "story"
   ) {
+
     const cover =
       data.story_cover ||
       data.storyCover ||
       data.cover;
 
+
     return isValidUrl(cover)
       ? cover
       : null;
+
   }
 
+
   return null;
+
 }
 
 
@@ -514,52 +1155,90 @@ function getCollectionCover(
 // ==================================================
 
 function extractMediaItems(data) {
+
   const results = [];
+
 
   if (
     !data ||
     typeof data !== "object"
   ) {
+
     return results;
+
   }
 
-  if (Array.isArray(data.items)) {
-    for (const item of data.items) {
+
+  if (
+    Array.isArray(data.items)
+  ) {
+
+    for (
+      const item
+      of data.items
+    ) {
 
       if (
         !item ||
         typeof item !== "object"
       ) {
+
         continue;
+
       }
+
 
       const nested =
-        extractMediaItems(item);
+        extractMediaItems(
+          item
+        );
 
-      for (const media of nested) {
+
+      for (
+        const media
+        of nested
+      ) {
+
         results.push(media);
+
       }
+
     }
+
   }
 
 
   // IMAGE ARRAY
 
-  if (Array.isArray(data.image)) {
-    for (const image of data.image) {
+  if (
+    Array.isArray(data.image)
+  ) {
 
-      if (typeof image === "string") {
+    for (
+      const image
+      of data.image
+    ) {
 
-        if (isValidUrl(image)) {
+      if (
+        typeof image === "string"
+      ) {
+
+        if (
+          isValidUrl(image)
+        ) {
+
           results.push({
             url: image,
             type: "photo",
             cover: null
           });
+
         }
 
         continue;
+
       }
+
 
       if (
         image &&
@@ -573,18 +1252,26 @@ function extractMediaItems(data) {
           image.mediaUrl ||
           image.src;
 
-        if (isValidUrl(imageUrl)) {
+
+        if (
+          isValidUrl(imageUrl)
+        ) {
 
           results.push({
             url: imageUrl,
             type: "photo",
             cover:
-              getCoverFromObject(image)
+              getCoverFromObject(
+                image
+              )
           });
 
         }
+
       }
+
     }
+
   }
 
 
@@ -619,7 +1306,10 @@ function extractMediaItems(data) {
       data.image.mediaUrl ||
       data.image.src;
 
-    if (isValidUrl(imageUrl)) {
+
+    if (
+      isValidUrl(imageUrl)
+    ) {
 
       results.push({
         url: imageUrl,
@@ -631,18 +1321,28 @@ function extractMediaItems(data) {
       });
 
     }
+
   }
 
 
   // VIDEO ARRAY
 
-  if (Array.isArray(data.video)) {
+  if (
+    Array.isArray(data.video)
+  ) {
 
-    for (const video of data.video) {
+    for (
+      const video
+      of data.video
+    ) {
 
-      if (typeof video === "string") {
+      if (
+        typeof video === "string"
+      ) {
 
-        if (isValidUrl(video)) {
+        if (
+          isValidUrl(video)
+        ) {
 
           results.push({
             url: video,
@@ -653,6 +1353,7 @@ function extractMediaItems(data) {
         }
 
         continue;
+
       }
 
 
@@ -662,7 +1363,10 @@ function extractMediaItems(data) {
       ) {
 
         const videoUrl =
-          getVideoUrlFromObject(video);
+          getVideoUrlFromObject(
+            video
+          );
+
 
         if (videoUrl) {
 
@@ -670,12 +1374,17 @@ function extractMediaItems(data) {
             url: videoUrl,
             type: "video",
             cover:
-              getCoverFromObject(video)
+              getCoverFromObject(
+                video
+              )
           });
 
         }
+
       }
+
     }
+
   }
 
 
@@ -692,6 +1401,7 @@ function extractMediaItems(data) {
         data.video
       );
 
+
     if (videoUrl) {
 
       results.push({
@@ -704,6 +1414,7 @@ function extractMediaItems(data) {
       });
 
     }
+
   }
 
 
@@ -724,6 +1435,7 @@ function extractMediaItems(data) {
 
 
   return results;
+
 }
 
 
@@ -740,27 +1452,35 @@ function storeMedia({
 
   cleanupStorage();
 
+
   const id =
     createStorageId();
 
-  mediaStorage.set(id, {
 
-    cover:
-      isValidUrl(cover)
-        ? cover
-        : null,
+  mediaStorage.set(
+    id,
+    {
 
-    data,
+      cover:
+        isValidUrl(cover)
+          ? cover
+          : null,
 
-    parent,
+      data,
 
-    kind,
+      parent,
 
-    createdAt: Date.now()
+      kind,
 
-  });
+      createdAt:
+        Date.now()
+
+    }
+  );
+
 
   return id;
+
 }
 
 
@@ -775,11 +1495,14 @@ function buildMediaKeyboard(
 
   const buttons = [];
 
+
   if (hasCover) {
 
     buttons.push([
       {
-        text: "🖼️ Get Cover Photo",
+        text:
+          "🖼️ Get Cover Photo",
+
         callback_data:
           `get_cover:${storageId}`
       }
@@ -787,17 +1510,22 @@ function buildMediaKeyboard(
 
   }
 
+
   buttons.push([
     {
-      text: "📋 Get Details",
+      text:
+        "📋 Get Details",
+
       callback_data:
         `get_details:${storageId}`
     }
   ]);
 
+
   return {
     inline_keyboard: buttons
   };
+
 }
 
 
@@ -814,8 +1542,13 @@ function formatDetails(
     !data ||
     typeof data !== "object"
   ) {
-    return "ℹ️ No additional details are available for this media.";
+
+    return (
+      "ℹ️ No additional details are available for this media."
+    );
+
   }
+
 
   const lines = [];
 
@@ -842,7 +1575,9 @@ function formatDetails(
       "story"
   ) {
 
-    lines.push("📖 Story");
+    lines.push(
+      "📖 Story"
+    );
 
   }
 
@@ -850,9 +1585,10 @@ function formatDetails(
   const username =
     normalizeUsername(
       data.username ||
-        data.user ||
-        data.author
+      data.user ||
+      data.author
     );
+
 
   if (username) {
 
@@ -875,9 +1611,16 @@ function formatDetails(
   if (data.bio) {
 
     lines.push("");
-    lines.push("📝 Bio:");
+
     lines.push(
-      truncate(data.bio, 1000)
+      "📝 Bio:"
+    );
+
+    lines.push(
+      truncate(
+        data.bio,
+        1000
+      )
     );
 
   }
@@ -920,19 +1663,31 @@ function formatDetails(
 
 
   if (data.is_verified) {
-    lines.push("✅ Verified");
+
+    lines.push(
+      "✅ Verified"
+    );
+
   }
 
 
   if (data.is_private) {
-    lines.push("🔒 Private Account");
+
+    lines.push(
+      "🔒 Private Account"
+    );
+
   }
 
 
   if (data.caption) {
 
     lines.push("");
-    lines.push("📝 Caption:");
+
+    lines.push(
+      "📝 Caption:"
+    );
+
     lines.push(
       truncate(
         data.caption,
@@ -946,6 +1701,7 @@ function formatDetails(
   if (data.taken_at) {
 
     lines.push("");
+
     lines.push(
       `📅 Taken: ${data.taken_at}`
     );
@@ -1030,7 +1786,9 @@ function formatDetails(
   }
 
 
-  if (Array.isArray(data.items)) {
+  if (
+    Array.isArray(data.items)
+  ) {
 
     lines.push(
       `📦 Items: ${data.items.length}`
@@ -1042,6 +1800,7 @@ function formatDetails(
   if (data.made_by) {
 
     lines.push("");
+
     lines.push(
       `⚙️ ${data.made_by}`
     );
@@ -1053,6 +1812,7 @@ function formatDetails(
     lines.join("\n"),
     3900
   );
+
 }
 
 
@@ -1071,7 +1831,9 @@ async function sendMedia(
     !media ||
     !isValidUrl(media.url)
   ) {
+
     return;
+
   }
 
 
@@ -1106,13 +1868,19 @@ async function sendMedia(
         "sendVideo",
         {
           chat_id: chatId,
+
           video: media.url,
+
           caption,
+
           parse_mode: "Markdown",
+
           supports_streaming: true,
+
           reply_markup: keyboard
         }
       );
+
 
       return;
 
@@ -1123,18 +1891,24 @@ async function sendMedia(
         error.message
       );
 
+
       try {
 
         await telegram(
           "sendDocument",
           {
             chat_id: chatId,
+
             document: media.url,
+
             caption,
+
             parse_mode: "Markdown",
+
             reply_markup: keyboard
           }
         );
+
 
         return;
 
@@ -1146,7 +1920,9 @@ async function sendMedia(
         );
 
       }
+
     }
+
   }
 
 
@@ -1156,12 +1932,17 @@ async function sendMedia(
       "sendPhoto",
       {
         chat_id: chatId,
+
         photo: media.url,
+
         caption,
+
         parse_mode: "Markdown",
+
         reply_markup: keyboard
       }
     );
+
 
   } catch (error) {
 
@@ -1177,12 +1958,17 @@ async function sendMedia(
         "sendDocument",
         {
           chat_id: chatId,
+
           document: media.url,
+
           caption,
+
           parse_mode: "Markdown",
+
           reply_markup: keyboard
         }
       );
+
 
     } catch (fallbackError) {
 
@@ -1191,18 +1977,24 @@ async function sendMedia(
         fallbackError.message
       );
 
+
       await telegram(
         "sendMessage",
         {
           chat_id: chatId,
+
           text:
             "⚠️ *Media found, but Telegram couldn't deliver it.*\n\n" +
             "Please try sending the Instagram link again.",
+
           parse_mode: "Markdown"
         }
       );
+
     }
+
   }
+
 }
 
 
@@ -1237,7 +2029,9 @@ async function sendCollectionHeader(
     responseType === "story"
   ) {
 
-    lines.push("📖 *Story*");
+    lines.push(
+      "📖 *Story*"
+    );
 
   }
 
@@ -1246,6 +2040,7 @@ async function sendCollectionHeader(
     normalizeUsername(
       data.username
     );
+
 
   if (username) {
 
@@ -1327,11 +2122,17 @@ async function sendCollectionHeader(
     "sendMessage",
     {
       chat_id: chatId,
-      text: lines.join("\n"),
+
+      text:
+        lines.join("\n"),
+
       parse_mode: "Markdown",
-      reply_markup: replyMarkup
+
+      reply_markup:
+        replyMarkup
     }
   );
+
 }
 
 
@@ -1351,7 +2152,9 @@ async function notifyAdmin(
   if (
     notifiedUsers.has(key)
   ) {
+
     return;
+
   }
 
 
@@ -1370,10 +2173,15 @@ async function notifyAdmin(
 
 
   const lines = [
+
     "👤 *New instadrop user*",
+
     "",
+
     `Chat ID: ${chatId}`,
+
     `Name: ${firstName}`
+
   ];
 
 
@@ -1391,9 +2199,14 @@ async function notifyAdmin(
     await telegram(
       "sendMessage",
       {
-        chat_id: ADMIN_CHAT_ID,
-        text: lines.join("\n"),
-        parse_mode: "Markdown"
+        chat_id:
+          ADMIN_CHAT_ID,
+
+        text:
+          lines.join("\n"),
+
+        parse_mode:
+          "Markdown"
       }
     );
 
@@ -1405,6 +2218,7 @@ async function notifyAdmin(
     );
 
   }
+
 }
 
 
@@ -1416,44 +2230,8 @@ async function sendWelcome(
   chatId
 ) {
 
-  /*
-   * COMPACT TELEGRAM HTML BLOCKQUOTES
-   *
-   * Nothing removed.
-   *
-   * What can I download?
-   * - Posts
-   * - Carousels
-   * - Reels
-   * - Stories
-   * - Highlights
-   * - Profiles
-   *
-   * Profile support
-   * - Profile picture
-   * - Account details
-   * - Followers & following
-   * - Post count
-   * - Name & bio
-   * - Verification status
-   * - Private account status
-   *
-   * Media details
-   * - Username
-   * - Caption
-   * - Upload date
-   * - Likes
-   * - Comments
-   * - Views
-   * - Plays
-   * - Reshares
-   *
-   * Extra blank lines have been removed
-   * to keep the quote boxes as small as
-   * Telegram allows.
-   */
-
   const welcomeCaption =
+
     "🚀 <b>Welcome to instadrop!</b>\n" +
     "Your simple and fast Instagram downloader.\n\n" +
 
@@ -1492,25 +2270,46 @@ async function sendWelcome(
       {
         chat_id: chatId,
 
-        photo: WELCOME_IMAGE,
+        photo:
+          WELCOME_IMAGE,
 
-        caption: welcomeCaption,
+        caption:
+          welcomeCaption,
 
-        parse_mode: "HTML",
+        parse_mode:
+          "HTML",
 
         reply_markup: {
+
           inline_keyboard: [
+
             [
               {
                 text:
                   "🌐 Open instadrop",
-                url: WEBSITE_URL
+
+                url:
+                  WEBSITE_URL
+              }
+            ],
+
+            [
+              {
+                text:
+                  "🌐 Language",
+
+                callback_data:
+                  "language_menu"
               }
             ]
+
           ]
+
         }
+
       }
     );
+
 
   } catch (error) {
 
@@ -1525,25 +2324,45 @@ async function sendWelcome(
       {
         chat_id: chatId,
 
-        text: welcomeCaption,
+        text:
+          welcomeCaption,
 
-        parse_mode: "HTML",
+        parse_mode:
+          "HTML",
 
         reply_markup: {
+
           inline_keyboard: [
+
             [
               {
                 text:
                   "🌐 Open instadrop",
-                url: WEBSITE_URL
+
+                url:
+                  WEBSITE_URL
+              }
+            ],
+
+            [
+              {
+                text:
+                  "🌐 Language",
+
+                callback_data:
+                  "language_menu"
               }
             ]
+
           ]
+
         }
+
       }
     );
 
   }
+
 }
 
 
@@ -1558,12 +2377,18 @@ async function handleCallback(
   const callbackId =
     callback.id;
 
+
   const chatId =
     callback.message?.chat?.id;
+
 
   const callbackData =
     callback.data || "";
 
+
+  // ==================================================
+  // ANSWER CALLBACK
+  // ==================================================
 
   try {
 
@@ -1586,7 +2411,47 @@ async function handleCallback(
 
 
   if (!chatId) {
+
     return;
+
+  }
+
+
+  // ==================================================
+  // LANGUAGE MENU
+  // ==================================================
+
+  if (
+    callbackData ===
+    "language_menu"
+  ) {
+
+    await sendLanguageMenu(
+      chatId,
+      callback.message?.message_id
+    );
+
+    return;
+
+  }
+
+
+  // ==================================================
+  // LANGUAGE SELECTION
+  // ==================================================
+
+  if (
+    callbackData.startsWith(
+      "language:"
+    )
+  ) {
+
+    await handleLanguageSelection(
+      callback
+    );
+
+    return;
+
   }
 
 
@@ -1624,14 +2489,19 @@ async function handleCallback(
         "sendMessage",
         {
           chat_id: chatId,
+
           text:
             "⏰ *Sorry, this cover has expired.*\n\n" +
             "Please send the Instagram link again to generate a fresh copy.",
-          parse_mode: "Markdown"
+
+          parse_mode:
+            "Markdown"
         }
       );
 
+
       return;
+
     }
 
 
@@ -1641,13 +2511,19 @@ async function handleCallback(
         "sendPhoto",
         {
           chat_id: chatId,
-          photo: stored.cover,
+
+          photo:
+            stored.cover,
+
           caption:
             "🖼️ *Cover Photo*\n\n" +
             "✨ Here is the cover image you requested.",
-          parse_mode: "Markdown"
+
+          parse_mode:
+            "Markdown"
         }
       );
+
 
     } catch (error) {
 
@@ -1663,13 +2539,19 @@ async function handleCallback(
           "sendDocument",
           {
             chat_id: chatId,
-            document: stored.cover,
+
+            document:
+              stored.cover,
+
             caption:
               "🖼️ *Cover Photo*\n\n" +
               "✨ Here is the cover image you requested.",
-            parse_mode: "Markdown"
+
+            parse_mode:
+              "Markdown"
           }
         );
+
 
       } catch (fallbackError) {
 
@@ -1683,17 +2565,22 @@ async function handleCallback(
           "sendMessage",
           {
             chat_id: chatId,
+
             text:
               "❌ *I couldn't send the cover image right now.*\n\n" +
               "Please try again.",
-            parse_mode: "Markdown"
+
+            parse_mode:
+              "Markdown"
           }
         );
 
       }
+
     }
 
     return;
+
   }
 
 
@@ -1728,14 +2615,19 @@ async function handleCallback(
         "sendMessage",
         {
           chat_id: chatId,
+
           text:
             "⏰ *Sorry, these details have expired.*\n\n" +
             "Please send the Instagram link again to get fresh information.",
-          parse_mode: "Markdown"
+
+          parse_mode:
+            "Markdown"
         }
       );
 
+
       return;
+
     }
 
 
@@ -1750,14 +2642,20 @@ async function handleCallback(
       "sendMessage",
       {
         chat_id: chatId,
+
         text:
           `📋 *Media Details*\n\n${details}`,
-        parse_mode: "Markdown"
+
+        parse_mode:
+          "Markdown"
       }
     );
 
+
     return;
+
   }
+
 }
 
 
@@ -1770,8 +2668,13 @@ async function deleteStatusMessage(
   messageId
 ) {
 
-  if (!chatId || !messageId) {
+  if (
+    !chatId ||
+    !messageId
+  ) {
+
     return;
+
   }
 
 
@@ -1781,9 +2684,12 @@ async function deleteStatusMessage(
       "deleteMessage",
       {
         chat_id: chatId,
-        message_id: messageId
+
+        message_id:
+          messageId
       }
     );
+
 
   } catch (error) {
 
@@ -1793,6 +2699,7 @@ async function deleteStatusMessage(
     );
 
   }
+
 }
 
 
@@ -1805,7 +2712,8 @@ async function processInstagramUrl(
   instagramUrl
 ) {
 
-  let statusMessageId = null;
+  let statusMessageId =
+    null;
 
 
   // ==================================================
@@ -1819,10 +2727,13 @@ async function processInstagramUrl(
         "sendMessage",
         {
           chat_id: chatId,
+
           text:
             "⏳ *Working on it...*\n\n" +
             "🔎 Reading the Instagram link and preparing your media.",
-          parse_mode: "Markdown"
+
+          parse_mode:
+            "Markdown"
         }
       );
 
@@ -1830,6 +2741,7 @@ async function processInstagramUrl(
     statusMessageId =
       statusResponse?.result?.message_id ||
       null;
+
 
   } catch (error) {
 
@@ -1850,27 +2762,34 @@ async function processInstagramUrl(
 
   try {
 
-    response = await fetch(
-      API_URL +
-        encodeURIComponent(
-          instagramUrl
-        ),
-      {
-        method: "GET",
+    response =
+      await fetch(
+        API_URL +
+          encodeURIComponent(
+            instagramUrl
+          ),
+        {
+          method:
+            "GET",
 
-        headers: {
-          Accept:
-            "application/json",
+          headers: {
 
-          "X-API-Key": API_KEY
-        },
+            Accept:
+              "application/json",
 
-        signal:
-          AbortSignal.timeout(
-            60000
-          )
-      }
-    );
+            "X-API-Key":
+              API_KEY
+
+          },
+
+          signal:
+            AbortSignal.timeout(
+              60000
+            )
+
+        }
+      );
+
 
   } catch (error) {
 
@@ -1890,14 +2809,19 @@ async function processInstagramUrl(
       "sendMessage",
       {
         chat_id: chatId,
+
         text:
           "❌ *I couldn't reach the download service.*\n\n" +
           "Please check the Instagram link and try again in a moment.",
-        parse_mode: "Markdown"
+
+        parse_mode:
+          "Markdown"
       }
     );
 
+
     return;
+
   }
 
 
@@ -1925,14 +2849,19 @@ async function processInstagramUrl(
       "sendMessage",
       {
         chat_id: chatId,
+
         text:
           "⚠️ *The download service returned an unexpected response.*\n\n" +
           "Please try the Instagram link again.",
-        parse_mode: "Markdown"
+
+        parse_mode:
+          "Markdown"
       }
     );
 
+
     return;
+
   }
 
 
@@ -1942,7 +2871,10 @@ async function processInstagramUrl(
       data,
       null,
       2
-    ).slice(0, 2000)
+    ).slice(
+      0,
+      2000
+    )
   );
 
 
@@ -1964,14 +2896,19 @@ async function processInstagramUrl(
       "sendMessage",
       {
         chat_id: chatId,
+
         text:
           `❌ *${errorMsg}*\n\n` +
           "Please try again with a valid Instagram link.",
-        parse_mode: "Markdown"
+
+        parse_mode:
+          "Markdown"
       }
     );
 
+
     return;
+
   }
 
 
@@ -1996,14 +2933,19 @@ async function processInstagramUrl(
       "sendMessage",
       {
         chat_id: chatId,
+
         text:
           `❌ *${message}*\n\n` +
           "💡 Make sure the content is available and the link is correct.",
-        parse_mode: "Markdown"
+
+        parse_mode:
+          "Markdown"
       }
     );
 
+
     return;
+
   }
 
 
@@ -2023,14 +2965,19 @@ async function processInstagramUrl(
       "sendMessage",
       {
         chat_id: chatId,
+
         text:
           `❌ *${data.error}*\n\n` +
           "Please try another Instagram link.",
-        parse_mode: "Markdown"
+
+        parse_mode:
+          "Markdown"
       }
     );
 
+
     return;
+
   }
 
 
@@ -2063,14 +3010,19 @@ async function processInstagramUrl(
         "sendMessage",
         {
           chat_id: chatId,
+
           text:
             "❌ *I couldn't find a downloadable video in this reel.*\n\n" +
             "Please try the reel link again.",
-          parse_mode: "Markdown"
+
+          parse_mode:
+            "Markdown"
         }
       );
 
+
       return;
+
     }
 
 
@@ -2080,12 +3032,19 @@ async function processInstagramUrl(
 
     await sendMedia(
       chatId,
+
       {
-        url: videoUrl,
-        type: "video",
+        url:
+          videoUrl,
+
+        type:
+          "video",
+
         cover
       },
+
       data,
+
       null
     );
 
@@ -2095,7 +3054,9 @@ async function processInstagramUrl(
       statusMessageId
     );
 
+
     return;
+
   }
 
 
@@ -2115,10 +3076,14 @@ async function processInstagramUrl(
 
 
     const mediaItems =
-      extractMediaItems(data);
+      extractMediaItems(
+        data
+      );
 
 
-    if (!mediaItems.length) {
+    if (
+      !mediaItems.length
+    ) {
 
       await deleteStatusMessage(
         chatId,
@@ -2130,32 +3095,43 @@ async function processInstagramUrl(
         "sendMessage",
         {
           chat_id: chatId,
+
           text:
             "❌ *This highlight doesn't contain any downloadable media.*\n\n" +
             "Please try another highlight.",
-          parse_mode: "Markdown"
+
+          parse_mode:
+            "Markdown"
         }
       );
 
+
       return;
+
     }
 
 
     if (
-      Array.isArray(data.items) &&
+      Array.isArray(
+        data.items
+      ) &&
       data.items.length > 0
     ) {
 
       for (
-        const item of data.items
+        const item
+        of data.items
       ) {
 
         const itemMedia =
-          extractMediaItems(item);
+          extractMediaItems(
+            item
+          );
 
 
         for (
-          const media of itemMedia
+          const media
+          of itemMedia
         ) {
 
           await sendMedia(
@@ -2166,12 +3142,14 @@ async function processInstagramUrl(
           );
 
         }
+
       }
 
     } else {
 
       for (
-        const media of mediaItems
+        const media
+        of mediaItems
       ) {
 
         await sendMedia(
@@ -2182,6 +3160,7 @@ async function processInstagramUrl(
         );
 
       }
+
     }
 
 
@@ -2190,7 +3169,9 @@ async function processInstagramUrl(
       statusMessageId
     );
 
+
     return;
+
   }
 
 
@@ -2210,10 +3191,14 @@ async function processInstagramUrl(
 
 
     const mediaItems =
-      extractMediaItems(data);
+      extractMediaItems(
+        data
+      );
 
 
-    if (!mediaItems.length) {
+    if (
+      !mediaItems.length
+    ) {
 
       await deleteStatusMessage(
         chatId,
@@ -2225,32 +3210,43 @@ async function processInstagramUrl(
         "sendMessage",
         {
           chat_id: chatId,
+
           text:
             "❌ *I couldn't find any downloadable media in this story.*\n\n" +
             "Please try the story link again.",
-          parse_mode: "Markdown"
+
+          parse_mode:
+            "Markdown"
         }
       );
 
+
       return;
+
     }
 
 
     if (
-      Array.isArray(data.items) &&
+      Array.isArray(
+        data.items
+      ) &&
       data.items.length > 0
     ) {
 
       for (
-        const item of data.items
+        const item
+        of data.items
       ) {
 
         const itemMedia =
-          extractMediaItems(item);
+          extractMediaItems(
+            item
+          );
 
 
         for (
-          const media of itemMedia
+          const media
+          of itemMedia
         ) {
 
           await sendMedia(
@@ -2261,12 +3257,14 @@ async function processInstagramUrl(
           );
 
         }
+
       }
 
     } else {
 
       for (
-        const media of mediaItems
+        const media
+        of mediaItems
       ) {
 
         await sendMedia(
@@ -2286,7 +3284,9 @@ async function processInstagramUrl(
       statusMessageId
     );
 
+
     return;
+
   }
 
 
@@ -2306,10 +3306,14 @@ async function processInstagramUrl(
 
 
     const mediaItems =
-      extractMediaItems(data);
+      extractMediaItems(
+        data
+      );
 
 
-    if (!mediaItems.length) {
+    if (
+      !mediaItems.length
+    ) {
 
       await deleteStatusMessage(
         chatId,
@@ -2321,32 +3325,43 @@ async function processInstagramUrl(
         "sendMessage",
         {
           chat_id: chatId,
+
           text:
             "❌ *This collection doesn't contain any downloadable media.*\n\n" +
             "Please try another Instagram link.",
-          parse_mode: "Markdown"
+
+          parse_mode:
+            "Markdown"
         }
       );
 
+
       return;
+
     }
 
 
     if (
-      Array.isArray(data.items) &&
+      Array.isArray(
+        data.items
+      ) &&
       data.items.length > 0
     ) {
 
       for (
-        const item of data.items
+        const item
+        of data.items
       ) {
 
         const itemMedia =
-          extractMediaItems(item);
+          extractMediaItems(
+            item
+          );
 
 
         for (
-          const media of itemMedia
+          const media
+          of itemMedia
         ) {
 
           await sendMedia(
@@ -2357,12 +3372,14 @@ async function processInstagramUrl(
           );
 
         }
+
       }
 
     } else {
 
       for (
-        const media of mediaItems
+        const media
+        of mediaItems
       ) {
 
         await sendMedia(
@@ -2373,6 +3390,7 @@ async function processInstagramUrl(
         );
 
       }
+
     }
 
 
@@ -2381,7 +3399,9 @@ async function processInstagramUrl(
       statusMessageId
     );
 
+
     return;
+
   }
 
 
@@ -2390,10 +3410,14 @@ async function processInstagramUrl(
   // ==================================================
 
   const mediaItems =
-    extractMediaItems(data);
+    extractMediaItems(
+      data
+    );
 
 
-  if (!mediaItems.length) {
+  if (
+    !mediaItems.length
+  ) {
 
     await deleteStatusMessage(
       chatId,
@@ -2405,19 +3429,25 @@ async function processInstagramUrl(
       "sendMessage",
       {
         chat_id: chatId,
+
         text:
           "❌ *I couldn't find any downloadable media in that Instagram post.*\n\n" +
           "Please check the link and try again.",
-        parse_mode: "Markdown"
+
+        parse_mode:
+          "Markdown"
       }
     );
 
+
     return;
+
   }
 
 
   for (
-    const media of mediaItems
+    const media
+    of mediaItems
   ) {
 
     await sendMedia(
@@ -2434,6 +3464,7 @@ async function processInstagramUrl(
     chatId,
     statusMessageId
   );
+
 }
 
 
@@ -2446,6 +3477,10 @@ export default async function handler(
   res
 ) {
 
+  // ==================================================
+  // HEALTH CHECK
+  // ==================================================
+
   if (
     req.method !== "POST"
   ) {
@@ -2453,9 +3488,12 @@ export default async function handler(
     return res
       .status(200)
       .json({
+
         ok: true,
+
         message:
           "instadrop Telegram bot is running."
+
       });
 
   }
@@ -2538,6 +3576,7 @@ export default async function handler(
     const anyUrl =
       findAnyUrl(text);
 
+
     if (anyUrl) {
 
       await reactToLink(
@@ -2580,6 +3619,31 @@ export default async function handler(
 
 
     // ==================================================
+    // /language
+    // ==================================================
+
+    if (
+      text === "/language" ||
+      text.startsWith(
+        "/language "
+      )
+    ) {
+
+      await sendLanguageMenu(
+        chatId
+      );
+
+
+      return res
+        .status(200)
+        .json({
+          ok: true
+        });
+
+    }
+
+
+    // ==================================================
     // /help
     // ==================================================
 
@@ -2608,11 +3672,17 @@ export default async function handler(
             "• Highlights\n" +
             "• Profiles\n\n" +
 
+            "*Commands*\n" +
+            "• /start — Start instadrop\n" +
+            "• /language — Choose language\n" +
+            "• /help — Show help\n\n" +
+
             "*Tip:* Copy the Instagram URL and paste it directly into this chat.\n\n" +
 
             "No extra commands are required.",
 
-          parse_mode: "Markdown"
+          parse_mode:
+            "Markdown"
         }
       );
 
@@ -2654,7 +3724,8 @@ export default async function handler(
 
             "💡 Just copy the Instagram URL and paste it here.",
 
-          parse_mode: "Markdown"
+          parse_mode:
+            "Markdown"
         }
       );
 
@@ -2684,6 +3755,7 @@ export default async function handler(
         ok: true
       });
 
+
   } catch (error) {
 
     console.error(
@@ -2709,11 +3781,13 @@ export default async function handler(
               "⚠️ *Something unexpected happened while processing your request.*\n\n" +
               "Please try the Instagram link again. If the problem continues, try again a little later.",
 
-            parse_mode: "Markdown"
+            parse_mode:
+              "Markdown"
           }
         );
 
       }
+
 
     } catch (telegramError) {
 
@@ -2732,4 +3806,5 @@ export default async function handler(
       });
 
   }
+
 }

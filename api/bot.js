@@ -1373,23 +1373,24 @@ async function sendWelcome(
 
     "<blockquote>" +
     "<b>📥 What can I download?</b>\n" +
-    "• Posts ✦ Carousels ✦ Reels\n" +
-    "• Stories ✦ Highlights ✦ Profiles" +
+    "✦ Posts ✦ Carousels ✦ Reels\n" +
+    "✦ Stories ✦ Highlights ✦ Profiles" +
     "</blockquote>" +
 
-    "\n\n<blockquote>" +
+    "<blockquote>" +
     "<b>👤 Profile support</b>\n" +
-    "• Profile picture ✦ Account details\n" +
-    "• Followers &amp; following ✦ Post count\n" +
-    "• Name &amp; bio ✦ Verification status\n" +
-    "• Private account status" +
+    "✦ Profile picture ✦ Account details\n" +
+    "✦ Followers &amp; following ✦ Post count\n" +
+    "✦ Name &amp; bio ✦ Verification status\n" +
+    "✦ Private account status" +
     "</blockquote>" +
 
-    "\n\n<blockquote>" +
+    "<blockquote>" +
     "<b>🖼️ Media details</b>\n" +
-    "• Username ✦ Caption ✦ Upload date\n" +
-    "• Likes ✦ Comments ✦ Views\n" +
-    "• Plays ✦ Reshares" +
+    "✦ Username ✦ Caption\n" +
+    "✦ Upload date Likes \n" +
+    "✦ Comments ✦ Views\n" +
+    "✦ Plays ✦ Reshares" +
     "</blockquote>\n" +
 
     "<b>How to use:</b>\n" +

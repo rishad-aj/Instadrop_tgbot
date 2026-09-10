@@ -99,15 +99,15 @@ const TEXT = {
   // ------------------------------------------------
 
   languageTitle: {
-    en: "🌐 <b>Choose your language.</b>",
-    ru: "🌐 <b>Выберите язык.</b>",
-    uz: "🌐 <b>Tilni tanlang.</b>",
-    id: "🌐 <b>Pilih bahasa Anda.</b>",
-    ar: "🌐 <b>اختر لغتك.</b>",
-    uk: "🌐 <b>Оберіть мову.</b>",
-    fa: "🌐 <b>زبان خود را انتخاب کنید.</b>",
-    tr: "🌐 <b>Dilinizi seçin.</b>",
-    hi: "🌐 <b>अपनी भाषा चुनें।</b>"
+    en: "🌍 <b>Choose your language.</b>",
+    ru: "🌍 <b>Выберите язык.</b>",
+    uz: "🌍 <b>Tilni tanlang.</b>",
+    id: "🌍 <b>Pilih bahasa Anda.</b>",
+    ar: "🌍 <b>اختر لغتك.</b>",
+    uk: "🌍 <b>Оберіть мову.</b>",
+    fa: "🌍 <b>زبان خود را انتخاب کنید.</b>",
+    tr: "🌍 <b>Dilinizi seçin.</b>",
+    hi: "🌍 <b>अपनी भाषा चुनें।</b>"
   },
 
   languageChanged: {
@@ -120,6 +120,19 @@ const TEXT = {
     fa: "✅ زبان به <b>فارسی</b> تغییر کرد.",
     tr: "✅ Dil <b>Türkçe</b> olarak değiştirildi.",
     hi: "✅ भाषा <b>हिन्दी</b> में बदल दी गई है।"
+  },
+
+
+  privacyPolicy: {
+    en: "🔒 <b>Privacy Policy</b>\n\nWe respect your privacy. This bot only processes the Instagram links you send, and only to download the media you request.\n\n<b>📌 What we collect</b>\n• Your Telegram chat ID\n• The Instagram links you send\n• Basic usage data (e.g. request timestamps)\n\n<b>🎯 How we use it</b>\n• To deliver the media you request\n• To respond to your messages and fix errors\n\n<b>🚫 What we don't do</b>\n• We don't sell or share your data with third parties\n• We don't keep your links longer than needed\n\n<b>🔗 Third-party services</b>\nMedia is fetched through our download service. Instagram's own terms apply to the content you download.\n\n<b>🗑️ Your data</b>\nYou can request removal of your data at any time by contacting the admin.\n\nℹ️ By using this bot, you agree to this privacy policy.",
+    ru: "🔒 <b>Политика конфиденциальности</b>\n\nМы уважаем вашу конфиденциальность. Этот бот обрабатывает ссылки Instagram, которые вы отправляете, и только для скачивания запрошенных медиа.\n\n<b>📌 Что мы собираем</b>\n• Ваш chat ID в Telegram\n• Отправленные вами ссылки Instagram\n• Базовые данные об использовании (например, время запросов)\n\n<b>🎯 Как мы это используем</b>\n• Чтобы отправить вам запрошенные медиа\n• Чтобы отвечать на ваши сообщения и исправлять ошибки\n\n<b>🚫 Чего мы не делаем</b>\n• Мы не продаём и не передаём ваши данные третьим лицам\n• Мы не храним ваши ссылки дольше, чем нужно\n\n<b>🔗 Сторонние сервисы</b>\nМедиа загружается через наш сервис загрузки. На скачиваемый контент распространяются условия самого Instagram.\n\n<b>🗑️ Ваши данные</b>\nВы можете в любой момент запросить удаление своих данных, связавшись с администратором.\n\nℹ️ Используя этого бота, вы соглашаетесь с данной политикой конфиденциальности.",
+    uz: "🔒 <b>Maxfiylik siyosati</b>\n\nBiz sizning maxfiyligingizni hurmat qilamiz. Bu bot faqat siz yuborgan Instagram havolalarini qayta ishlaydi va faqat so‘ralgan mediani yuklab olish uchun.\n\n<b>📌 Biz nimani yig‘amiz</b>\n• Telegram chat ID raqamingiz\n• Siz yuborgan Instagram havolalari\n• Asosiy foydalanish ma’lumotlari (masalan, so‘rov vaqti)\n\n<b>🎯 Undan qanday foydalanamiz</b>\n• So‘ralgan mediani sizga yetkazish uchun\n• Xabarlaringizga javob berish va xatolarni tuzatish uchun\n\n<b>🚫 Nima qilmaymiz</b>\n• Ma’lumotlaringizni uchinchi shaxslarga sotmaymiz yoki bermaymiz\n• Havolalaringizni kerakidan uzoq saqlamaymiz\n\n<b>🔗 Uchinchi tomon xizmatlari</b>\nMedia bizning yuklab olish xizmatimiz orqali olinadi. Yuklab olingan kontentga Instagram shartlari tatbiq etiladi.\n\n<b>🗑️ Sizning ma’lumotlaringiz</b>\nAdministrator bilan bog‘lanib, istalgan vaqtda ma’lumotlaringizni o‘chirishni so‘rashingiz mumkin.\n\nℹ️ Bu botdan foydalanib, siz ushbu maxfiylik siyosatiga rozilik bildirasiz.",
+    id: "🔒 <b>Kebijakan Privasi</b>\n\nKami menghormati privasi Anda. Bot ini hanya memproses tautan Instagram yang Anda kirim, dan hanya untuk mengunduh media yang Anda minta.\n\n<b>📌 Apa yang kami kumpulkan</b>\n• ID chat Telegram Anda\n• Tautan Instagram yang Anda kirim\n• Data penggunaan dasar (misalnya waktu permintaan)\n\n<b>🎯 Bagaimana kami menggunakannya</b>\n• Untuk mengirimkan media yang Anda minta\n• Untuk membalas pesan Anda dan memperbaiki kesalahan\n\n<b>🚫 Yang tidak kami lakukan</b>\n• Kami tidak menjual atau membagikan data Anda kepada pihak ketiga\n• Kami tidak menyimpan tautan Anda lebih lama dari yang diperlukan\n\n<b>🔗 Layanan pihak ketiga</b>\nMedia diambil melalui layanan unduhan kami. Ketentuan Instagram berlaku untuk konten yang Anda unduh.\n\n<b>🗑️ Data Anda</b>\nAnda dapat meminta penghapusan data Anda kapan saja dengan menghubungi admin.\n\nℹ️ Dengan menggunakan bot ini, Anda menyetujui kebijakan privasi ini.",
+    ar: "🔒 <b>سياسة الخصوصية</b>\n\nنحن نحترم خصوصيتك. يعالج هذا البوت فقط روابط Instagram التي ترسلها، وذلك فقط لتحميل الوسائط التي تطلبها.\n\n<b>📌 ما الذي نجمعه</b>\n• معرّف محادثة Telegram الخاص بك\n• روابط Instagram التي ترسلها\n• بيانات استخدام أساسية (مثل وقت الطلبات)\n\n<b>🎯 كيف نستخدمها</b>\n• لتسليم الوسائط التي تطلبها\n• للرد على رسائلك وإصلاح الأخطاء\n\n<b>🚫 ما لا نقوم به</b>\n• لا نبيع بياناتك أو نشاركها مع أطراف ثالثة\n• لا نحتفظ بروابطك أكثر من اللازم\n\n<b>🔗 خدمات الطرف الثالث</b>\nيتم جلب الوسائط عبر خدمة التحميل الخاصة بنا. تنطبق شروط Instagram على المحتوى الذي تحمّله.\n\n<b>🗑️ بياناتك</b>\nيمكنك طلب حذف بياناتك في أي وقت عن طريق التواصل مع المشرف.\n\nℹ️ باستخدام هذا البوت، فإنك توافق على سياسة الخصوصية هذه.",
+    uk: "🔒 <b>Політика конфіденційності</b>\n\nМи поважаємо вашу конфіденційність. Цей бот обробляє лише надіслані вами посилання Instagram і лише для завантаження запитаних медіа.\n\n<b>📌 Що ми збираємо</b>\n• Ваш chat ID у Telegram\n• Надіслані вами посилання Instagram\n• Базові дані про використання (наприклад, час запитів)\n\n<b>🎯 Як ми це використовуємо</b>\n• Щоб надіслати вам запитані медіа\n• Щоб відповідати на ваші повідомлення та виправляти помилки\n\n<b>🚫 Чого ми не робимо</b>\n• Ми не продаємо та не передаємо ваші дані третім особам\n• Ми не зберігаємо ваші посилання довше, ніж потрібно\n\n<b>🔗 Сторонні сервіси</b>\nМедіа завантажується через наш сервіс завантаження. На контент, який ви завантажуєте, поширюються умови Instagram.\n\n<b>🗑️ Ваші дані</b>\nВи можете будь-коли попросити видалити ваші дані, звернувшись до адміністратора.\n\nℹ️ Користуючись цим ботом, ви погоджуєтесь із цією політикою конфіденційності.",
+    fa: "🔒 <b>سیاست حفظ حریم خصوصی</b>\n\nما به حریم خصوصی شما احترام می‌گذاریم. این ربات فقط لینک‌های Instagram را که ارسال می‌کنید پردازش می‌کند، و تنها برای دانلود رسانه‌ای که درخواست کرده‌اید.\n\n<b>📌 چه اطلاعاتی جمع‌آوری می‌کنیم</b>\n• شناسه چت Telegram شما\n• لینک‌های Instagram که ارسال می‌کنید\n• داده‌های پایه استفاده (مثلاً زمان درخواست‌ها)\n\n<b>🎯 چگونه از آن استفاده می‌کنیم</b>\n• برای تحویل رسانه‌ای که درخواست کرده‌اید\n• برای پاسخ به پیام‌های شما و رفع خطاها\n\n<b>🚫 چه کارهایی نمی‌کنیم</b>\n• اطلاعات شما را به اشخاص ثالث نمی‌فروشیم یا نمی‌دهیم\n• لینک‌های شما را بیشتر از حد لازم نگه نمی‌داریم\n\n<b>🔗 خدمات طرف سوم</b>\nرسانه از طریق سرویس دانلود ما دریافت می‌شود. شرایط خود Instagram بر محتوایی که دانلود می‌کنید اعمال می‌شود.\n\n<b>🗑️ اطلاعات شما</b>\nمی‌توانید هر زمان با تماس با مدیر، حذف اطلاعات خود را درخواست کنید.\n\nℹ️ با استفاده از این ربات، شما با این سیاست حفظ حریم خصوصی موافقت می‌کنید.",
+    tr: "🔒 <b>Gizlilik Politikası</b>\n\nGizliliğinize saygı duyuyoruz. Bu bot yalnızca gönderdiğiniz Instagram bağlantılarını ve yalnızca istediğiniz medyayı indirmek için işler.\n\n<b>📌 Neyi topluyoruz</b>\n• Telegram sohbet kimliğiniz\n• Gönderdiğiniz Instagram bağlantıları\n• Temel kullanım verileri (ör. istek zamanları)\n\n<b>🎯 Nasıl kullanıyoruz</b>\n• İstediğiniz medyayı size ulaştırmak için\n• Mesajlarınıza yanıt vermek ve hataları düzeltmek için\n\n<b>🚫 Neleri yapmıyoruz</b>\n• Verilerinizi üçüncü taraflara satmıyor veya paylaşmıyoruz\n• Bağlantılarınızı gereğinden uzun süre saklamıyoruz\n\n<b>🔗 Üçüncü taraf hizmetleri</b>\nMedya, indirme hizmetimiz aracılığıyla alınır. İndirdiğiniz içerik için Instagram'ın kendi koşulları geçerlidir.\n\n<b>🗑️ Verileriniz</b>\nYöneticiyle iletişime geçerek verilerinizin silinmesini istediğiniz zaman talep edebilirsiniz.\n\nℹ️ Bu botu kullanarak bu gizlilik politikasını kabul etmiş olursunuz.",
+    hi: "🔒 <b>गोपनीयता नीति</b>\n\nहम आपकी निजता का सम्मान करते हैं। यह बॉट केवल आपके द्वारा भेजे गए Instagram लिंक को प्रोसेस करता है, और वह भी केवल आपके माँगे गए मीडिया को डाउनलोड करने के लिए।\n\n<b>📌 हम क्या जमा करते हैं</b>\n• आपकी Telegram chat ID\n• आपके द्वारा भेजे गए Instagram लिंक\n• बुनियादी उपयोग डेटा (जैसे अनुरोध का समय)\n\n<b>🎯 हम इसका उपयोग कैसे करते हैं</b>\n• आपके माँगे गए मीडिया को भेजने के लिए\n• आपके संदेशों का जवाब देने और त्रुटियाँ ठीक करने के लिए\n\n<b>🚫 हम क्या नहीं करते</b>\n• हम आपका डेटा तीसरे पक्ष को बेचते या साझा नहीं करते\n• हम आपके लिंक ज़रूरत से ज़्यादा नहीं रखते\n\n<b>🔗 तीसरे पक्ष की सेवाएँ</b>\nमीडिया हमारी डाउनलोड सेवा के ज़रिए लाया जाता है। आपके डाउनलोड किए गए कंटेंट पर Instagram की अपनी शर्तें लागू होती हैं।\n\n<b>🗑️ आपका डेटा</b>\nआप एडमिन से संपर्क करके कभी भी अपना डेटा हटाने का अनुरोध कर सकते हैं।\n\nℹ️ इस बॉट का उपयोग करके, आप इस गोपनीयता नीति से सहमत होते हैं।"
   },
 
 
@@ -2640,31 +2653,31 @@ async function sendHelp(
 
   const help = {
     en:
-      "<b>instadrop Help</b>\n\nJust send me an Instagram link and I'll handle the rest.\n\n<b>Supported content</b>\n• Posts\n• Carousels\n• Reels\n• Stories\n• Highlights\n• Profiles\n\n<b>Tip:</b> Copy the Instagram URL and paste it directly into this chat.\n\nNo extra commands are required.",
+      "📖 <b>instadrop Help</b>\n\nJust send me an Instagram link and I'll handle the rest. 🚀\n\n<b>📥 Supported content</b>\n📸 Posts\n🖼️ Carousels\n🎬 Reels\n📖 Stories\n✨ Highlights\n👤 Profiles\n\n<b>💡 Tip:</b> Copy the Instagram URL and paste it directly into this chat.\n\nNo extra commands are required. ✅",
 
     ru:
-      "<b>Помощь instadrop</b>\n\nПросто отправьте ссылку Instagram, и я всё сделаю сам.\n\n<b>Поддерживаемый контент</b>\n• Посты\n• Карусели\n• Reels\n• Истории\n• Highlights\n• Профили\n\n<b>Совет:</b> Скопируйте URL Instagram и отправьте его прямо в этот чат.\n\nДополнительные команды не требуются.",
+      "📖 <b>Помощь instadrop</b>\n\nПросто отправьте ссылку Instagram, и я всё сделаю сам. 🚀\n\n<b>📥 Поддерживаемый контент</b>\n📸 Посты\n🖼️ Карусели\n🎬 Reels\n📖 Истории\n✨ Highlights\n👤 Профили\n\n<b>💡 Совет:</b> Скопируйте URL Instagram и отправьте его прямо в этот чат.\n\nДополнительные команды не требуются. ✅",
 
     uz:
-      "<b>instadrop Yordam</b>\n\nInstagram havolasini yuboring va qolganini men bajaraman.\n\n<b>Qo‘llab-quvvatlanadigan kontent</b>\n• Postlar\n• Karusellar\n• Reels\n• Hikoyalar\n• Highlights\n• Profillar\n\n<b>Maslahat:</b> Instagram URL manzilini nusxalab shu chatga yuboring.\n\nQo‘shimcha buyruqlar kerak emas.",
+      "📖 <b>instadrop Yordam</b>\n\nInstagram havolasini yuboring va qolganini men bajaraman. 🚀\n\n<b>📥 Qo‘llab-quvvatlanadigan kontent</b>\n📸 Postlar\n🖼️ Karusellar\n🎬 Reels\n📖 Hikoyalar\n✨ Highlights\n👤 Profillar\n\n<b>💡 Maslahat:</b> Instagram URL manzilini nusxalab shu chatga yuboring.\n\nQo‘shimcha buyruqlar kerak emas. ✅",
 
     id:
-      "<b>Bantuan instadrop</b>\n\nCukup kirim tautan Instagram dan saya akan mengurus sisanya.\n\n<b>Konten yang didukung</b>\n• Postingan\n• Carousel\n• Reels\n• Story\n• Highlight\n• Profil\n\n<b>Tips:</b> Salin URL Instagram dan kirim langsung ke chat ini.\n\nTidak diperlukan perintah tambahan.",
+      "📖 <b>Bantuan instadrop</b>\n\nCukup kirim tautan Instagram dan saya akan mengurus sisanya. 🚀\n\n<b>📥 Konten yang didukung</b>\n📸 Postingan\n🖼️ Carousel\n🎬 Reels\n📖 Story\n✨ Highlight\n👤 Profil\n\n<b>💡 Tips:</b> Salin URL Instagram dan kirim langsung ke chat ini.\n\nTidak diperlukan perintah tambahan. ✅",
 
     ar:
-      "<b>مساعدة instadrop</b>\n\nأرسل رابط Instagram وسأتولى الباقي.\n\n<b>المحتوى المدعوم</b>\n• المنشورات\n• المنشورات المتعددة\n• Reels\n• القصص\n• Highlights\n• الملفات الشخصية\n\n<b>نصيحة:</b> انسخ رابط Instagram وأرسله مباشرة إلى هذه المحادثة.\n\nلا تحتاج إلى أوامر إضافية.",
+      "📖 <b>مساعدة instadrop</b>\n\nأرسل رابط Instagram وسأتولى الباقي. 🚀\n\n<b>📥 المحتوى المدعوم</b>\n📸 المنشورات\n🖼️ المنشورات المتعددة\n🎬 Reels\n📖 القصص\n✨ Highlights\n👤 الملفات الشخصية\n\n<b>💡 نصيحة:</b> انسخ رابط Instagram وأرسله مباشرة إلى هذه المحادثة.\n\nلا تحتاج إلى أوامر إضافية. ✅",
 
     uk:
-      "<b>Допомога instadrop</b>\n\nПросто надішліть посилання Instagram, а я зроблю все інше.\n\n<b>Підтримуваний контент</b>\n• Дописи\n• Каруселі\n• Reels\n• Історії\n• Highlights\n• Профілі\n\n<b>Порада:</b> Скопіюйте URL Instagram і надішліть його прямо в цей чат.\n\nДодаткові команди не потрібні.",
+      "📖 <b>Допомога instadrop</b>\n\nПросто надішліть посилання Instagram, а я зроблю все інше. 🚀\n\n<b>📥 Підтримуваний контент</b>\n📸 Дописи\n🖼️ Каруселі\n🎬 Reels\n📖 Історії\n✨ Highlights\n👤 Профілі\n\n<b>💡 Порада:</b> Скопіюйте URL Instagram і надішліть його прямо в цей чат.\n\nДодаткові команди не потрібні. ✅",
 
     fa:
-      "<b>راهنمای instadrop</b>\n\nفقط لینک Instagram را ارسال کنید و بقیه کارها را من انجام می‌دهم.\n\n<b>محتوای پشتیبانی‌شده</b>\n• پست‌ها\n• کاروسل‌ها\n• Reels\n• استوری‌ها\n• Highlights\n• پروفایل‌ها\n\n<b>نکته:</b> لینک Instagram را کپی کرده و مستقیماً در این چت ارسال کنید.\n\nبه دستور دیگری نیاز نیست.",
+      "📖 <b>راهنمای instadrop</b>\n\nفقط لینک Instagram را ارسال کنید و بقیه کارها را من انجام می‌دهم. 🚀\n\n<b>📥 محتوای پشتیبانی‌شده</b>\n📸 پست‌ها\n🖼️ کاروسل‌ها\n🎬 Reels\n📖 استوری‌ها\n✨ Highlights\n👤 پروفایل‌ها\n\n<b>💡 نکته:</b> لینک Instagram را کپی کرده و مستقیماً در این چت ارسال کنید.\n\nبه دستور دیگری نیاز نیست. ✅",
 
     tr:
-      "<b>instadrop Yardım</b>\n\nInstagram bağlantısını gönderin, gerisini ben hallederim.\n\n<b>Desteklenen içerikler</b>\n• Gönderiler\n• Carousel\n• Reels\n• Hikâyeler\n• Highlights\n• Profiller\n\n<b>İpucu:</b> Instagram URL'sini kopyalayıp doğrudan bu sohbete gönderin.\n\nEkstra komut gerekmez.",
+      "📖 <b>instadrop Yardım</b>\n\nInstagram bağlantısını gönderin, gerisini ben hallederim. 🚀\n\n<b>📥 Desteklenen içerikler</b>\n📸 Gönderiler\n🖼️ Carousel\n🎬 Reels\n📖 Hikâyeler\n✨ Highlights\n👤 Profiller\n\n<b>💡 İpucu:</b> Instagram URL'sini kopyalayıp doğrudan bu sohbete gönderin.\n\nEkstra komut gerekmez. ✅",
 
     hi:
-      "<b>instadrop सहायता</b>\n\nबस Instagram लिंक भेजें और बाकी काम मैं कर दूँगा।\n\n<b>सपोर्टेड कंटेंट</b>\n• पोस्ट\n• कैरोसेल\n• Reels\n• स्टोरीज़\n• Highlights\n• प्रोफ़ाइल\n\n<b>टिप:</b> Instagram URL कॉपी करके सीधे इस चैट में भेजें।\n\nकिसी अतिरिक्त कमांड की ज़रूरत नहीं है।"
+      "📖 <b>instadrop सहायता</b>\n\nबस Instagram लिंक भेजें और बाकी काम मैं कर दूँगा। 🚀\n\n<b>📥 सपोर्टेड कंटेंट</b>\n📸 पोस्ट\n🖼️ कैरोसेल\n🎬 Reels\n📖 स्टोरीज़\n✨ Highlights\n👤 प्रोफ़ाइल\n\n<b>💡 टिप:</b> Instagram URL कॉपी करके सीधे इस चैट में भेजें।\n\nकिसी अतिरिक्त कमांड की ज़रूरत नहीं है। ✅"
   };
 
 
@@ -2690,6 +2703,32 @@ async function sendHelp(
 }
 
 
+// ==================================================
+// PRIVACY POLICY
+// ==================================================
+
+async function sendPrivacyPolicy(
+  chatId
+) {
+
+  await telegram(
+    "sendMessage",
+    {
+      chat_id:
+        chatId,
+
+      text:
+        t(
+          "privacyPolicy",
+          chatId
+        ),
+
+      parse_mode:
+        "HTML"
+    }
+  );
+
+}
 // ==================================================
 // CALLBACK HANDLER
 // ==================================================
@@ -4110,6 +4149,33 @@ export default async function handler(
       );
 
 
+      const startPayload =
+        text
+          .slice(
+            "/start".length
+          )
+          .trim()
+          .toLowerCase();
+
+
+      if (
+        startPayload === "privecy"
+      ) {
+
+        await sendPrivacyPolicy(
+          chatId
+        );
+
+
+        return res
+          .status(200)
+          .json({
+            ok: true
+          });
+
+      }
+
+
       await sendWelcome(
         chatId
       );
@@ -4161,6 +4227,31 @@ export default async function handler(
     ) {
 
       await sendHelp(
+        chatId
+      );
+
+
+      return res
+        .status(200)
+        .json({
+          ok: true
+        });
+
+    }
+
+
+    // ==================================================
+    // /PRIVECYPOLICY
+    // ==================================================
+
+    if (
+      text === "/privecypolicy" ||
+      text.startsWith(
+        "/privecypolicy "
+      )
+    ) {
+
+      await sendPrivacyPolicy(
         chatId
       );
 

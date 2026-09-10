@@ -43,7 +43,7 @@ const STORAGE_TTL = 30 * 60 * 1000;
 const LANGUAGES = {
   en: {
     name: "English",
-    flag: "🇬🇧🇺🇸"
+    flag: "🇬🇧"
   },
 
   ru: {
@@ -93,7 +93,7 @@ const LANGUAGES = {
 
   pt: {
     name: "Português",
-    flag: "🇵🇹🇧🇷"
+    flag: "🇧🇷"
   },
 
   fr: {
@@ -365,18 +365,18 @@ const TEXT = {
 
 
   needInstagram: {
-    en: "📎 <b>I need an Instagram link to get started.</b>\n\nSend me the link to a:\n📸 Post\n🖼️ Carousel\n🎬 Reel\n📖 Story\n✨ Highlight\n👤 Profile\n\n💡 Just copy the Instagram URL and paste it here.",
-    ru: "📎 <b>Для начала мне нужна ссылка Instagram.</b>\n\nОтправьте ссылку на:\n📸 Пост\n🖼️ Карусель\n🎬 Reels\n📖 Историю\n✨ Highlight\n👤 Профиль\n\n💡 Просто скопируйте ссылку Instagram и отправьте её сюда.",
-    uz: "📎 <b>Boshlash uchun Instagram havolasi kerak.</b>\n\nQuyidagilardan birining havolasini yuboring:\n📸 Post\n🖼️ Karusel\n🎬 Reels\n📖 Hikoya\n✨ Highlight\n👤 Profil\n\n💡 Instagram URL manzilini nusxalab shu yerga yuboring.",
-    id: "📎 <b>Saya membutuhkan tautan Instagram untuk memulai.</b>\n\nKirim tautan:\n📸 Postingan\n🖼️ Carousel\n🎬 Reel\n📖 Story\n✨ Highlight\n👤 Profil\n\n💡 Salin URL Instagram dan kirim ke sini.",
-    ar: "📎 <b>أحتاج إلى رابط Instagram للبدء.</b>\n\nأرسل رابط:\n📸 منشور\n🖼️ منشور متعدد\n🎬 Reel\n📖 قصة\n✨ Highlight\n👤 ملف شخصي\n\n💡 انسخ رابط Instagram وأرسله هنا.",
-    uk: "📎 <b>Для початку мені потрібне посилання Instagram.</b>\n\nНадішліть посилання на:\n📸 Допис\n🖼️ Карусель\n🎬 Reels\n📖 Історію\n✨ Highlight\n👤 Профіль\n\n💡 Просто скопіюйте URL Instagram і надішліть його сюди.",
-    fa: "📎 <b>برای شروع به لینک Instagram نیاز دارم.</b>\n\nلینک یکی از موارد زیر را ارسال کنید:\n📸 پست\n🖼️ کاروسل\n🎬 Reel\n📖 استوری\n✨ Highlight\n👤 پروفایل\n\n💡 لینک Instagram را کپی کرده و اینجا ارسال کنید.",
-    tr: "📎 <b>Başlamak için bir Instagram bağlantısına ihtiyacım var.</b>\n\nŞunlardan birinin bağlantısını gönderin:\n📸 Gönderi\n🖼️ Carousel\n🎬 Reel\n📖 Hikâye\n✨ Highlight\n👤 Profil\n\n💡 Instagram URL'sini kopyalayıp buraya gönderin.",
-    hi: "📎 <b>शुरू करने के लिए मुझे Instagram लिंक चाहिए।</b>\n\nइनमें से किसी का लिंक भेजें:\n📸 पोस्ट\n🖼️ कैरोसेल\n🎬 Reel\n📖 स्टोरी\n✨ Highlight\n👤 प्रोफ़ाइल\n\n💡 Instagram URL कॉपी करके यहाँ भेजें।",
-    es: "📎 <b>Necesito un enlace de Instagram para empezar.</b>\n\nEnvíame el enlace de:\n📸 Publicación\n🖼️ Carrusel\n🎬 Reel\n📖 Historia\n✨ Destacado\n👤 Perfil\n\n💡 Solo copia la URL de Instagram y pégala aquí.",
-    pt: "📎 <b>Preciso de um link do Instagram para começar.</b>\n\nEnvie-me o link de:\n📸 Publicação\n🖼️ Carrossel\n🎬 Reel\n📖 Story\n✨ Destaque\n👤 Perfil\n\n💡 Basta copiar a URL do Instagram e colar aqui.",
-    fr: "📎 <b>J'ai besoin d'un lien Instagram pour commencer.</b>\n\nEnvoyez-moi le lien d'une :\n📸 Publication\n🖼️ Carrousel\n🎬 Reel\n📖 Story\n✨ À la une\n👤 Profil\n\n💡 Copiez simplement l'URL Instagram et collez-la ici."
+    en: "📎 <b>I need an Instagram link to get started.</b>\n\n<blockquote>Send me the link to a:\n📸 Post\n🖼️ Carousel\n🎬 Reel\n📖 Story\n✨ Highlight\n👤 Profile</blockquote>\n\n💡 Just copy the Instagram URL and paste it here.",
+    ru: "📎 <b>Для начала мне нужна ссылка Instagram.</b>\n\n<blockquote>Отправьте ссылку на:\n📸 Пост\n🖼️ Карусель\n🎬 Reels\n📖 Историю\n✨ Highlight\n👤 Профиль</blockquote>\n\n💡 Просто скопируйте ссылку Instagram и отправьте её сюда.",
+    uz: "📎 <b>Boshlash uchun Instagram havolasi kerak.</b>\n\n<blockquote>Quyidagilardan birining havolasini yuboring:\n📸 Post\n🖼️ Karusel\n🎬 Reels\n📖 Hikoya\n✨ Highlight\n👤 Profil</blockquote>\n\n💡 Instagram URL manzilini nusxalab shu yerga yuboring.",
+    id: "📎 <b>Saya membutuhkan tautan Instagram untuk memulai.</b>\n\n<blockquote>Kirim tautan:\n📸 Postingan\n🖼️ Carousel\n🎬 Reel\n📖 Story\n✨ Highlight\n👤 Profil</blockquote>\n\n💡 Salin URL Instagram dan kirim ke sini.",
+    ar: "📎 <b>أحتاج إلى رابط Instagram للبدء.</b>\n\n<blockquote>أرسل رابط:\n📸 منشور\n🖼️ منشور متعدد\n🎬 Reel\n📖 قصة\n✨ Highlight\n👤 ملف شخصي</blockquote>\n\n💡 انسخ رابط Instagram وأرسله هنا.",
+    uk: "📎 <b>Для початку мені потрібне посилання Instagram.</b>\n\n<blockquote>Надішліть посилання на:\n📸 Допис\n🖼️ Карусель\n🎬 Reels\n📖 Історію\n✨ Highlight\n👤 Профіль</blockquote>\n\n💡 Просто скопіюйте URL Instagram і надішліть його сюди.",
+    fa: "📎 <b>برای شروع به لینک Instagram نیاز دارم.</b>\n\n<blockquote>لینک یکی از موارد زیر را ارسال کنید:\n📸 پست\n🖼️ کاروسل\n🎬 Reel\n📖 استوری\n✨ Highlight\n👤 پروفایل</blockquote>\n\n💡 لینک Instagram را کپی کرده و اینجا ارسال کنید.",
+    tr: "📎 <b>Başlamak için bir Instagram bağlantısına ihtiyacım var.</b>\n\n<blockquote>Şunlardan birinin bağlantısını gönderin:\n📸 Gönderi\n🖼️ Carousel\n🎬 Reel\n📖 Hikâye\n✨ Highlight\n👤 Profil</blockquote>\n\n💡 Instagram URL'sini kopyalayıp buraya gönderin.",
+    hi: "📎 <b>शुरू करने के लिए मुझे Instagram लिंक चाहिए।</b>\n\n<blockquote>इनमें से किसी का लिंक भेजें:\n📸 पोस्ट\n🖼️ कैरोसेल\n🎬 Reel\n📖 स्टोरी\n✨ Highlight\n👤 प्रोफ़ाइल</blockquote>\n\n💡 Instagram URL कॉपी करके यहाँ भेजें।",
+    es: "📎 <b>Necesito un enlace de Instagram para empezar.</b>\n\n<blockquote>Envíame el enlace de:\n📸 Publicación\n🖼️ Carrusel\n🎬 Reel\n📖 Historia\n✨ Destacado\n👤 Perfil</blockquote>\n\n💡 Solo copia la URL de Instagram y pégala aquí.",
+    pt: "📎 <b>Preciso de um link do Instagram para começar.</b>\n\n<blockquote>Envie-me o link de:\n📸 Publicação\n🖼️ Carrossel\n🎬 Reel\n📖 Story\n✨ Destaque\n👤 Perfil</blockquote>\n\n💡 Basta copiar a URL do Instagram e colar aqui.",
+    fr: "📎 <b>J'ai besoin d'un lien Instagram pour commencer.</b>\n\n<blockquote>Envoyez-moi le lien d'une :\n📸 Publication\n🖼️ Carrousel\n🎬 Reel\n📖 Story\n✨ À la une\n👤 Profil</blockquote>\n\n💡 Copiez simplement l'URL Instagram et collez-la ici."
   },
 
 
@@ -523,7 +523,7 @@ function languageKeyboard() {
     inline_keyboard: [
       [
         {
-          text: "🇬🇧🇺🇸 English",
+          text: "🇬🇧 English",
           callback_data: "lang:en"
         },
         {
@@ -573,7 +573,7 @@ function languageKeyboard() {
       ],
       [
         {
-          text: "🇵🇹🇧🇷 Português",
+          text: "🇧🇷 Português",
           callback_data: "lang:pt"
         },
         {

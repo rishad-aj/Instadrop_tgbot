@@ -84,6 +84,21 @@ const LANGUAGES = {
   hi: {
     name: "हिन्दी",
     flag: "🇮🇳"
+  },
+
+  es: {
+    name: "Español",
+    flag: "🇪🇸"
+  },
+
+  pt: {
+    name: "Português",
+    flag: "🇧🇷"
+  },
+
+  fr: {
+    name: "Français",
+    flag: "🇫🇷"
   }
 };
 
@@ -107,7 +122,10 @@ const TEXT = {
     uk: "🌍 <b>Оберіть мову.</b>",
     fa: "🌍 <b>زبان خود را انتخاب کنید.</b>",
     tr: "🌍 <b>Dilinizi seçin.</b>",
-    hi: "🌍 <b>अपनी भाषा चुनें।</b>"
+    hi: "🌍 <b>अपनी भाषा चुनें।</b>",
+    es: "🌍 <b>Elige tu idioma.</b>",
+    pt: "🌍 <b>Escolha seu idioma.</b>",
+    fr: "🌍 <b>Choisissez votre langue.</b>"
   },
 
   languageChanged: {
@@ -119,7 +137,10 @@ const TEXT = {
     uk: "✅ Мову змінено на <b>українську</b>.",
     fa: "✅ زبان به <b>فارسی</b> تغییر کرد.",
     tr: "✅ Dil <b>Türkçe</b> olarak değiştirildi.",
-    hi: "✅ भाषा <b>हिन्दी</b> में बदल दी गई है।"
+    hi: "✅ भाषा <b>हिन्दी</b> में बदल दी गई है।",
+    es: "✅ Idioma cambiado a <b>español</b>.",
+    pt: "✅ Idioma alterado para <b>português</b>.",
+    fr: "✅ Langue changée en <b>français</b>."
   },
 
 
@@ -132,7 +153,10 @@ const TEXT = {
     uk: "🔒 <b>Політика конфіденційності</b>\n\nВаша конфіденційність важлива для нас. Цей бот обробляє лише надіслані вами посилання Instagram і лише для завантаження запитаних медіа.\n\n<b>🙅 Що ми не збираємо</b>\n• Ваш номер телефону\n• Вашу електронну адресу\n• Вашу IP-адресу\n• Ваше ім'я, контакти чи будь-які інші особисті дані\n\n<b>🗂️ Ваші посилання</b>\nМи не зберігаємо посилання, якими ви ділитеся. Вони використовуються лише для отримання запитаних медіа й після цього не зберігаються.\n\n<b>💸 Продаж вашої інформації</b>\nМи не продаємо та не передаємо вашу інформацію — бо немає чого продавати чи передавати.\n\n<b>🔗 Сторонні сервіси</b>\nМедіа завантажується через наш сервіс завантаження. На контент, який ви завантажуєте, поширюються умови Instagram.\n\nℹ️ Користуючись цим ботом, ви погоджуєтесь із цією політикою конфіденційності.",
     fa: "🔒 <b>سیاست حفظ حریم خصوصی</b>\n\nحفظ حریم خصوصی شما برای ما مهم است. این ربات فقط لینک‌های Instagram را که ارسال می‌کنید پردازش می‌کند، و تنها برای دانلود رسانه‌ای که درخواست کرده‌اید.\n\n<b>🙅 چه اطلاعاتی را جمع نمی‌کنیم</b>\n• شماره تلفن شما\n• ایمیل شما\n• نشانی IP شما\n• نام، مخاطبین یا هر اطلاعات شخصی دیگر شما\n\n<b>🗂️ لینک‌های شما</b>\nما لینک‌هایی که ارسال می‌کنید را ذخیره نمی‌کنیم. آن‌ها فقط برای دریافت رسانه درخواستی استفاده می‌شوند و پس از آن نگه‌داری نمی‌شوند.\n\n<b>💸 فروش اطلاعات شما</b>\nما اطلاعات شما را نمی‌فروشیم یا به اشتراک نمی‌گذاریم — چون چیزی برای فروش یا به اشتراک گذاشتن وجود ندارد.\n\n<b>🔗 خدمات طرف سوم</b>\nرسانه از طریق سرویس دانلود ما دریافت می‌شود. شرایط خود Instagram بر محتوایی که دانلود می‌کنید اعمال می‌شود.\n\nℹ️ با استفاده از این ربات، شما با این سیاست حفظ حریم خصوصی موافقت می‌کنید.",
     tr: "🔒 <b>Gizlilik Politikası</b>\n\nGizliliğiniz bizim için önemli. Bu bot yalnızca gönderdiğiniz Instagram bağlantılarını ve yalnızca istediğiniz medyayı indirmek için işler.\n\n<b>🙅 Neleri toplamıyoruz</b>\n• Telefon numaranızı\n• E-posta adresinizi\n• IP adresinizi\n• Adınızı, kişilerinizi veya başka herhangi bir kişisel verinizi\n\n<b>🗂️ Bağlantılarınız</b>\nPaylaştığınız bağlantıları saklamıyoruz. Bunlar yalnızca istediğiniz medyayı almak için kullanılır ve sonrasında tutulmaz.\n\n<b>💸 Bilgilerinizi satmak</b>\nBilgilerinizi satmıyor veya paylaşmıyoruz — çünkü satacak ya da paylaşacak bir şey yok.\n\n<b>🔗 Üçüncü taraf hizmetleri</b>\nMedya, indirme hizmetimiz aracılığıyla alınır. İndirdiğiniz içerik için Instagram'ın kendi koşulları geçerlidir.\n\nℹ️ Bu botu kullanarak bu gizlilik politikasını kabul etmiş olursunuz.",
-    hi: "🔒 <b>गोपनीयता नीति</b>\n\nआपकी निजता हमारे लिए महत्वपूर्ण है। यह बॉट केवल आपके द्वारा भेजे गए Instagram लिंक को प्रोसेस करता है, और वह भी केवल आपके माँगे गए मीडिया को डाउनलोड करने के लिए।\n\n<b>🙅 हम क्या नहीं जमा करते</b>\n• आपका फ़ोन नंबर\n• आपका ईमेल पता\n• आपका IP पता\n• आपका नाम, संपर्क या कोई अन्य व्यक्तिगत जानकारी\n\n<b>🗂️ आपके लिंक</b>\nआपके द्वारा साझा किए गए लिंक हम जमा नहीं करते। वे केवल आपके माँगे गए मीडिया को लाने के लिए उपयोग होते हैं और उसके बाद नहीं रखे जाते।\n\n<b>💸 आपकी जानकारी बेचना</b>\nहम आपकी जानकारी न बेचते हैं न साझा करते हैं — क्योंकि बेचने या साझा करने के लिए कुछ है ही नहीं।\n\n<b>🔗 तीसरे पक्ष की सेवाएँ</b>\nमीडिया हमारी डाउनलोड सेवा के ज़रिए लाया जाता है। आपके डाउनलोड किए गए कंटेंट पर Instagram की अपनी शर्तें लागू होती हैं।\n\nℹ️ इस बॉट का उपयोग करके, आप इस गोपनीयता नीति से सहमत होते हैं।"
+    hi: "🔒 <b>गोपनीयता नीति</b>\n\nआपकी निजता हमारे लिए महत्वपूर्ण है। यह बॉट केवल आपके द्वारा भेजे गए Instagram लिंक को प्रोसेस करता है, और वह भी केवल आपके माँगे गए मीडिया को डाउनलोड करने के लिए।\n\n<b>🙅 हम क्या नहीं जमा करते</b>\n• आपका फ़ोन नंबर\n• आपका ईमेल पता\n• आपका IP पता\n• आपका नाम, संपर्क या कोई अन्य व्यक्तिगत जानकारी\n\n<b>🗂️ आपके लिंक</b>\nआपके द्वारा साझा किए गए लिंक हम जमा नहीं करते। वे केवल आपके माँगे गए मीडिया को लाने के लिए उपयोग होते हैं और उसके बाद नहीं रखे जाते।\n\n<b>💸 आपकी जानकारी बेचना</b>\nहम आपकी जानकारी न बेचते हैं न साझा करते हैं — क्योंकि बेचने या साझा करने के लिए कुछ है ही नहीं।\n\n<b>🔗 तीसरे पक्ष की सेवाएँ</b>\nमीडिया हमारी डाउनलोड सेवा के ज़रिए लाया जाता है। आपके डाउनलोड किए गए कंटेंट पर Instagram की अपनी शर्तें लागू होती हैं।\n\nℹ️ इस बॉट का उपयोग करके, आप इस गोपनीयता नीति से सहमत होते हैं।",
+    es: "🔒 <b>Política de Privacidad</b>\n\nTu privacidad nos importa. Este bot solo procesa los enlaces de Instagram que envías, y solo para descargar el contenido que solicitas.\n\n<b>🙅 Lo que no recopilamos</b>\n• Tu número de teléfono\n• Tu correo electrónico\n• Tu dirección IP\n• Tu nombre, contactos o cualquier otro dato personal\n\n<b>🗂️ Tus enlaces</b>\nNo guardamos los enlaces que compartes. Solo se usan para obtener el contenido que solicitaste y no se conservan después.\n\n<b>💸 Venta de tu información</b>\nNo vendemos ni compartimos tu información — porque no hay nada que vender ni compartir.\n\n<b>🔗 Servicios de terceros</b>\nEl contenido se obtiene a través de nuestro servicio de descarga. Se aplican los términos de Instagram al contenido que descargas.\n\nℹ️ Al usar este bot, aceptas esta política de privacidad.",
+    pt: "🔒 <b>Política de Privacidade</b>\n\nSua privacidade é importante para nós. Este bot processa apenas os links do Instagram que você envia, e somente para baixar o conteúdo que você solicita.\n\n<b>🙅 O que não coletamos</b>\n• Seu número de telefone\n• Seu e-mail\n• Seu endereço IP\n• Seu nome, contatos ou qualquer outro dado pessoal\n\n<b>🗂️ Seus links</b>\nNão armazenamos os links que você compartilha. Eles são usados apenas para buscar o conteúdo solicitado e não são mantidos depois.\n\n<b>💸 Venda das suas informações</b>\nNão vendemos nem compartilhamos suas informações — porque não há nada para vender ou compartilhar.\n\n<b>🔗 Serviços de terceiros</b>\nO conteúdo é obtido por meio do nosso serviço de download. Os termos do Instagram se aplicam ao conteúdo que você baixa.\n\nℹ️ Ao usar este bot, você concorda com esta política de privacidade.",
+    fr: "🔒 <b>Politique de Confidentialité</b>\n\nVotre vie privée nous tient à cœur. Ce bot traite uniquement les liens Instagram que vous envoyez, et seulement pour télécharger le contenu que vous demandez.\n\n<b>🙅 Ce que nous ne collectons pas</b>\n• Votre numéro de téléphone\n• Votre adresse e-mail\n• Votre adresse IP\n• Votre nom, vos contacts ou toute autre donnée personnelle\n\n<b>🗂️ Vos liens</b>\nNous ne conservons pas les liens que vous partagez. Ils servent uniquement à récupérer le contenu demandé et ne sont pas gardés ensuite.\n\n<b>💸 Vente de vos informations</b>\nNous ne vendons ni ne partageons vos informations — car il n'y a rien à vendre ou à partager.\n\n<b>🔗 Services tiers</b>\nLe contenu est récupéré via notre service de téléchargement. Les conditions d'Instagram s'appliquent au contenu que vous téléchargez.\n\nℹ️ En utilisant ce bot, vous acceptez cette politique de confidentialité."
   },
 
 
@@ -145,7 +169,10 @@ const TEXT = {
     uk: "🌍 Обрати мову",
     fa: "🌍 انتخاب زبان",
     tr: "🌍 Dil seçin",
-    hi: "🌍 भाषा चुनें"
+    hi: "🌍 भाषा चुनें",
+    es: "🌍 Elegir idioma",
+    pt: "🌍 Escolher idioma",
+    fr: "🌍 Choisir la langue"
   },
 
 
@@ -162,7 +189,10 @@ const TEXT = {
     uk: "🚀 <b>Ласкаво просимо до instadrop!</b>\nПростий і швидкий завантажувач Instagram.",
     fa: "🚀 <b>به instadrop خوش آمدید!</b>\nدانلودر ساده و سریع برای Instagram.",
     tr: "🚀 <b>instadrop'a hoş geldiniz!</b>\nBasit ve hızlı Instagram indiriciniz.",
-    hi: "🚀 <b>instadrop में आपका स्वागत है!</b>\nआपका सरल और तेज़ Instagram डाउनलोडर।"
+    hi: "🚀 <b>instadrop में आपका स्वागत है!</b>\nआपका सरल और तेज़ Instagram डाउनलोडर।",
+    es: "🚀 <b>¡Bienvenido a instadrop!</b>\nTu descargador de Instagram simple y rápido.",
+    pt: "🚀 <b>Bem-vindo ao instadrop!</b>\nSeu baixador de Instagram simples e rápido.",
+    fr: "🚀 <b>Bienvenue sur instadrop !</b>\nVotre téléchargeur Instagram simple et rapide."
   },
 
 
@@ -175,7 +205,10 @@ const TEXT = {
     uk: "📥 <b>Що можна завантажити?</b>\n• Дописи  • Каруселі  • Reels\n• Історії  • Highlights  • Профілі",
     fa: "📥 <b>چه چیزهایی را می‌توانم دانلود کنم؟</b>\n• پست‌ها  • کاروسل‌ها  • Reels\n• استوری‌ها  • Highlights  • پروفایل‌ها",
     tr: "📥 <b>Neleri indirebilirim?</b>\n• Gönderiler  • Carousel  • Reels\n• Hikâyeler  • Highlights  • Profiller",
-    hi: "📥 <b>मैं क्या डाउनलोड कर सकता हूँ?</b>\n• पोस्ट  • कैरोसेल  • Reels\n• स्टोरीज़  • Highlights  • प्रोफ़ाइल"
+    hi: "📥 <b>मैं क्या डाउनलोड कर सकता हूँ?</b>\n• पोस्ट  • कैरोसेल  • Reels\n• स्टोरीज़  • Highlights  • प्रोफ़ाइल",
+    es: "📥 <b>¿Qué puedo descargar?</b>\n• Publicaciones  • Carruseles  • Reels\n• Historias  • Destacados  • Perfiles",
+    pt: "📥 <b>O que posso baixar?</b>\n• Publicações  • Carrosséis  • Reels\n• Stories  • Destaques  • Perfis",
+    fr: "📥 <b>Que puis-je télécharger ?</b>\n• Publications  • Carrousels  • Reels\n• Stories  • À la une  • Profils"
   },
 
 
@@ -188,7 +221,10 @@ const TEXT = {
     uk: "👤 <b>Підтримка профілів</b>\n• Фото профілю  • Дані акаунта\n• Підписники та підписки  • Кількість дописів\n• Ім'я та біо  • Статус верифікації\n• Статус приватного акаунта",
     fa: "👤 <b>پشتیبانی از پروفایل</b>\n• عکس پروفایل  • اطلاعات حساب\n• دنبال‌کنندگان و دنبال‌شده‌ها  • تعداد پست‌ها\n• نام و بیو  • وضعیت تأیید\n• وضعیت حساب خصوصی",
     tr: "👤 <b>Profil desteği</b>\n• Profil fotoğrafı  • Hesap bilgileri\n• Takipçiler &amp; takip edilenler  • Gönderi sayısı\n• İsim &amp; bio  • Doğrulama durumu\n• Gizli hesap durumu",
-    hi: "👤 <b>प्रोफ़ाइल सपोर्ट</b>\n• प्रोफ़ाइल फोटो  • अकाउंट विवरण\n• फ़ॉलोअर्स और फ़ॉलोइंग  • पोस्ट की संख्या\n• नाम और बायो  • वेरिफिकेशन स्थिति\n• प्राइवेट अकाउंट स्थिति"
+    hi: "👤 <b>प्रोफ़ाइल सपोर्ट</b>\n• प्रोफ़ाइल फोटो  • अकाउंट विवरण\n• फ़ॉलोअर्स और फ़ॉलोइंग  • पोस्ट की संख्या\n• नाम और बायो  • वेरिफिकेशन स्थिति\n• प्राइवेट अकाउंट स्थिति",
+    es: "👤 <b>Compatibilidad con perfiles</b>\n• Foto de perfil  • Datos de la cuenta\n• Seguidores y seguidos  • Número de publicaciones\n• Nombre y biografía  • Estado de verificación\n• Estado de cuenta privada",
+    pt: "👤 <b>Suporte a perfis</b>\n• Foto de perfil  • Detalhes da conta\n• Seguidores e seguindo  • Número de publicações\n• Nome e bio  • Status de verificação\n• Status de conta privada",
+    fr: "👤 <b>Prise en charge des profils</b>\n• Photo de profil  • Détails du compte\n• Abonnés &amp; abonnements  • Nombre de publications\n• Nom &amp; bio  • Statut de vérification\n• Statut de compte privé"
   },
 
 
@@ -201,7 +237,10 @@ const TEXT = {
     uk: "🖼️ <b>Деталі медіа</b>\n• Ім'я користувача  • Підпис\n• Дата завантаження  • Вподобання\n• Коментарі  • Перегляди\n• Відтворення  • Репости",
     fa: "🖼️ <b>جزئیات رسانه</b>\n• نام کاربری  • کپشن\n• تاریخ انتشار  • لایک‌ها\n• نظرات  • بازدیدها\n• پخش‌ها  • بازنشرها",
     tr: "🖼️ <b>Medya detayları</b>\n• Kullanıcı adı  • Açıklama\n• Yükleme tarihi  • Beğeniler\n• Yorumlar  • Görüntülenmeler\n• Oynatmalar  • Yeniden paylaşımlar",
-    hi: "🖼️ <b>मीडिया विवरण</b>\n• यूज़रनेम  • कैप्शन\n• अपलोड की तारीख  • लाइक्स\n• कमेंट्स  • व्यूज़\n• प्लेज़  • रीशेयर्स"
+    hi: "🖼️ <b>मीडिया विवरण</b>\n• यूज़रनेम  • कैप्शन\n• अपलोड की तारीख  • लाइक्स\n• कमेंट्स  • व्यूज़\n• प्लेज़  • रीशेयर्स",
+    es: "🖼️ <b>Detalles del contenido</b>\n• Usuario  • Descripción\n• Fecha de subida  • Me gusta\n• Comentarios  • Visualizaciones\n• Reproducciones  • Recompartidos",
+    pt: "🖼️ <b>Detalhes da mídia</b>\n• Usuário  • Legenda\n• Data de upload  • Curtidas\n• Comentários  • Visualizações\n• Reproduções  • Compartilhamentos",
+    fr: "🖼️ <b>Détails du média</b>\n• Nom d'utilisateur  • Légende\n• Date de publication  • J'aime\n• Commentaires  • Vues\n• Lectures  • Repartages"
   },
 
 
@@ -214,7 +253,10 @@ const TEXT = {
     uk: "<b>Як користуватися:</b>\nПросто скопіюйте посилання Instagram і надішліть його сюди.\n\nЖодних складних дій. Просто надішліть посилання!",
     fa: "<b>نحوه استفاده:</b>\nفقط لینک Instagram را کپی کرده و اینجا ارسال کنید.\n\nهیچ مرحله پیچیده‌ای وجود ندارد. فقط لینک را ارسال کنید!",
     tr: "<b>Nasıl kullanılır:</b>\nInstagram bağlantısını kopyalayıp buraya gönderin.\n\nKarmaşık bir işlem yok. Sadece bağlantıyı gönderin!",
-    hi: "<b>कैसे उपयोग करें:</b>\nबस Instagram लिंक कॉपी करके यहाँ भेजें।\n\nकोई जटिल प्रक्रिया नहीं। बस लिंक भेजें!"
+    hi: "<b>कैसे उपयोग करें:</b>\nबस Instagram लिंक कॉपी करके यहाँ भेजें।\n\nकोई जटिल प्रक्रिया नहीं। बस लिंक भेजें!",
+    es: "<b>Cómo usar:</b>\nSolo copia un enlace de Instagram y envíalo aquí.\n\nSin pasos complicados. ¡Solo envía el enlace!",
+    pt: "<b>Como usar:</b>\nBasta copiar um link do Instagram e enviá-lo aqui.\n\nSem etapas complicadas. Basta enviar o link!",
+    fr: "<b>Comment utiliser :</b>\nCopiez simplement un lien Instagram et envoyez-le ici.\n\nAucune étape compliquée. Envoyez simplement le lien !"
   },
 
 
@@ -231,7 +273,10 @@ const TEXT = {
     uk: "⏳ <b>Обробляю...</b>\n\n🔎 Читаю посилання Instagram і готую медіа.",
     fa: "⏳ <b>در حال پردازش...</b>\n\n🔎 لینک Instagram در حال بررسی و رسانه شما در حال آماده‌سازی است.",
     tr: "⏳ <b>İşleniyor...</b>\n\n🔎 Instagram bağlantısı okunuyor ve medyanız hazırlanıyor.",
-    hi: "⏳ <b>काम हो रहा है...</b>\n\n🔎 Instagram लिंक पढ़ा जा रहा है और आपका मीडिया तैयार किया जा रहा है।"
+    hi: "⏳ <b>काम हो रहा है...</b>\n\n🔎 Instagram लिंक पढ़ा जा रहा है और आपका मीडिया तैयार किया जा रहा है।",
+    es: "⏳ <b>Trabajando en ello...</b>\n\n🔎 Leyendo el enlace de Instagram y preparando tu contenido.",
+    pt: "⏳ <b>Trabalhando nisso...</b>\n\n🔎 Lendo o link do Instagram e preparando sua mídia.",
+    fr: "⏳ <b>En cours de traitement...</b>\n\n🔎 Lecture du lien Instagram et préparation de votre média."
   },
 
 
@@ -248,7 +293,10 @@ const TEXT = {
     uk: "❌ <b>Не вдалося підключитися до сервісу завантаження.</b>\n\nПеревірте посилання Instagram і спробуйте ще раз.",
     fa: "❌ <b>نتوانستم به سرویس دانلود متصل شوم.</b>\n\nلینک Instagram را بررسی کنید و دوباره تلاش کنید.",
     tr: "❌ <b>İndirme hizmetine ulaşılamadı.</b>\n\nInstagram bağlantısını kontrol edip biraz sonra tekrar deneyin.",
-    hi: "❌ <b>डाउनलोड सेवा से कनेक्ट नहीं हो सका।</b>\n\nInstagram लिंक जाँचें और थोड़ी देर बाद फिर कोशिश करें।"
+    hi: "❌ <b>डाउनलोड सेवा से कनेक्ट नहीं हो सका।</b>\n\nInstagram लिंक जाँचें और थोड़ी देर बाद फिर कोशिश करें।",
+    es: "❌ <b>No pude conectarme al servicio de descarga.</b>\n\nRevisa el enlace de Instagram e inténtalo de nuevo en un momento.",
+    pt: "❌ <b>Não consegui acessar o serviço de download.</b>\n\nVerifique o link do Instagram e tente novamente em instantes.",
+    fr: "❌ <b>Je n'ai pas pu joindre le service de téléchargement.</b>\n\nVérifiez le lien Instagram et réessayez dans un instant."
   },
 
 
@@ -261,7 +309,10 @@ const TEXT = {
     uk: "⚠️ <b>Сервіс завантаження повернув неочікувану відповідь.</b>\n\nСпробуйте надіслати посилання Instagram ще раз.",
     fa: "⚠️ <b>سرویس دانلود پاسخ غیرمنتظره‌ای برگرداند.</b>\n\nلینک Instagram را دوباره ارسال کنید.",
     tr: "⚠️ <b>İndirme hizmeti beklenmeyen bir yanıt verdi.</b>\n\nInstagram bağlantısını tekrar deneyin.",
-    hi: "⚠️ <b>डाउनलोड सेवा ने अप्रत्याशित जवाब दिया।</b>\n\nInstagram लिंक फिर से भेजें।"
+    hi: "⚠️ <b>डाउनलोड सेवा ने अप्रत्याशित जवाब दिया।</b>\n\nInstagram लिंक फिर से भेजें।",
+    es: "⚠️ <b>El servicio de descarga devolvió una respuesta inesperada.</b>\n\nInténtalo de nuevo con el enlace de Instagram.",
+    pt: "⚠️ <b>O serviço de download retornou uma resposta inesperada.</b>\n\nTente novamente com o link do Instagram.",
+    fr: "⚠️ <b>Le service de téléchargement a renvoyé une réponse inattendue.</b>\n\nRéessayez avec le lien Instagram."
   },
 
 
@@ -274,7 +325,10 @@ const TEXT = {
     uk: "❌ <b>Не вдалося знайти медіа для завантаження в цьому дописі Instagram.</b>\n\nПеревірте посилання та спробуйте ще раз.",
     fa: "❌ <b>رسانه قابل دانلودی در این پست Instagram پیدا نشد.</b>\n\nلینک را بررسی کرده و دوباره تلاش کنید.",
     tr: "❌ <b>Bu Instagram gönderisinde indirilebilir medya bulunamadı.</b>\n\nBağlantıyı kontrol edip tekrar deneyin.",
-    hi: "❌ <b>इस Instagram पोस्ट में कोई डाउनलोड करने योग्य मीडिया नहीं मिला।</b>\n\nलिंक जाँचें और फिर कोशिश करें।"
+    hi: "❌ <b>इस Instagram पोस्ट में कोई डाउनलोड करने योग्य मीडिया नहीं मिला।</b>\n\nलिंक जाँचें और फिर कोशिश करें।",
+    es: "❌ <b>No encontré contenido descargable en esa publicación de Instagram.</b>\n\nRevisa el enlace e inténtalo de nuevo.",
+    pt: "❌ <b>Não encontrei nenhuma mídia para baixar nessa publicação do Instagram.</b>\n\nVerifique o link e tente novamente.",
+    fr: "❌ <b>Je n'ai trouvé aucun média téléchargeable dans cette publication Instagram.</b>\n\nVérifiez le lien et réessayez."
   },
 
 
@@ -287,7 +341,10 @@ const TEXT = {
     uk: "❌ <b>Не вдалося знайти відео для завантаження в цьому Reels.</b>\n\nСпробуйте надіслати посилання ще раз.",
     fa: "❌ <b>ویدیوی قابل دانلودی در این Reel پیدا نشد.</b>\n\nلینک Reel را دوباره ارسال کنید.",
     tr: "❌ <b>Bu reel'de indirilebilir video bulunamadı.</b>\n\nReel bağlantısını tekrar deneyin.",
-    hi: "❌ <b>इस Reel में कोई डाउनलोड करने योग्य वीडियो नहीं मिला।</b>\n\nReel लिंक फिर से भेजें।"
+    hi: "❌ <b>इस Reel में कोई डाउनलोड करने योग्य वीडियो नहीं मिला।</b>\n\nReel लिंक फिर से भेजें।",
+    es: "❌ <b>No encontré un video descargable en este reel.</b>\n\nInténtalo de nuevo con el enlace del reel.",
+    pt: "❌ <b>Não encontrei um vídeo para baixar neste reel.</b>\n\nTente novamente com o link do reel.",
+    fr: "❌ <b>Je n'ai trouvé aucune vidéo téléchargeable dans ce reel.</b>\n\nRéessayez avec le lien du reel."
   },
 
 
@@ -300,7 +357,10 @@ const TEXT = {
     uk: "⚠️ <b>Під час обробки вашого запиту сталася неочікувана помилка.</b>\n\nСпробуйте надіслати посилання Instagram ще раз. Якщо проблема не зникне, спробуйте пізніше.",
     fa: "⚠️ <b>هنگام پردازش درخواست شما خطای غیرمنتظره‌ای رخ داد.</b>\n\nلینک Instagram را دوباره ارسال کنید. اگر مشکل ادامه داشت، بعداً دوباره تلاش کنید.",
     tr: "⚠️ <b>İsteğiniz işlenirken beklenmeyen bir hata oluştu.</b>\n\nInstagram bağlantısını tekrar deneyin. Sorun devam ederse biraz sonra tekrar deneyin.",
-    hi: "⚠️ <b>आपके अनुरोध को प्रोसेस करते समय कुछ अप्रत्याशित हुआ।</b>\n\nInstagram लिंक फिर से भेजें। समस्या बनी रहे तो थोड़ी देर बाद दोबारा कोशिश करें।"
+    hi: "⚠️ <b>आपके अनुरोध को प्रोसेस करते समय कुछ अप्रत्याशित हुआ।</b>\n\nInstagram लिंक फिर से भेजें। समस्या बनी रहे तो थोड़ी देर बाद दोबारा कोशिश करें।",
+    es: "⚠️ <b>Ocurrió algo inesperado al procesar tu solicitud.</b>\n\nInténtalo de nuevo con el enlace de Instagram. Si el problema continúa, prueba un poco más tarde.",
+    pt: "⚠️ <b>Algo inesperado aconteceu ao processar sua solicitação.</b>\n\nTente novamente com o link do Instagram. Se o problema continuar, tente de novo mais tarde.",
+    fr: "⚠️ <b>Quelque chose d'inattendu s'est produit lors du traitement de votre demande.</b>\n\nRéessayez avec le lien Instagram. Si le problème persiste, réessayez un peu plus tard."
   },
 
 
@@ -313,7 +373,10 @@ const TEXT = {
     uk: "📎 <b>Для початку мені потрібне посилання Instagram.</b>\n\nНадішліть посилання на:\n📸 Допис\n🖼️ Карусель\n🎬 Reels\n📖 Історію\n✨ Highlight\n👤 Профіль\n\n💡 Просто скопіюйте URL Instagram і надішліть його сюди.",
     fa: "📎 <b>برای شروع به لینک Instagram نیاز دارم.</b>\n\nلینک یکی از موارد زیر را ارسال کنید:\n📸 پست\n🖼️ کاروسل\n🎬 Reel\n📖 استوری\n✨ Highlight\n👤 پروفایل\n\n💡 لینک Instagram را کپی کرده و اینجا ارسال کنید.",
     tr: "📎 <b>Başlamak için bir Instagram bağlantısına ihtiyacım var.</b>\n\nŞunlardan birinin bağlantısını gönderin:\n📸 Gönderi\n🖼️ Carousel\n🎬 Reel\n📖 Hikâye\n✨ Highlight\n👤 Profil\n\n💡 Instagram URL'sini kopyalayıp buraya gönderin.",
-    hi: "📎 <b>शुरू करने के लिए मुझे Instagram लिंक चाहिए।</b>\n\nइनमें से किसी का लिंक भेजें:\n📸 पोस्ट\n🖼️ कैरोसेल\n🎬 Reel\n📖 स्टोरी\n✨ Highlight\n👤 प्रोफ़ाइल\n\n💡 Instagram URL कॉपी करके यहाँ भेजें।"
+    hi: "📎 <b>शुरू करने के लिए मुझे Instagram लिंक चाहिए।</b>\n\nइनमें से किसी का लिंक भेजें:\n📸 पोस्ट\n🖼️ कैरोसेल\n🎬 Reel\n📖 स्टोरी\n✨ Highlight\n👤 प्रोफ़ाइल\n\n💡 Instagram URL कॉपी करके यहाँ भेजें।",
+    es: "📎 <b>Necesito un enlace de Instagram para empezar.</b>\n\nEnvíame el enlace de:\n📸 Publicación\n🖼️ Carrusel\n🎬 Reel\n📖 Historia\n✨ Destacado\n👤 Perfil\n\n💡 Solo copia la URL de Instagram y pégala aquí.",
+    pt: "📎 <b>Preciso de um link do Instagram para começar.</b>\n\nEnvie-me o link de:\n📸 Publicação\n🖼️ Carrossel\n🎬 Reel\n📖 Story\n✨ Destaque\n👤 Perfil\n\n💡 Basta copiar a URL do Instagram e colar aqui.",
+    fr: "📎 <b>J'ai besoin d'un lien Instagram pour commencer.</b>\n\nEnvoyez-moi le lien d'une :\n📸 Publication\n🖼️ Carrousel\n🎬 Reel\n📖 Story\n✨ À la une\n👤 Profil\n\n💡 Copiez simplement l'URL Instagram et collez-la ici."
   },
 
 
@@ -330,7 +393,10 @@ const TEXT = {
     uk: "✅ <b>Завантаження готове!</b>\n\n📥 Надіслано через <b>instadrop</b>",
     fa: "✅ <b>دانلود آماده است!</b>\n\n📥 ارسال‌شده توسط <b>instadrop</b>",
     tr: "✅ <b>İndirme hazır!</b>\n\n📥 <b>instadrop</b> tarafından gönderildi",
-    hi: "✅ <b>डाउनलोड तैयार है!</b>\n\n📥 <b>instadrop</b> द्वारा भेजा गया"
+    hi: "✅ <b>डाउनलोड तैयार है!</b>\n\n📥 <b>instadrop</b> द्वारा भेजा गया",
+    es: "✅ <b>¡Descarga lista!</b>\n\n📥 Entregado por <b>instadrop</b>",
+    pt: "✅ <b>Download pronto!</b>\n\n📥 Entregue por <b>instadrop</b>",
+    fr: "✅ <b>Téléchargement prêt !</b>\n\n📥 Livré par <b>instadrop</b>"
   },
 
 
@@ -343,7 +409,10 @@ const TEXT = {
     uk: "🖼️ <b>Обкладинка</b>\n\n✨ Ось зображення обкладинки, яке ви запитали.",
     fa: "🖼️ <b>تصویر کاور</b>\n\n✨ تصویر کاور موردنظر شما آماده است.",
     tr: "🖼️ <b>Kapak Fotoğrafı</b>\n\n✨ İstediğiniz kapak görseli burada.",
-    hi: "🖼️ <b>कवर फोटो</b>\n\n✨ यह वह कवर इमेज है जो आपने माँगी थी।"
+    hi: "🖼️ <b>कवर फोटो</b>\n\n✨ यह वह कवर इमेज है जो आपने माँगी थी।",
+    es: "🖼️ <b>Foto de portada</b>\n\n✨ Aquí está la imagen de portada que solicitaste.",
+    pt: "🖼️ <b>Foto de capa</b>\n\n✨ Aqui está a imagem de capa que você solicitou.",
+    fr: "🖼️ <b>Photo de couverture</b>\n\n✨ Voici l'image de couverture que vous avez demandée."
   },
 
 
@@ -356,7 +425,10 @@ const TEXT = {
     uk: "⏰ <b>На жаль, термін дії цієї обкладинки минув.</b>\n\nНадішліть посилання Instagram ще раз, щоб отримати нову копію.",
     fa: "⏰ <b>متأسفانه، این کاور منقضی شده است.</b>\n\nلینک Instagram را دوباره ارسال کنید تا نسخه جدید ایجاد شود.",
     tr: "⏰ <b>Üzgünüz, bu kapak görselinin süresi doldu.</b>\n\nYeni bir kopya oluşturmak için Instagram bağlantısını tekrar gönderin.",
-    hi: "⏰ <b>माफ़ करें, इस कवर की समय सीमा समाप्त हो गई है।</b>\n\nनई कॉपी बनाने के लिए Instagram लिंक फिर से भेजें।"
+    hi: "⏰ <b>माफ़ करें, इस कवर की समय सीमा समाप्त हो गई है।</b>\n\nनई कॉपी बनाने के लिए Instagram लिंक फिर से भेजें।",
+    es: "⏰ <b>Lo sentimos, esta portada ha caducado.</b>\n\nEnvía de nuevo el enlace de Instagram para generar una copia nueva.",
+    pt: "⏰ <b>Desculpe, esta capa expirou.</b>\n\nEnvie o link do Instagram novamente para gerar uma nova cópia.",
+    fr: "⏰ <b>Désolé, cette couverture a expiré.</b>\n\nRenvoyez le lien Instagram pour en générer une nouvelle copie."
   },
 
 
@@ -369,7 +441,10 @@ const TEXT = {
     uk: "📋 <b>Деталі медіа</b>",
     fa: "📋 <b>جزئیات رسانه</b>",
     tr: "📋 <b>Medya Detayları</b>",
-    hi: "📋 <b>मीडिया विवरण</b>"
+    hi: "📋 <b>मीडिया विवरण</b>",
+    es: "📋 <b>Detalles del contenido</b>",
+    pt: "📋 <b>Detalhes da mídia</b>",
+    fr: "📋 <b>Détails du média</b>"
   },
 
 
@@ -382,7 +457,10 @@ const TEXT = {
     uk: "ℹ️ Додаткові відомості про це медіа недоступні.",
     fa: "ℹ️ اطلاعات بیشتری برای این رسانه موجود نیست.",
     tr: "ℹ️ Bu medya için ek bilgi bulunmuyor.",
-    hi: "ℹ️ इस मीडिया के लिए कोई अतिरिक्त विवरण उपलब्ध नहीं है।"
+    hi: "ℹ️ इस मीडिया के लिए कोई अतिरिक्त विवरण उपलब्ध नहीं है।",
+    es: "ℹ️ No hay detalles adicionales disponibles para este contenido.",
+    pt: "ℹ️ Não há detalhes adicionais disponíveis para esta mídia.",
+    fr: "ℹ️ Aucun détail supplémentaire n'est disponible pour ce média."
   },
 
 
@@ -395,7 +473,10 @@ const TEXT = {
     uk: "⏰ <b>На жаль, термін дії цих даних минув.</b>\n\nНадішліть посилання Instagram ще раз, щоб отримати свіжу інформацію.",
     fa: "⏰ <b>متأسفانه، این اطلاعات منقضی شده‌اند.</b>\n\nلینک Instagram را دوباره ارسال کنید تا اطلاعات جدید دریافت کنید.",
     tr: "⏰ <b>Üzgünüz, bu detayların süresi doldu.</b>\n\nGüncel bilgi almak için Instagram bağlantısını tekrar gönderin.",
-    hi: "⏰ <b>माफ़ करें, इन विवरणों की समय सीमा समाप्त हो गई है।</b>\n\nनई जानकारी पाने के लिए Instagram लिंक फिर से भेजें।"
+    hi: "⏰ <b>माफ़ करें, इन विवरणों की समय सीमा समाप्त हो गई है।</b>\n\nनई जानकारी पाने के लिए Instagram लिंक फिर से भेजें।",
+    es: "⏰ <b>Lo sentimos, estos detalles han caducado.</b>\n\nEnvía de nuevo el enlace de Instagram para obtener información actualizada.",
+    pt: "⏰ <b>Desculpe, estes detalhes expiraram.</b>\n\nEnvie o link do Instagram novamente para obter informações atualizadas.",
+    fr: "⏰ <b>Désolé, ces détails ont expiré.</b>\n\nRenvoyez le lien Instagram pour obtenir des informations à jour."
   }
 
 };
@@ -484,6 +565,22 @@ function languageKeyboard() {
         {
           text: "🇮🇳 हिन्दी",
           callback_data: "lang:hi"
+        }
+      ],
+      [
+        {
+          text: "🇪🇸 Español",
+          callback_data: "lang:es"
+        },
+        {
+          text: "🇧🇷 Português",
+          callback_data: "lang:pt"
+        }
+      ],
+      [
+        {
+          text: "🇫🇷 Français",
+          callback_data: "lang:fr"
         }
       ]
     ]
@@ -1553,7 +1650,10 @@ function formatDetails(
       uk: "✨ Highlight",
       fa: "✨ Highlight",
       tr: "✨ Highlight",
-      hi: "✨ Highlight"
+      hi: "✨ Highlight",
+      es: "✨ Destacado",
+      pt: "✨ Destaque",
+      fr: "✨ À la une"
     };
 
     lines.push(
@@ -1578,7 +1678,10 @@ function formatDetails(
       uk: "📖 Історія",
       fa: "📖 استوری",
       tr: "📖 Hikâye",
-      hi: "📖 स्टोरी"
+      hi: "📖 स्टोरी",
+      es: "📖 Historia",
+      pt: "📖 Story",
+      fr: "📖 Story"
     };
 
     lines.push(
@@ -1606,7 +1709,10 @@ function formatDetails(
       uk: "👤 Ім'я користувача",
       fa: "👤 نام کاربری",
       tr: "👤 Kullanıcı adı",
-      hi: "👤 यूज़रनेम"
+      hi: "👤 यूज़रनेम",
+      es: "👤 Usuario",
+      pt: "👤 Usuário",
+      fr: "👤 Nom d'utilisateur"
     };
 
     lines.push(
@@ -1627,7 +1733,10 @@ function formatDetails(
       uk: "📛 Ім'я",
       fa: "📛 نام",
       tr: "📛 İsim",
-      hi: "📛 नाम"
+      hi: "📛 नाम",
+      es: "📛 Nombre",
+      pt: "📛 Nome",
+      fr: "📛 Nom"
     };
 
     lines.push(
@@ -1648,7 +1757,10 @@ function formatDetails(
       uk: "📝 Біо",
       fa: "📝 بیو",
       tr: "📝 Bio",
-      hi: "📝 बायो"
+      hi: "📝 बायो",
+      es: "📝 Biografía",
+      pt: "📝 Bio",
+      fr: "📝 Bio"
     };
 
     lines.push("");
@@ -1658,14 +1770,14 @@ function formatDetails(
     );
 
     lines.push(
-      "<code>" +
+      "<blockquote><code>" +
         escapeHtml(
           truncate(
             data.bio,
             1000
           )
         ) +
-        "</code>"
+        "</code></blockquote>"
     );
 
   }
@@ -1686,7 +1798,10 @@ function formatDetails(
       uk: "👥 Підписники",
       fa: "👥 دنبال‌کنندگان",
       tr: "👥 Takipçiler",
-      hi: "👥 फ़ॉलोअर्स"
+      hi: "👥 फ़ॉलोअर्स",
+      es: "👥 Seguidores",
+      pt: "👥 Seguidores",
+      fr: "👥 Abonnés"
     };
 
     lines.push(
@@ -1711,7 +1826,10 @@ function formatDetails(
       uk: "👤 Підписки",
       fa: "👤 دنبال‌شده‌ها",
       tr: "👤 Takip edilen",
-      hi: "👤 फ़ॉलोइंग"
+      hi: "👤 फ़ॉलोइंग",
+      es: "👤 Seguidos",
+      pt: "👤 Seguindo",
+      fr: "👤 Abonnements"
     };
 
     lines.push(
@@ -1736,7 +1854,10 @@ function formatDetails(
       uk: "📦 Дописи",
       fa: "📦 پست‌ها",
       tr: "📦 Gönderiler",
-      hi: "📦 पोस्ट"
+      hi: "📦 पोस्ट",
+      es: "📦 Publicaciones",
+      pt: "📦 Publicações",
+      fr: "📦 Publications"
     };
 
     lines.push(
@@ -1757,7 +1878,10 @@ function formatDetails(
       uk: "✅ Верифіковано",
       fa: "✅ تأیید شده",
       tr: "✅ Doğrulanmış",
-      hi: "✅ वेरिफाइड"
+      hi: "✅ वेरिफाइड",
+      es: "✅ Verificado",
+      pt: "✅ Verificado",
+      fr: "✅ Vérifié"
     };
 
     lines.push(
@@ -1778,7 +1902,10 @@ function formatDetails(
       uk: "🔒 Приватний акаунт",
       fa: "🔒 حساب خصوصی",
       tr: "🔒 Gizli Hesap",
-      hi: "🔒 प्राइवेट अकाउंट"
+      hi: "🔒 प्राइवेट अकाउंट",
+      es: "🔒 Cuenta privada",
+      pt: "🔒 Conta privada",
+      fr: "🔒 Compte privé"
     };
 
     lines.push(
@@ -1799,7 +1926,10 @@ function formatDetails(
       uk: "📝 Підпис",
       fa: "📝 کپشن",
       tr: "📝 Açıklama",
-      hi: "📝 कैप्शन"
+      hi: "📝 कैप्शन",
+      es: "📝 Descripción",
+      pt: "📝 Legenda",
+      fr: "📝 Légende"
     };
 
     lines.push("");
@@ -1809,14 +1939,14 @@ function formatDetails(
     );
 
     lines.push(
-      "<code>" +
+      "<blockquote><code>" +
         escapeHtml(
           truncate(
             data.caption,
             2500
           )
         ) +
-        "</code>"
+        "</code></blockquote>"
     );
 
   }
@@ -1833,7 +1963,10 @@ function formatDetails(
       uk: "📅 Дата",
       fa: "📅 تاریخ",
       tr: "📅 Tarih",
-      hi: "📅 तारीख"
+      hi: "📅 तारीख",
+      es: "📅 Fecha",
+      pt: "📅 Data",
+      fr: "📅 Date"
     };
 
     lines.push("");
@@ -1860,7 +1993,10 @@ function formatDetails(
       uk: "❤️ Вподобання",
       fa: "❤️ لایک‌ها",
       tr: "❤️ Beğeniler",
-      hi: "❤️ लाइक्स"
+      hi: "❤️ लाइक्स",
+      es: "❤️ Me gusta",
+      pt: "❤️ Curtidas",
+      fr: "❤️ J'aime"
     };
 
     lines.push(
@@ -1885,7 +2021,10 @@ function formatDetails(
       uk: "💬 Коментарі",
       fa: "💬 نظرات",
       tr: "💬 Yorumlar",
-      hi: "💬 कमेंट्स"
+      hi: "💬 कमेंट्स",
+      es: "💬 Comentarios",
+      pt: "💬 Comentários",
+      fr: "💬 Commentaires"
     };
 
     lines.push(
@@ -1911,7 +2050,10 @@ function formatDetails(
       uk: "👀 Перегляди",
       fa: "👀 بازدیدها",
       tr: "👀 Görüntülenmeler",
-      hi: "👀 व्यूज़"
+      hi: "👀 व्यूज़",
+      es: "👀 Visualizaciones",
+      pt: "👀 Visualizações",
+      fr: "👀 Vues"
     };
 
     lines.push(
@@ -1937,7 +2079,10 @@ function formatDetails(
       uk: "▶️ Відтворення",
       fa: "▶️ پخش‌ها",
       tr: "▶️ Oynatmalar",
-      hi: "▶️ प्लेज़"
+      hi: "▶️ प्लेज़",
+      es: "▶️ Reproducciones",
+      pt: "▶️ Reproduções",
+      fr: "▶️ Lectures"
     };
 
     lines.push(
@@ -1963,7 +2108,10 @@ function formatDetails(
       uk: "🔁 Репости",
       fa: "🔁 بازنشرها",
       tr: "🔁 Yeniden paylaşımlar",
-      hi: "🔁 रीशेयर्स"
+      hi: "🔁 रीशेयर्स",
+      es: "🔁 Recompartidos",
+      pt: "🔁 Compartilhamentos",
+      fr: "🔁 Repartages"
     };
 
     lines.push(
@@ -1989,7 +2137,10 @@ function formatDetails(
       uk: "📦 Елементів у Highlight",
       fa: "📦 موارد Highlight",
       tr: "📦 Highlight öğeleri",
-      hi: "📦 Highlight आइटम"
+      hi: "📦 Highlight आइटम",
+      es: "📦 Elementos del destacado",
+      pt: "📦 Itens do destaque",
+      fr: "📦 Éléments du highlight"
     };
 
     lines.push(
@@ -2012,7 +2163,10 @@ function formatDetails(
       uk: "📦 Елементів",
       fa: "📦 موارد",
       tr: "📦 Öğeler",
-      hi: "📦 आइटम"
+      hi: "📦 आइटम",
+      es: "📦 Elementos",
+      pt: "📦 Itens",
+      fr: "📦 Éléments"
     };
 
     lines.push(
@@ -2263,7 +2417,10 @@ async function sendCollectionHeader(
       uk: "✨ <b>Highlight:</b>",
       fa: "✨ <b>Highlight:</b>",
       tr: "✨ <b>Highlight:</b>",
-      hi: "✨ <b>Highlight:</b>"
+      hi: "✨ <b>Highlight:</b>",
+      es: "✨ <b>Destacado:</b>",
+      pt: "✨ <b>Destaque:</b>",
+      fr: "✨ <b>À la une :</b>"
     };
 
     lines.push(
@@ -2289,7 +2446,10 @@ async function sendCollectionHeader(
       uk: "📖 <b>Історія</b>",
       fa: "📖 <b>استوری</b>",
       tr: "📖 <b>Hikâye</b>",
-      hi: "📖 <b>स्टोरी</b>"
+      hi: "📖 <b>स्टोरी</b>",
+      es: "📖 <b>Historia</b>",
+      pt: "📖 <b>Story</b>",
+      fr: "📖 <b>Story</b>"
     };
 
     lines.push(
@@ -2328,7 +2488,10 @@ async function sendCollectionHeader(
       uk: "📦 <b>Елементів:</b>",
       fa: "📦 <b>موارد:</b>",
       tr: "📦 <b>Öğeler:</b>",
-      hi: "📦 <b>आइटम:</b>"
+      hi: "📦 <b>आइटम:</b>",
+      es: "📦 <b>Elementos:</b>",
+      pt: "📦 <b>Itens:</b>",
+      fr: "📦 <b>Éléments :</b>"
     };
 
     lines.push(
@@ -2348,7 +2511,10 @@ async function sendCollectionHeader(
       uk: "📦 <b>Елементів:</b>",
       fa: "📦 <b>موارد:</b>",
       tr: "📦 <b>Öğeler:</b>",
-      hi: "📦 <b>आइटम:</b>"
+      hi: "📦 <b>आइटम:</b>",
+      es: "📦 <b>Elementos:</b>",
+      pt: "📦 <b>Itens:</b>",
+      fr: "📦 <b>Éléments :</b>"
     };
 
     lines.push(
@@ -2695,7 +2861,16 @@ async function sendHelp(
       "📖 <b>instadrop Yardım</b>\n\nInstagram bağlantısını gönderin, gerisini ben hallederim. 🚀\n\n<b>📥 Desteklenen içerikler</b>\n📸 Gönderiler\n🖼️ Carousel\n🎬 Reels\n📖 Hikâyeler\n✨ Highlights\n👤 Profiller\n\n<b>💡 İpucu:</b> Instagram URL'sini kopyalayıp doğrudan bu sohbete gönderin.\n\nEkstra komut gerekmez. ✅",
 
     hi:
-      "📖 <b>instadrop सहायता</b>\n\nबस Instagram लिंक भेजें और बाकी काम मैं कर दूँगा। 🚀\n\n<b>📥 सपोर्टेड कंटेंट</b>\n📸 पोस्ट\n🖼️ कैरोसेल\n🎬 Reels\n📖 स्टोरीज़\n✨ Highlights\n👤 प्रोफ़ाइल\n\n<b>💡 टिप:</b> Instagram URL कॉपी करके सीधे इस चैट में भेजें।\n\nकिसी अतिरिक्त कमांड की ज़रूरत नहीं है। ✅"
+      "📖 <b>instadrop सहायता</b>\n\nबस Instagram लिंक भेजें और बाकी काम मैं कर दूँगा। 🚀\n\n<b>📥 सपोर्टेड कंटेंट</b>\n📸 पोस्ट\n🖼️ कैरोसेल\n🎬 Reels\n📖 स्टोरीज़\n✨ Highlights\n👤 प्रोफ़ाइल\n\n<b>💡 टिप:</b> Instagram URL कॉपी करके सीधे इस चैट में भेजें।\n\nकिसी अतिरिक्त कमांड की ज़रूरत नहीं है। ✅",
+
+    es:
+      "📖 <b>Ayuda de instadrop</b>\n\nSolo envíame un enlace de Instagram y yo me encargo del resto. 🚀\n\n<b>📥 Contenido compatible</b>\n📸 Publicaciones\n🖼️ Carruseles\n🎬 Reels\n📖 Historias\n✨ Destacados\n👤 Perfiles\n\n<b>💡 Consejo:</b> Copia la URL de Instagram y pégala directamente en este chat.\n\nNo se necesitan comandos adicionales. ✅",
+
+    pt:
+      "📖 <b>Ajuda do instadrop</b>\n\nBasta me enviar um link do Instagram e eu cuido do resto. 🚀\n\n<b>📥 Conteúdo suportado</b>\n📸 Publicações\n🖼️ Carrosséis\n🎬 Reels\n📖 Stories\n✨ Destaques\n👤 Perfis\n\n<b>💡 Dica:</b> Copie a URL do Instagram e cole diretamente neste chat.\n\nNenhum comando extra é necessário. ✅",
+
+    fr:
+      "📖 <b>Aide instadrop</b>\n\nEnvoyez-moi simplement un lien Instagram et je m'occupe du reste. 🚀\n\n<b>📥 Contenu pris en charge</b>\n📸 Publications\n🖼️ Carrousels\n🎬 Reels\n📖 Stories\n✨ À la une\n👤 Profils\n\n<b>💡 Astuce :</b> Copiez l'URL Instagram et collez-la directement dans ce chat.\n\nAucune commande supplémentaire n'est nécessaire. ✅"
   };
 
 
@@ -4115,7 +4290,11 @@ export default async function handler(
         fa: "fa",
         tr: "tr",
         hi: "hi",
-        en: "en"
+        en: "en",
+        es: "es",
+        pt: "pt",
+        "pt-br": "pt",
+        fr: "fr"
       };
 
 

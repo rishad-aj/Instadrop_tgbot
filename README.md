@@ -3,7 +3,7 @@
 A fast, multilingual **Instagram downloader bot** for Telegram, running as a single
 serverless function on [Vercel](https://vercel.com).
 
-**Bot:** [t.me/Instadrop_tgbot](https://t.me/Instadrop_tgbot)
+**Bot:** [t.me/Instadrop_tgbot](https://t.me/Instadrop_tgbot?start=start) &nbsp;—&nbsp; tap to open **and start** the bot
 **Website:** https://instadrop.web.app/
 
 Just paste an Instagram link into the chat and the bot sends the media back.

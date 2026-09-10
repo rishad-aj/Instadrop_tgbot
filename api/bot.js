@@ -543,7 +543,7 @@ function languageKeyboard() {
       ],
       [
         {
-          text: "🇸🇦 العربية",
+          text: "\u200E🇸🇦 العربية",
           callback_data: "lang:ar"
         },
         {
@@ -553,7 +553,7 @@ function languageKeyboard() {
       ],
       [
         {
-          text: "🇮🇷 فارسی",
+          text: "\u200E🇮🇷 فارسی",
           callback_data: "lang:fa"
         },
         {

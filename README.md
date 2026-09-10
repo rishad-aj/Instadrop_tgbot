@@ -2,33 +2,35 @@
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:26A5E4,100:0B3D91&height=140&section=header&text=instadrop&fontSize=52&fontColor=ffffff&animation=fadeIn&fontAlignY=36&desc=Telegram%20Instagram%20Downloader%20Bot&descAlignY=58&descSize=16" width="100%" alt="instadrop header" />
-
-<br/>
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:93C5FD,50:3B82F6,100:2563EB&height=130&section=header" alt="" />
 
 <a href="https://t.me/Instadrop_tgbot?start=start">
-  <img src="https://instadrop.web.app/og-image.png" width="620" alt="instadrop — free Instagram media downloader" />
+  <img src="https://user.uploads.dev/file/d3c86f3b763e528f22145ef3007301ff.svg" height="66" alt="instadrop logo" />
+  &nbsp;
+  <img src="https://user.uploads.dev/file/8e5b11d22563d0629952d23124344bf5.png" height="66" alt="instadrop" />
 </a>
 
 <br/><br/>
 
 <a href="https://t.me/Instadrop_tgbot?start=start">
-  <img src="https://readme-typing-svg.demolab.com?font=Poppins&weight=600&size=22&pause=900&color=26A5E4&center=true&vCenter=true&width=620&height=45&lines=Free+Instagram+media+downloader;No+ads+%C2%B7+No+login+%C2%B7+No+limits;Posts+%C2%B7+Reels+%C2%B7+Stories+%C2%B7+Highlights;Speaks+9+languages" alt="typing" />
+  <img src="https://readme-typing-svg.demolab.com?font=Poppins&weight=600&size=22&pause=900&color=2563EB&center=true&vCenter=true&width=620&height=45&lines=Free+Instagram+media+downloader;No+ads+%C2%B7+No+login+%C2%B7+No+limits;Posts+%C2%B7+Reels+%C2%B7+Stories+%C2%B7+Highlights;Speaks+9+languages" alt="typing" />
 </a>
 
 <br/>
 
 <a href="https://t.me/Instadrop_tgbot?start=start">
-  <img src="https://img.shields.io/badge/Telegram-@Instadrop__tgbot-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram" />
+  <img src="https://img.shields.io/badge/Telegram-@Instadrop__tgbot-2563EB?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram" />
 </a>
 <img src="https://img.shields.io/badge/Deploy-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
 <img src="https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
-<img src="https://img.shields.io/badge/Languages-9-FF6F00?style=for-the-badge&logo=googletranslate&logoColor=white" alt="9 languages" />
+<img src="https://img.shields.io/badge/Languages-9-2563EB?style=for-the-badge&logo=googletranslate&logoColor=white" alt="9 languages" />
 <img src="https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="MIT" />
 
 <br/><br/>
 
-**<a href="https://t.me/Instadrop_tgbot?start=start">▶️ Start the bot on Telegram</a>** &nbsp;·&nbsp; [t.me/Instadrop_tgbot](https://t.me/Instadrop_tgbot?start=start)
+<a href="https://t.me/Instadrop_tgbot?start=start">
+  <img src="https://img.shields.io/badge/▶️_Start_@Instadrop__tgbot-2563EB?style=for-the-badge&logo=telegram&logoColor=white" alt="Start the bot" />
+</a>
 
 </div>
 
@@ -47,7 +49,7 @@ Paste an Instagram link into the chat — the bot sends the media back. That's i
 
 <div align="center">
 
-| <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Camera.png" width="22" valign="middle" alt="" /> Link to bot | <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Globe%20Showing%20Europe-Africa.png" width="22" valign="middle" alt="" /> Website | <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Books.png" width="22" valign="middle" alt="" /> Host |
+| Bot | Website | Host |
 | :---: | :---: | :---: |
 | [t.me/Instadrop_tgbot](https://t.me/Instadrop_tgbot?start=start) | [instadrop.web.app](https://instadrop.web.app/) | Vercel Serverless |
 
@@ -115,13 +117,20 @@ Paste an Instagram link into the chat — the bot sends the media back. That's i
 
 ## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Light%20Bulb.png" width="30" valign="middle" alt="" /> How it works
 
-```mermaid
-flowchart LR
-    U([👤 Telegram user]) -->|sends Instagram link| T[🤖 Vercel function<br/>bot.js]
-    T -->|GET ?url= + X-API-Key| A[(☁️ instadrop download API<br/>Cloudflare Worker)]
-    A -->|JSON media| T
-    T -->|sendPhoto / sendVideo| U
-    T -.->|sendMessage| ADMIN([🔔 Admin chat])
+```text
+   👤 Telegram user
+        │  sends an Instagram link
+        ▼
+   🤖 Vercel function  (bot.js)
+        │  GET  ?url=<link>          header: X-API-Key
+        ▼
+   ☁️  instadrop download API  (Cloudflare Worker)
+        │  JSON { media, username, caption, ... }
+        ▼
+   🤖 Vercel function  (bot.js)
+        │  sendPhoto / sendVideo  (+ Cover Photo / Details buttons)
+        ▼
+   👤 Telegram user
 ```
 
 1. Telegram delivers every update to the Vercel function via a webhook (`POST`).
@@ -264,16 +273,16 @@ The entire bot lives in a single file, **`bot.js`**, organised into sections:
 
 <div align="center">
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Party%20Popper.png" width="30" valign="middle" alt="" /> Ready to try it?
+<img src="https://readme-typing-svg.demolab.com?font=Poppins&weight=600&size=18&pause=900&color=2563EB&center=true&vCenter=true&width=420&height=40&lines=Ready+to+try+it%3F" alt="" />
 
 <a href="https://t.me/Instadrop_tgbot?start=start">
-  <img src="https://img.shields.io/badge/▶️_Start_@Instadrop__tgbot-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Start the bot" />
+  <img src="https://img.shields.io/badge/▶️_Start_@Instadrop__tgbot-2563EB?style=for-the-badge&logo=telegram&logoColor=white" alt="Start the bot" />
 </a>
 
 <br/><br/>
 
 <sub>Made with <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Red%20Heart.png" width="16" valign="middle" alt="love" /> — provided as-is. Respect Instagram's Terms of Service and applicable copyright law when using this bot.</sub>
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0B3D91,100:26A5E4&height=120&section=footer" width="100%" alt="" />
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:2563EB,50:3B82F6,100:93C5FD&height=120&section=footer" alt="" />
 
 </div>

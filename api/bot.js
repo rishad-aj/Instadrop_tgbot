@@ -431,9 +431,7 @@ function languageKeyboard() {
         {
           text: "🇬🇧 English",
           callback_data: "lang:en"
-        }
-      ],
-      [
+        },
         {
           text: "🇷🇺 Русский",
           callback_data: "lang:ru"
@@ -443,9 +441,7 @@ function languageKeyboard() {
         {
           text: "🇺🇿 O‘zbek",
           callback_data: "lang:uz"
-        }
-      ],
-      [
+        },
         {
           text: "🇮🇩 Bahasa Indonesia",
           callback_data: "lang:id"
@@ -455,9 +451,7 @@ function languageKeyboard() {
         {
           text: "🇸🇦 العربية",
           callback_data: "lang:ar"
-        }
-      ],
-      [
+        },
         {
           text: "🇺🇦 Українська",
           callback_data: "lang:uk"
@@ -467,9 +461,7 @@ function languageKeyboard() {
         {
           text: "🇮🇷 فارسی",
           callback_data: "lang:fa"
-        }
-      ],
-      [
+        },
         {
           text: "🇹🇷 Türkçe",
           callback_data: "lang:tr"

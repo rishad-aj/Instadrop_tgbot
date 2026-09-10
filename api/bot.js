@@ -43,7 +43,7 @@ const STORAGE_TTL = 30 * 60 * 1000;
 const LANGUAGES = {
   en: {
     name: "English",
-    flag: "🇬🇧"
+    flag: "🇬🇧🇺🇸"
   },
 
   ru: {
@@ -93,7 +93,7 @@ const LANGUAGES = {
 
   pt: {
     name: "Português",
-    flag: "🇧🇷"
+    flag: "🇵🇹🇧🇷"
   },
 
   fr: {
@@ -523,7 +523,7 @@ function languageKeyboard() {
     inline_keyboard: [
       [
         {
-          text: "🇬🇧 English",
+          text: "🇬🇧🇺🇸 English",
           callback_data: "lang:en"
         },
         {
@@ -565,19 +565,17 @@ function languageKeyboard() {
         {
           text: "🇮🇳 हिन्दी",
           callback_data: "lang:hi"
-        }
-      ],
-      [
+        },
         {
           text: "🇪🇸 Español",
           callback_data: "lang:es"
-        },
-        {
-          text: "🇧🇷 Português",
-          callback_data: "lang:pt"
         }
       ],
       [
+        {
+          text: "🇵🇹🇧🇷 Português",
+          callback_data: "lang:pt"
+        },
         {
           text: "🇫🇷 Français",
           callback_data: "lang:fr"

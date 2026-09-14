@@ -29,7 +29,8 @@
 <br/><br/>
 
 <a href="https://t.me/Instadrop_tgbot?start=start">
-  <img src="https://img.shields.io/badge/▶️_Start_@Instadrop__tgbot-2563EB?style=for-the-badge&logo=telegram&logoColor=white" alt="Start the bot" />
+  <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Travel%20and%20Places/Rocket.webp" width="28" valign="middle" alt="" />
+  <img src="https://img.shields.io/badge/Start_@Instadrop__tgbot-2563EB?style=for-the-badge&logo=telegram&logoColor=white" alt="Start the bot" />
 </a>
 
 </div>
@@ -38,7 +39,7 @@
 
 <!-- ===================== ABOUT ===================== -->
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Rocket.png" width="30" valign="middle" alt="" /> About
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Travel%20and%20Places/Rocket.webp" width="30" valign="middle" alt="" /> About
 
 A fast, **multilingual Instagram downloader bot** for Telegram, running as a single
 serverless function on [Vercel](https://vercel.com).
@@ -59,53 +60,53 @@ Paste an Instagram link into the chat — the bot sends the media back. That's i
 
 <!-- ===================== FEATURES ===================== -->
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Sparkles.png" width="30" valign="middle" alt="" /> Features
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Activity/Sparkles.webp" width="30" valign="middle" alt="" /> Features
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-**<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Package.png" width="20" valign="middle" alt="" /> Supported content**
+**<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Newspaper.webp" width="20" valign="middle" alt="" /> Supported content**
 
-- 📸 Posts
-- 🖼️ Carousels
-- 🎬 Reels
-- 📖 Stories
-- ✨ Highlights
-- 👤 Profiles
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Newspaper.webp" width="18" valign="middle" alt="" /> Posts
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Activity/Artist%20Palette.webp" width="18" valign="middle" alt="" /> Carousels
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Clapper%20Board.webp" width="18" valign="middle" alt="" /> Reels
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Open%20Book.webp" width="18" valign="middle" alt="" /> Stories
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Activity/Sparkles.webp" width="18" valign="middle" alt="" /> Highlights
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/People/Bust%20In%20Silhouette.webp" width="18" valign="middle" alt="" /> Profiles
 
 </td>
 <td width="50%" valign="top">
 
-**<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Bar%20Chart.png" width="20" valign="middle" alt="" /> Media details**
+**<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Bar%20Chart.webp" width="20" valign="middle" alt="" /> Media details**
 
-- 👤 Username & caption
-- 📅 Upload date
-- ❤️ Likes & 💬 comments
-- 👀 Views & ▶️ plays
-- 🔁 Reshares
-- 👥 Followers / following / posts
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Identification%20Card.webp" width="18" valign="middle" alt="" /> Username &amp; caption
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Tear%20Off%20Calendar.webp" width="18" valign="middle" alt="" /> Upload date
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/Red%20Heart.webp" width="18" valign="middle" alt="" /> Likes &amp; <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/Speech%20Balloon.webp" width="18" valign="middle" alt="" /> comments
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/People/Eyes.webp" width="18" valign="middle" alt="" /> Views &amp; <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Television.webp" width="18" valign="middle" alt="" /> plays
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Outbox%20Tray.webp" width="18" valign="middle" alt="" /> Reshares
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/People/Busts%20In%20Silhouette.webp" width="18" valign="middle" alt="" /> Followers / following / posts
 
 </td>
 </tr>
 <tr>
 <td width="50%" valign="top">
 
-**<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Gear.png" width="20" valign="middle" alt="" /> Smart behaviour**
+**<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Toolbox.webp" width="20" valign="middle" alt="" /> Smart behaviour**
 
-- 🌍 Auto language detection (from Telegram)
-- ❤️ Auto heart reaction on any link
-- 🔔 Admin notification on each new user
-- 🧩 Inline buttons for language / cover / details
-- 🛟 Graceful fallbacks (video → document, photo → document → text)
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Travel%20and%20Places/Compass.webp" width="18" valign="middle" alt="" /> Auto language detection (from Telegram)
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/Beating%20Heart.webp" width="18" valign="middle" alt="" /> Auto heart reaction on any link
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Megaphone.webp" width="18" valign="middle" alt="" /> Admin notification on each new user
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/Check%20Mark%20Button.webp" width="18" valign="middle" alt="" /> Inline buttons for language / cover / details
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Smileys/Relieved%20Face.webp" width="18" valign="middle" alt="" /> Graceful fallbacks (video → document, photo → document → text)
 
 </td>
 <td width="50%" valign="top">
 
-**<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Globe%20with%20Meridians.png" width="20" valign="middle" alt="" /> Languages**
+**<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Travel%20and%20Places/Compass.webp" width="20" valign="middle" alt="" /> Languages**
 
-🇬🇧 English · 🇷🇺 Русский · 🇺🇿 O‘zbek · 🇮🇩 Bahasa Indonesia ·
-🇸🇦 العربية · 🇺🇦 Українська · 🇮🇷 فارسی · 🇹🇷 Türkçe · 🇮🇳 हिन्दी
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Flags/Flag%20United%20Kingdom.webp" width="18" valign="middle" alt="" /> English · <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Flags/Flag%20Russia.webp" width="18" valign="middle" alt="" /> Русский · <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Flags/Flag%20Uzbekistan.webp" width="18" valign="middle" alt="" /> O‘zbek · <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Flags/Flag%20Indonesia.webp" width="18" valign="middle" alt="" /> Bahasa Indonesia ·
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Flags/Flag%20Saudi%20Arabia.webp" width="18" valign="middle" alt="" /> العربية · <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Flags/Flag%20Ukraine.webp" width="18" valign="middle" alt="" /> Українська · 🇮🇷 فارسی · 🇹🇷 Türkçe · <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Flags/Flag%20India.webp" width="18" valign="middle" alt="" /> हिन्दी
 
 </td>
 </tr>
@@ -115,23 +116,25 @@ Paste an Instagram link into the chat — the bot sends the media back. That's i
 
 <!-- ===================== HOW IT WORKS ===================== -->
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Light%20Bulb.png" width="30" valign="middle" alt="" /> How it works
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Light%20Bulb.webp" width="30" valign="middle" alt="" /> How it works
 
-```text
-   👤 Telegram user
-        │  sends an Instagram link
-        ▼
-   🤖 Vercel function  (bot.js)
-        │  GET  ?url=<link>          header: X-API-Key
-        ▼
-   ☁️  instadrop download API  (Cloudflare Worker)
-        │  JSON { media, username, caption, ... }
-        ▼
-   🤖 Vercel function  (bot.js)
-        │  sendPhoto / sendVideo  (+ Cover Photo / Details buttons)
-        ▼
-   👤 Telegram user
-```
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/People/Bust%20In%20Silhouette.webp" width="20" valign="middle" alt="" /> <b>Telegram user</b>
+<br/><sub>sends an Instagram link</sub>
+<br/>⬇
+<br/><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Smileys/Robot.webp" width="20" valign="middle" alt="" /> <b>Vercel function</b> (<code>bot.js</code>)
+<br/><sub><code>GET ?url=&lt;link&gt;</code> &nbsp;·&nbsp; header: <code>X-API-Key</code></sub>
+<br/>⬇
+<br/><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Animals%20and%20Nature/Cloud.webp" width="20" valign="middle" alt="" /> <b>instadrop download API</b> (Cloudflare Worker)
+<br/><sub>JSON <code>{ media, username, caption, ... }</code></sub>
+<br/>⬇
+<br/><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Smileys/Robot.webp" width="20" valign="middle" alt="" /> <b>Vercel function</b> (<code>bot.js</code>)
+<br/><sub><code>sendPhoto</code> / <code>sendVideo</code> (+ Cover Photo / Details buttons)</sub>
+<br/>⬇
+<br/><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/People/Bust%20In%20Silhouette.webp" width="20" valign="middle" alt="" /> <b>Telegram user</b>
+
+</div>
 
 1. Telegram delivers every update to the Vercel function via a webhook (`POST`).
 2. The handler checks for a **callback query** (button press) or a **text message**.
@@ -143,7 +146,7 @@ Paste an Instagram link into the chat — the bot sends the media back. That's i
 
 <!-- ===================== COMMANDS ===================== -->
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Speech%20Balloon.png" width="30" valign="middle" alt="" /> Commands
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/Speech%20Balloon.webp" width="30" valign="middle" alt="" /> Commands
 
 | Command | Description |
 | :--- | :--- |
@@ -158,25 +161,25 @@ Non-link text gets a friendly "send me an Instagram link" prompt.
 
 | Button | Callback data |
 | :--- | :--- |
-| 🌍 Choose language | `open_language` |
-| 🌐 Open instadrop | URL → website |
-| 🖼️ Get Cover Photo | `get_cover:<id>` |
-| 📋 Get Details | `get_details:<id>` |
+| <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Travel%20and%20Places/Compass.webp" width="18" valign="middle" alt="" /> Choose language | `open_language` |
+| <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/Up%20Button.webp" width="18" valign="middle" alt="" /> Open instadrop | URL → website |
+| <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Activity/Artist%20Palette.webp" width="18" valign="middle" alt="" /> Get Cover Photo | `get_cover:<id>` |
+| <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Memo.webp" width="18" valign="middle" alt="" /> Get Details | `get_details:<id>` |
 | Language options | `lang:<code>` |
 
 ---
 
 <!-- ===================== CONFIG ===================== -->
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Key.png" width="30" valign="middle" alt="" /> Configuration
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Key.webp" width="30" valign="middle" alt="" /> Configuration
 
 All configuration is via **environment variables** (set these in your Vercel project):
 
 | Variable | Required | Description |
 | :--- | :---: | :--- |
-| `TELEGRAM_BOT_TOKEN` | ✅ | Token from [@BotFather](https://t.me/BotFather) |
-| `ADMIN_CHAT_ID` | ✅ | Chat ID that receives new-user notifications |
-| `API_KEY` | ✅ | API key for the download service (`X-API-Key` header) |
+| `TELEGRAM_BOT_TOKEN` | <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/Check%20Mark%20Button.webp" width="16" valign="middle" alt="yes" /> | Token from [@BotFather](https://t.me/BotFather) |
+| `ADMIN_CHAT_ID` | <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/Check%20Mark%20Button.webp" width="16" valign="middle" alt="yes" /> | Chat ID that receives new-user notifications |
+| `API_KEY` | <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/Check%20Mark%20Button.webp" width="16" valign="middle" alt="yes" /> | API key for the download service (`X-API-Key` header) |
 
 Hardcoded constants at the top of `bot.js`:
 
@@ -190,7 +193,7 @@ Hardcoded constants at the top of `bot.js`:
 
 <!-- ===================== DEPLOY ===================== -->
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Rocket.png" width="30" valign="middle" alt="" /> Deploy on Vercel
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Travel%20and%20Places/Rocket.webp" width="30" valign="middle" alt="" /> Deploy on Vercel
 
 1. Push this code to a Git repository and import it into Vercel, **or** deploy the
    file as an API route, e.g. `api/bot.js` (the default export is the webhook handler).
@@ -210,13 +213,13 @@ Hardcoded constants at the top of `bot.js`:
    You can also open the deployed URL in a browser — a `GET` returns
    `{"ok":true,"message":"instadrop Telegram bot is running."}`.
 
-> ℹ️ **Runtime:** requires **Node.js 18+** (uses global `fetch` and `AbortSignal.timeout`).
+> <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Memo.webp" width="16" valign="middle" alt="" /> **Runtime:** requires **Node.js 18+** (uses global `fetch` and `AbortSignal.timeout`).
 
 ---
 
 <!-- ===================== STRUCTURE ===================== -->
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Books.png" width="30" valign="middle" alt="" /> Project structure
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Objects/Books.webp" width="30" valign="middle" alt="" /> Project structure
 
 The entire bot lives in a single file, **`bot.js`**, organised into sections:
 
@@ -241,7 +244,7 @@ The entire bot lives in a single file, **`bot.js`**, organised into sections:
 
 <!-- ===================== ADD LANGUAGE ===================== -->
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Puzzle%20Piece.png" width="30" valign="middle" alt="" /> Adding a language
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/New%20Button.webp" width="30" valign="middle" alt="" /> Adding a language
 
 1. Add an entry to `LANGUAGES` (code → `{ name, flag }`).
 2. Add the code to every key in the `TEXT` table (fallback is English — `t()` returns
@@ -255,7 +258,7 @@ The entire bot lives in a single file, **`bot.js`**, organised into sections:
 
 <!-- ===================== LIMITATIONS ===================== -->
 
-## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Wrench.png" width="30" valign="middle" alt="" /> Known limitations
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/Exclamation%20Mark.webp" width="30" valign="middle" alt="" /> Known limitations
 
 - **In-memory state** — `mediaStorage`, `notifiedUsers` and `userLanguages` are
   in-memory `Map`/`Set` objects. On serverless they are **not shared between instances
@@ -276,12 +279,13 @@ The entire bot lives in a single file, **`bot.js`**, organised into sections:
 <img src="https://readme-typing-svg.demolab.com?font=Poppins&weight=600&size=18&pause=900&color=2563EB&center=true&vCenter=true&width=420&height=40&lines=Ready+to+try+it%3F" alt="" />
 
 <a href="https://t.me/Instadrop_tgbot?start=start">
-  <img src="https://img.shields.io/badge/▶️_Start_@Instadrop__tgbot-2563EB?style=for-the-badge&logo=telegram&logoColor=white" alt="Start the bot" />
+  <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Travel%20and%20Places/Rocket.webp" width="28" valign="middle" alt="" />
+  <img src="https://img.shields.io/badge/Start_@Instadrop__tgbot-2563EB?style=for-the-badge&logo=telegram&logoColor=white" alt="Start the bot" />
 </a>
 
 <br/><br/>
 
-<sub>Made with <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Red%20Heart.png" width="16" valign="middle" alt="love" /> — provided as-is. Respect Instagram's Terms of Service and applicable copyright law when using this bot.</sub>
+<sub>Made with <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Symbols/Red%20Heart.webp" width="16" valign="middle" alt="love" /> — provided as-is. Respect Instagram's Terms of Service and applicable copyright law when using this bot.</sub>
 
 <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:2563EB,50:3B82F6,100:93C5FD&height=120&section=footer" alt="" />
 

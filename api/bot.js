@@ -12,8 +12,14 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const API_KEY = process.env.API_KEY;
 
-const API_URL =
+const PRIMARY_API_URL =
+  process.env.API_URL ||
   "https://instadrop.rishu-rishad2019.workers.dev/?url=";
+
+const BACKUP_API_URL =
+  process.env.BACKUP_API_URL || "";
+
+const API_URL = PRIMARY_API_URL;
 
 const WELCOME_IMAGE =
   "https://instadrop.web.app/og-image.png";
@@ -3380,6 +3386,35 @@ async function deleteStatusMessage(
 
 
 // ==================================================
+// API FETCH WITH BACKUP FALLBACK
+// Tries PRIMARY, then BACKUP (Vercel) if primary fails
+// ==================================================
+
+async function fetchApiWithFallback(instagramUrl) {
+  const bases = [PRIMARY_API_URL, BACKUP_API_URL].filter(Boolean);
+  let lastError = null;
+  for (const base of bases) {
+    try {
+      const r = await fetch(base + encodeURIComponent(instagramUrl), {
+        method: "GET",
+        headers: { Accept: "application/json", "X-API-Key": API_KEY },
+        signal: AbortSignal.timeout(60000)
+      });
+      if (!r.ok && r.status >= 500) {
+        lastError = new Error("API " + r.status + " from " + base);
+        continue;
+      }
+      return r;
+    } catch (e) {
+      lastError = e;
+      continue;
+    }
+  }
+  throw lastError || new Error("All APIs failed");
+}
+
+
+// ==================================================
 // PROCESS INSTAGRAM URL
 // ==================================================
 
@@ -3442,30 +3477,7 @@ async function processInstagramUrl(
 
   try {
 
-    response =
-      await fetch(
-        API_URL +
-          encodeURIComponent(
-            instagramUrl
-          ),
-        {
-          method:
-            "GET",
-
-          headers: {
-            Accept:
-              "application/json",
-
-            "X-API-Key":
-              API_KEY
-          },
-
-          signal:
-            AbortSignal.timeout(
-              60000
-            )
-        }
-      );
+    response = await fetchApiWithFallback(instagramUrl);
 
   } catch (error) {
 

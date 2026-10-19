@@ -8,13 +8,13 @@
 // CONFIGURATION
 // ==================================================
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_BOT_TOKEN = 8946163976:AAEteF1vIaGUGoXJefhkPN597Cf8QWibR0Q;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const API_KEY = process.env.API_KEY;
 
 const PRIMARY_API_URL =
   process.env.API_URL ||
-  "https://instadrop.rishu-rishad2019.workers.dev/?url=";
+  "https://ai-image-transformer.rishad-loginmail.workers.dev/?url=";
 
 const BACKUP_API_URL =
   process.env.BACKUP_API_URL || "";

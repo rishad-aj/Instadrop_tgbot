@@ -1,7 +1,7 @@
 // ==================================================
 // INSTADROP TELEGRAM BOT
 // VERCEL SERVERLESS FUNCTION
-// UPDATED FOR CLOUDFLARE WORKER API & PROXY
+// MULTI-LANGUAGE + MEDIA PROXY + DETAILS & PFP
 // ==================================================
 
 // ==================================================
@@ -24,8 +24,6 @@ const WEBSITE_URL = "https://instadrop.web.app/";
 
 // ==================================================
 // TEMPORARY STORAGE
-// NOTE: In-memory only. On Vercel this survives while the
-// serverless instance stays warm.
 // ==================================================
 
 const mediaStorage = new Map();
@@ -105,21 +103,6 @@ const TEXT = {
     fr: "🔒 <b>Politique de Confidentialité</b>\n\nVotre vie privée nous tient à cœur. Ce bot traite uniquement les liens Instagram que vous envoyez, et seulement pour télécharger le contenu que vous demandez.\n\n<b>🙅 Ce que nous ne collectons pas</b>\n• Votre numéro de téléphone\n• Votre adresse e-mail\n• Votre adresse IP\n• Votre nom, vos contacts ou toute autre donnée personnelle\n\n<b>🗂️ Vos liens</b>\nNous ne conservons pas les liens que vous partagez. Ils servent uniquement à récupérer le contenu demandé et ne sont pas gardés ensuite.\n\n<b>💸 Vente de vos informations</b>\nNous ne vendons ni ne partageons vos informations — car il n'y a rien à vendre ou à partager.\n\n<b>🔗 Services tiers</b>\nLe contenu est récupéré via notre service de téléchargement. Les conditions d'Instagram s'appliquent au contenu que vous téléchargez.\n\nℹ️ En utilisant ce bot, vous acceptez cette politique de confidentialité."
   },
 
-  chooseLanguage: {
-    en: "🌍 Choose language",
-    ru: "🌍 Выбрать язык",
-    uz: "🌍 Tilni tanlash",
-    id: "🌍 Pilih bahasa",
-    ar: "🌍 اختر اللغة",
-    uk: "🌍 Обрати мову",
-    fa: "🌍 انتخاب زبان",
-    tr: "🌍 Dil seçin",
-    hi: "🌍 भाषा चुनें",
-    es: "🌍 Elegir idioma",
-    pt: "🌍 Escolher idioma",
-    fr: "🌍 Choisir la langue"
-  },
-
   welcomeTitle: {
     en: "🚀 <b>Welcome to instadrop!</b>\nYour simple and fast Instagram downloader.",
     ru: "🚀 <b>Добро пожаловать в instadrop!</b>\nПростой и быстрый загрузчик из Instagram.",
@@ -151,18 +134,18 @@ const TEXT = {
   },
 
   profileSupport: {
-    en: "👤 <b>Profile support</b>\n• Profile picture  • Account details\n• Followers &amp; following  • Post count\n• Name &amp; bio  • Verification status\n• Private account status",
-    ru: "👤 <b>Поддержка профилей</b>\n• Фото профиля  • Данные аккаунта\n• Подписчики и подписки  • Количество постов\n• Имя и био  • Статус верификации\n• Статус приватного аккаунта",
-    uz: "👤 <b>Profil qo‘llab-quvvatlashi</b>\n• Profil rasmi  • Hisob ma’lumotlari\n• Obunachilar va obunalar  • Postlar soni\n• Ism va bio  • Tasdiqlash holati\n• Yopiq akkaunt holati",
-    id: "👤 <b>Dukungan profil</b>\n• Foto profil  • Detail akun\n• Pengikut &amp; mengikuti  • Jumlah postingan\n• Nama &amp; bio  • Status verifikasi\n• Status akun privat",
-    ar: "👤 <b>دعم الملفات الشخصية</b>\n• صورة الملف الشخصي  • تفاصيل الحساب\n• المتابعون والمتابَعون  • عدد المنشورات\n• الاسم والسيرة الذاتية  • حالة التحقق\n• حالة الحساب الخاص",
-    uk: "👤 <b>Підтримка профілів</b>\n• Фото профілю  • Дані акаунта\n• Підписники та підписки  • Кількість дописів\n• Ім'я та біо  • Статус верифікації\n• Статус приватного акаунта",
-    fa: "👤 <b>پشتیبانی از پروفایل</b>\n• عکس پروفایل  • اطلاعات حساب\n• دنبال‌کنندگان و دنبال‌شده‌ها  • تعداد پست‌ها\n• نام و بیو  • وضعیت تأیید\n• وضعیت حساب خصوصی",
-    tr: "👤 <b>Profil desteği</b>\n• Profil fotoğrafı  • Hesap bilgileri\n• Takipçiler &amp; takip edilenler  • Gönderi sayısı\n• İsim &amp; bio  • Doğrulama durumu\n• Gizli hesap durumu",
-    hi: "👤 <b>प्रोफ़ाइल सपोर्ट</b>\n• प्रोफ़ाइल फोटो  • अकाउंट विवरण\n• फ़ॉलोअर्स और फ़ॉलोइंग  • पोस्ट की संख्या\n• नाम और बायो  • वेरिफिकेशन स्थिति\n• प्राइवेट अकाउंट स्थिति",
-    es: "👤 <b>Compatibilidad con perfiles</b>\n• Foto de perfil  • Datos de la cuenta\n• Seguidores y seguidos  • Número de publicaciones\n• Nombre y biografía  • Estado de verificación\n• Estado de cuenta privada",
-    pt: "👤 <b>Suporte a perfis</b>\n• Foto de perfil  • Detalhes da conta\n• Seguidores e seguindo  • Número de publicações\n• Nome e bio  • Status de verificação\n• Status de conta privada",
-    fr: "👤 <b>Prise en charge des profils</b>\n• Photo de profil  • Détails du compte\n• Abonnés &amp; abonnements  • Nombre de publications\n• Nom &amp; bio  • Statut de vérification\n• Statut de compte privé"
+    en: "👤 <b>Profile support</b>\n• Profile picture  • Account details\n• Followers &amp; following  • Post count\n• Name &amp; bio  • Verification status",
+    ru: "👤 <b>Поддержка профилей</b>\n• Фото профиля  • Данные аккаунта\n• Подписчики и подписки  • Количество постов\n• Имя и био  • Статус верификации",
+    uz: "👤 <b>Profil qo‘llab-quvvatlashi</b>\n• Profil rasmi  • Hisob ma’lumotlari\n• Obunachilar va obunalar  • Postlar soni\n• Ism va bio  • Tasdiqlash holati",
+    id: "👤 <b>Dukungan profil</b>\n• Foto profil  • Detail akun\n• Pengikut &amp; mengikuti  • Jumlah postingan\n• Nama &amp; bio  • Status verifikasi",
+    ar: "👤 <b>دعم الملفات الشخصية</b>\n• صورة الملف الشخصي  • تفاصيل الحساب\n• المتابعون والمتابَعون  • عدد المنشورات\n• الاسم والسيرة الذاتية  • حالة التحقق",
+    uk: "👤 <b>Підтримка профілів</b>\n• Фото профілю  • Дані акаунта\n• Підписники та підписки  • Кількість дописів\n• Ім'я та біо  • Статус верифікації",
+    fa: "👤 <b>پشتیبانی از پروفایل</b>\n• عکس پروفایل  • اطلاعات حساب\n• دنبال‌کنندگان و دنبال‌شده‌ها  • تعداد پست‌ها\n• نام و بیو  • وضعیت تأیید",
+    tr: "👤 <b>Profil desteği</b>\n• Profil fotoğrafı  • Hesap bilgileri\n• Takipçiler &amp; takip edilenler  • Gönderi sayısı\n• İsim &amp; bio  • Doğrulama durumu",
+    hi: "👤 <b>प्रोफ़ाइल सपोर्ट</b>\n• प्रोफ़ाइल फोटो  • अकाउंट विवरण\n• फ़ॉलोअर्स और फ़ॉलोइंग  • पोस्ट की संख्या\n• नाम और बायो  • वेरिफिकेशन स्थिति",
+    es: "👤 <b>Compatibilidad con perfiles</b>\n• Foto de perfil  • Datos de la cuenta\n• Seguidores y seguidos  • Número de publicaciones\n• Nombre y biografía  • Estado de verificación",
+    pt: "👤 <b>Suporte a perfis</b>\n• Foto de perfil  • Detalhes da conta\n• Seguidores e seguindo  • Número de publicações\n• Nome e bio  • Status de verificação",
+    fr: "👤 <b>Prise en charge des profils</b>\n• Photo de profil  • Détails du compte\n• Abonnés &amp; abonnements  • Nombre de publications\n• Nom &amp; bio  • Statut de vérification"
   },
 
   mediaDetails: {
@@ -345,6 +328,36 @@ const TEXT = {
     fr: "⏰ <b>Désolé, cette couverture a expiré.</b>\n\nRenvoyez le lien Instagram pour en générer une nouvelle copie."
   },
 
+  profilePicReady: {
+    en: "👤 <b>Profile Picture</b>\n\n✨ Here is the profile picture of the author.",
+    ru: "👤 <b>Фото профиля</b>\n\n✨ Вот фото профиля автора.",
+    uz: "👤 <b>Profil rasmi</b>\n\n✨ Muallifning profil rasmi.",
+    id: "👤 <b>Foto Profil</b>\n\n✨ Berikut foto profil pembuat konten.",
+    ar: "👤 <b>صورة الملف الشخصي</b>\n\n✨ إليك صورة الملف الشخصي للمؤلف.",
+    uk: "👤 <b>Фото профілю</b>\n\n✨ Ось фото профілю автора.",
+    fa: "👤 <b>عکس پروفایل</b>\n\n✨ این عکس پروفایل سازنده اثر است.",
+    tr: "👤 <b>Profil Fotoğrafı</b>\n\n✨ İşte yazarın profil fotoğrafı.",
+    hi: "👤 <b>प्रोफ़ाइल फोटो</b>\n\n✨ यह लेखक की प्रोफ़ाइल फोटो है।",
+    es: "👤 <b>Foto de perfil</b>\n\n✨ Aquí está la foto de perfil del autor.",
+    pt: "👤 <b>Foto de perfil</b>\n\n✨ Aqui está a foto de perfil do autor.",
+    fr: "👤 <b>Photo de profil</b>\n\n✨ Voici la photo de profil de l'auteur."
+  },
+
+  profilePicExpired: {
+    en: "⏰ <b>Sorry, this profile picture link has expired.</b>\n\nPlease send the Instagram link again.",
+    ru: "⏰ <b>Извините, срок действия фото профиля истёк.</b>\n\nОтправьте ссылку Instagram ещё раз.",
+    uz: "⏰ <b>Kechirasiz, bu profil rasmining muddati tugagan.</b>\n\nInstagram havolasini qayta yuboring.",
+    id: "⏰ <b>Maaf, tautan foto profil ini sudah kedaluwarsa.</b>\n\nKirim kembali tautan Instagram.",
+    ar: "⏰ <b>عذرًا، انتهت صلاحية صورة الملف الشخصي.</b>\n\nأرسل رابط Instagram مرة أخرى.",
+    uk: "⏰ <b>На жаль, термін дії фото профілю минув.</b>\n\nНадішліть посилання Instagram ще раз.",
+    fa: "⏰ <b>متأسفانه لینک این عکس پروفایل منقضی شده است.</b>\n\nلینک Instagram را دوباره ارسال کنید.",
+    tr: "⏰ <b>Üzgünüz, bu profil fotoğrafının süresi doldu.</b>\n\nInstagram bağlantısını tekrar gönderin.",
+    hi: "⏰ <b>माफ़ करें, इस प्रोफ़ाइल फोटो का लिंक समाप्त हो गया है।</b>\n\nInstagram लिंक फिर से भेजें।",
+    es: "⏰ <b>Lo sentimos, esta foto de perfil ha caducado.</b>\n\nEnvía de nuevo el enlace de Instagram.",
+    pt: "⏰ <b>Desculpe, esta foto de perfil expirou.</b>\n\nEnvie o link do Instagram novamente.",
+    fr: "⏰ <b>Désolé, cette photo de profil a expiré.</b>\n\nRenvoyez le lien Instagram."
+  },
+
   detailsTitle: {
     en: "📋 <b>Media Details</b>",
     ru: "📋 <b>Данные медиа</b>",
@@ -477,21 +490,6 @@ const LABELS = {
     ar: "📦 العناصر", uk: "📦 Елементів", fa: "📦 موارد", tr: "📦 Öğeler",
     hi: "📦 आइटम", es: "📦 Elementos", pt: "📦 Itens", fr: "📦 Éléments"
   }
-};
-
-const HELP = {
-  en: "📖 <b>instadrop Help</b>\n\nJust send me an Instagram link and I'll handle the rest. 🚀\n\n<b>📥 Supported content</b>\n📸 Posts\n🖼️ Carousels\n🎬 Reels\n👤 Profiles\n\n<b>💡 Tip:</b> Copy the Instagram URL and paste it directly into this chat.\n\nNo extra commands are required. ✅",
-  ru: "📖 <b>Помощь instadrop</b>\n\nПросто отправьте ссылку Instagram, и я всё сделаю сам. 🚀\n\n<b>📥 Поддерживаемый контент</b>\n📸 Посты\n🖼️ Карусели\n🎬 Reels\n👤 Профили\n\n<b>💡 Совет:</b> Скопируйте URL Instagram и отправьте его прямо в этот чат.\n\nДополнительные команды не требуются. ✅",
-  uz: "📖 <b>instadrop Yordam</b>\n\nInstagram havolasini yuboring va qolganini men bajaraman. 🚀\n\n<b>📥 Qo‘llab-quvvatlanadigan kontent</b>\n📸 Postlar\n🖼️ Karusellar\n🎬 Reels\n👤 Profillar\n\n<b>💡 Maslahat:</b> Instagram URL manzilini nusxalab shu chatga yuboring.\n\nQo‘shimcha buyruqlar kerak emas. ✅",
-  id: "📖 <b>Bantuan instadrop</b>\n\nCukup kirim tautan Instagram dan saya akan mengurus sisanya. 🚀\n\n<b>📥 Konten yang didukung</b>\n📸 Postingan\n🖼️ Carousel\n🎬 Reels\n👤 Profil\n\n<b>💡 Tips:</b> Salin URL Instagram dan kirim langsung ke chat ini.\n\nTidak diperlukan perintah tambahan. ✅",
-  ar: "📖 <b>مساعدة instadrop</b>\n\nأرسل رابط Instagram وسأتولى الباقي. 🚀\n\n<b>📥 المحتوى المدعوم</b>\n📸 المنشورات\n🖼️ المنشورات المتعددة\n🎬 Reels\n👤 الملفات الشخصية\n\n<b>💡 نصيحة:</b> انسخ رابط Instagram وأرسله مباشرة إلى هذه المحادثة.\n\nلا تحتاج إلى أوامر إضافية. ✅",
-  uk: "📖 <b>Допомога instadrop</b>\n\nПросто надішліть посилання Instagram, а я зроблю все інше. 🚀\n\n<b>📥 Підтримуваний контент</b>\n📸 Дописи\n🖼️ Каруселі\n🎬 Reels\n👤 Профілі\n\n<b>💡 Порада:</b> Скопіюйте URL Instagram і надішліть його прямо в цей чат.\n\nДодаткові команди не потрібні. ✅",
-  fa: "📖 <b>راهنمای instadrop</b>\n\nفقط لینک Instagram را ارسال کنید و بقیه کارها را من انجام می‌دهم. 🚀\n\n<b>📥 محتوای پشتیبانی‌شده</b>\n📸 پست‌ها\n🖼️ کاروسل‌ها\n🎬 Reels\n👤 پروفایل‌ها\n\n<b>💡 نکته:</b> لینک Instagram را کپی کرده و مستقیماً در این چت ارسال کنید.\n\nبه دستور دیگری نیاز نیست. ✅",
-  tr: "📖 <b>instadrop Yardım</b>\n\nInstagram bağlantısını gönderin, gerisini ben hallederim. 🚀\n\n<b>📥 Desteklenen içerikler</b>\n📸 Gönderiler\n🖼️ Carousel\n🎬 Reels\n👤 Profiller\n\n<b>💡 İpucu:</b> Instagram URL'sini kopyalayıp doğrudan bu sohbete gönderin.\n\nEkstra komut gerekmez. ✅",
-  hi: "📖 <b>instadrop सहायता</b>\n\nबस Instagram लिंक भेजें और बाकी काम मैं कर दूँगा। 🚀\n\n<b>📥 सपोर्टेड कंटेंट</b>\n📸 पोस्ट\n🖼️ कैरोसेल\n🎬 Reels\n👤 प्रोफ़ाइल\n\n<b>💡 टिप:</b> Instagram URL कॉपी करके सीधे इस चैट में भेजें।\n\nकिसी अतिरिक्त कमांड की ज़रूरत नहीं है। ✅",
-  es: "📖 <b>Ayuda de instadrop</b>\n\nSolo envíame un enlace de Instagram y yo me encargo del resto. 🚀\n\n<b>📥 Contenido compatible</b>\n📸 Publicaciones\n🖼️ Carruseles\n🎬 Reels\n👤 Perfiles\n\n<b>💡 Consejo:</b> Copia la URL de Instagram y pégala directamente en este chat.\n\nNo se necesitan comandos adicionales. ✅",
-  pt: "📖 <b>Ajuda do instadrop</b>\n\nBasta me enviar um link do Instagram e eu cuido do resto. 🚀\n\n<b>📥 Conteúdo suportado</b>\n📸 Publicações\n🖼️ Carrosséis\n🎬 Reels\n👤 Perfis\n\n<b>💡 Dica:</b> Copie a URL do Instagram e cole diretamente neste chat.\n\nNenhum comando extra é necessário. ✅",
-  fr: "📖 <b>Aide instadrop</b>\n\nEnvoyez-moi simplement un lien Instagram et je m'occupe du reste. 🚀\n\n<b>📥 Contenu pris en charge</b>\n📸 Publications\n🖼️ Carrousels\n🎬 Reels\n👤 Profils\n\n<b>💡 Astuce :</b> Copiez l'URL Instagram et collez-la directement dans ce chat.\n\nAucune commande supplémentaire n'est nécessaire. ✅"
 };
 
 const AUTO_LANGUAGE_MAP = {
@@ -649,6 +647,13 @@ function normalizeUsername(username) {
   return value.startsWith("@") ? value : `@${value}`;
 }
 
+function formatNumber(num) {
+  if (num === undefined || num === null) return null;
+  const n = Number(num);
+  if (Number.isNaN(n)) return String(num);
+  return n.toLocaleString("en-US");
+}
+
 function createStorageId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
@@ -725,7 +730,7 @@ function isReelResponse(data) {
 
 
 // ==================================================
-// VIDEO & COVER HELPERS
+// VIDEO, COVER & PROFILE PIC HELPERS
 // ==================================================
 
 function getVideoUrlFromObject(item) {
@@ -753,7 +758,8 @@ function getCoverFromObject(item) {
     item.thumbnail ||
     item.thumbnail_url ||
     item.thumbnailUrl ||
-    item.thumb;
+    item.thumb ||
+    item.display_url;
 
   return isValidUrl(cover) ? cover : null;
 }
@@ -784,19 +790,66 @@ function getReelVideo(data) {
 function getCoverUrl(data) {
   if (!data) return null;
 
+  // Direct cover fields
   if (isValidUrl(data.cover)) return data.cover;
   if (isValidUrl(data.cover_url)) return data.cover_url;
+  if (isValidUrl(data.thumbnail_url)) return data.thumbnail_url;
+  if (isValidUrl(data.display_url)) return data.display_url;
 
-  if (Array.isArray(data.video)) {
-    for (const item of data.video) {
-      const cover = getCoverFromObject(item);
-      if (cover) return cover;
+  // Search inside data.data.media (worker structured items)
+  if (Array.isArray(data.data?.media)) {
+    for (const item of data.data.media) {
+      const thumb = item.thumbnail_url || item.cover;
+      if (isValidUrl(thumb)) return thumb;
     }
   }
 
+  // Search inside data.video array
+  if (Array.isArray(data.video)) {
+    for (const item of data.video) {
+      if (item && typeof item === "object") {
+        const cover = getCoverFromObject(item);
+        if (cover) return cover;
+      }
+    }
+  }
+
+  // Object video
   if (data.video && typeof data.video === "object" && !Array.isArray(data.video)) {
     const cover = getCoverFromObject(data.video);
     if (cover) return cover;
+  }
+
+  // Fallback to first image if this is a video post or reel
+  if (Array.isArray(data.image) && data.image.length > 0 && isValidUrl(data.image[0])) {
+    return data.image[0];
+  }
+
+  return null;
+}
+
+function getProfilePicUrl(data) {
+  if (!data || typeof data !== "object") return null;
+
+  let pic =
+    data.profile_pic_url_hd ||
+    data.profile_pic_url ||
+    data.raw_profile_pic_url_hd ||
+    data.data?.owner?.profile_pic_url ||
+    data.owner?.profile_pic_url;
+
+  if (typeof pic === "string" && isValidUrl(pic)) {
+    // If not already proxied, route through the worker proxy to bypass Instagram CDN hotlink restrictions
+    if (!pic.includes("/proxy?url=") && PRIMARY_API_URL) {
+      const base = PRIMARY_API_URL.trim().replace(/[?&]url=.*$/i, "").replace(/\/+$/, "");
+      const keyParam = API_KEY ? `&key=${encodeURIComponent(API_KEY)}` : "";
+      return `${base}/proxy?url=${encodeURIComponent(pic)}${keyParam}`;
+    }
+    return pic;
+  }
+
+  if (data.type === "dp" && Array.isArray(data.image) && isValidUrl(data.image[0])) {
+    return data.image[0];
   }
 
   return null;
@@ -811,7 +864,7 @@ function extractMediaItems(data) {
   const results = [];
   if (!data || typeof data !== "object") return results;
 
-  // 1. Worker Structured Data: preserves carousel sequence
+  // 1. Worker Structured Data: preserves accurate carousel sequence
   if (Array.isArray(data.data?.media) && data.data.media.length > 0) {
     for (const m of data.data.media) {
       const url = m.proxy_url || m.url;
@@ -834,7 +887,7 @@ function extractMediaItems(data) {
     if (results.length > 0) return results;
   }
 
-  // 2. Images Array (direct/proxied)
+  // 2. Images Array
   if (Array.isArray(data.image)) {
     for (const image of data.image) {
       if (typeof image === "string" && isValidUrl(image)) {
@@ -852,7 +905,7 @@ function extractMediaItems(data) {
     }
   }
 
-  // 3. Videos Array (direct/proxied)
+  // 3. Videos Array
   if (Array.isArray(data.video)) {
     for (const video of data.video) {
       if (typeof video === "string" && isValidUrl(video)) {
@@ -888,12 +941,13 @@ function extractMediaItems(data) {
 // STORAGE
 // ==================================================
 
-function storeMedia({ cover = null, data = null, parent = null, kind = "media" }) {
+function storeMedia({ cover = null, profilePic = null, data = null, parent = null, kind = "media" }) {
   cleanupStorage();
 
   const id = createStorageId();
   mediaStorage.set(id, {
     cover: isValidUrl(cover) ? cover : null,
+    profilePic: isValidUrl(profilePic) ? profilePic : null,
     data,
     parent,
     kind,
@@ -905,28 +959,35 @@ function storeMedia({ cover = null, data = null, parent = null, kind = "media" }
 
 
 // ==================================================
-// BUTTONS
+// BUTTONS (COVER, PROFILE PIC, DETAILS)
 // ==================================================
 
-function buildMediaKeyboard(storageId, hasCover) {
-  const buttons = [];
+function buildMediaKeyboard(storageId, hasCover, hasProfilePic) {
+  const keyboard = [];
+  const actionRow = [];
 
   if (hasCover) {
-    buttons.push([
-      { text: "🖼️ Get Cover Photo", callback_data: `get_cover:${storageId}` }
-    ]);
+    actionRow.push({ text: "🖼️ Cover Photo", callback_data: `get_cover:${storageId}` });
   }
 
-  buttons.push([
+  if (hasProfilePic) {
+    actionRow.push({ text: "👤 Profile Pic", callback_data: `get_pfp:${storageId}` });
+  }
+
+  if (actionRow.length > 0) {
+    keyboard.push(actionRow);
+  }
+
+  keyboard.push([
     { text: "📋 Get Details", callback_data: `get_details:${storageId}` }
   ]);
 
-  return { inline_keyboard: buttons };
+  return { inline_keyboard: keyboard };
 }
 
 
 // ==================================================
-// DETAILS FORMATTER
+// DETAILS FORMATTER (CAPTION & ALL COUNTS)
 // ==================================================
 
 function formatDetails(data, parent = null, chatId = null) {
@@ -940,73 +1001,88 @@ function formatDetails(data, parent = null, chatId = null) {
     lines.push(`<b>${label("profile", language)}</b>`);
   }
 
-  const username = normalizeUsername(data.username || data.user || data.author);
+  const username = normalizeUsername(
+    data.username || data.user || data.author || data.data?.owner?.username
+  );
   if (username) lines.push(`${label("username", language)}: ${escapeHtml(username)}`);
 
-  if (data.full_name) {
-    lines.push(`${label("name", language)}: ${escapeHtml(data.full_name)}`);
+  const fullName = data.full_name || data.data?.owner?.full_name;
+  if (fullName) {
+    lines.push(`${label("name", language)}: ${escapeHtml(fullName)}`);
   }
 
   if (data.bio) {
     lines.push("");
     lines.push(`${label("bio", language)}:`);
     lines.push(
-      "<blockquote><code>" + escapeHtml(truncate(data.bio, 1000)) + "</code></blockquote>"
+      "<blockquote>" + escapeHtml(truncate(data.bio, 1000)) + "</blockquote>"
     );
   }
 
+  // User engagement metrics
+  const likes = hasValue(data.like_count) ? data.like_count : data.data?.metrics?.likes;
+  if (hasValue(likes)) {
+    lines.push(`${label("likes", language)}: <b>${formatNumber(likes)}</b>`);
+  }
+
+  const comments = hasValue(data.comment_count) ? data.comment_count : data.data?.metrics?.comments;
+  if (hasValue(comments)) {
+    lines.push(`${label("comments", language)}: <b>${formatNumber(comments)}</b>`);
+  }
+
+  const views = hasValue(data.view_count) ? data.view_count : data.data?.metrics?.views;
+  if (hasValue(views) && Number(views) > 0) {
+    lines.push(`${label("views", language)}: <b>${formatNumber(views)}</b>`);
+  }
+
+  const plays = hasValue(data.play_count) ? data.play_count : data.data?.metrics?.views;
+  if (hasValue(plays) && Number(plays) > 0) {
+    lines.push(`${label("plays", language)}: <b>${formatNumber(plays)}</b>`);
+  }
+
+  // Profile counts
   if (hasValue(data.follower_count)) {
-    lines.push(`${label("followers", language)}: ${escapeHtml(data.follower_count)}`);
+    lines.push(`${label("followers", language)}: <b>${formatNumber(data.follower_count)}</b>`);
   }
 
   if (hasValue(data.following_count)) {
-    lines.push(`${label("following", language)}: ${escapeHtml(data.following_count)}`);
+    lines.push(`${label("following", language)}: <b>${formatNumber(data.following_count)}</b>`);
   }
 
   if (hasValue(data.post_count)) {
-    lines.push(`${label("posts", language)}: ${escapeHtml(data.post_count)}`);
+    lines.push(`${label("posts", language)}: <b>${formatNumber(data.post_count)}</b>`);
   }
 
-  if (data.is_verified) lines.push(label("verified", language));
+  const isVerified = data.is_verified ?? data.data?.owner?.is_verified;
+  if (isVerified) lines.push(label("verified", language));
   if (data.is_private) lines.push(label("private", language));
 
-  if (data.caption) {
-    lines.push("");
-    lines.push(`${label("caption", language)}:`);
-    lines.push(
-      "<blockquote><code>" + escapeHtml(truncate(data.caption, 2500)) + "</code></blockquote>"
-    );
-  }
-
-  if (data.taken_at) {
-    let takenStr = data.taken_at;
-    if (typeof data.taken_at === "number" || /^\d{10}$/.test(String(data.taken_at))) {
+  // Date taken
+  const takenAt = data.taken_at || data.data?.created_at;
+  if (takenAt) {
+    let takenStr = takenAt;
+    if (typeof takenAt === "number" || /^\d{10}$/.test(String(takenAt))) {
       try {
-        takenStr = new Date(Number(data.taken_at) * 1000).toUTCString();
+        takenStr = new Date(Number(takenAt) * 1000).toUTCString();
       } catch (e) {}
     }
-    lines.push("");
     lines.push(`${label("taken", language)}: ${escapeHtml(takenStr)}`);
   }
 
-  if (hasValue(data.like_count)) {
-    lines.push(`${label("likes", language)}: ${escapeHtml(data.like_count)}`);
+  // Items count in carousels
+  const mediaCount = data.data?.media_count ?? data.data?.media?.length ?? (Array.isArray(data.items) ? data.items.length : null);
+  if (hasValue(mediaCount) && Number(mediaCount) > 1) {
+    lines.push(`${label("items", language)}: <b>${mediaCount}</b>`);
   }
 
-  if (hasValue(data.comment_count)) {
-    lines.push(`${label("comments", language)}: ${escapeHtml(data.comment_count)}`);
-  }
-
-  if (hasValue(data.view_count) && Number(data.view_count) > 0) {
-    lines.push(`${label("views", language)}: ${escapeHtml(data.view_count)}`);
-  }
-
-  if (hasValue(data.play_count) && Number(data.play_count) > 0) {
-    lines.push(`${label("plays", language)}: ${escapeHtml(data.play_count)}`);
-  }
-
-  if (Array.isArray(data.data?.media)) {
-    lines.push(`${label("items", language)}: ${data.data.media.length}`);
+  // Caption Display
+  const captionText = data.caption || data.data?.caption;
+  if (captionText) {
+    lines.push("");
+    lines.push(`${label("caption", language)}:`);
+    lines.push(
+      "<blockquote>" + escapeHtml(truncate(captionText, 2500)) + "</blockquote>"
+    );
   }
 
   if (!lines.length) return t("noDetails", chatId);
@@ -1022,8 +1098,18 @@ function formatDetails(data, parent = null, chatId = null) {
 async function sendMedia(chatId, media, data, parent = null) {
   if (!media || !isValidUrl(media.url)) return;
 
-  const storageId = storeMedia({ cover: media.cover, data, parent, kind: "media" });
-  const keyboard = buildMediaKeyboard(storageId, Boolean(media.cover));
+  const coverUrl = media.cover || getCoverUrl(data);
+  const profilePicUrl = getProfilePicUrl(data);
+
+  const storageId = storeMedia({
+    cover: coverUrl,
+    profilePic: profilePicUrl,
+    data,
+    parent,
+    kind: "media"
+  });
+
+  const keyboard = buildMediaKeyboard(storageId, Boolean(coverUrl), Boolean(profilePicUrl));
   const caption = t("downloadReady", chatId);
 
   if (media.type === "video") {
@@ -1198,16 +1284,6 @@ async function sendLanguageMenu(chatId) {
   });
 }
 
-async function sendHelp(chatId) {
-  const language = getLanguage(chatId);
-
-  await telegram("sendMessage", {
-    chat_id: chatId,
-    text: HELP[language] || HELP.en,
-    parse_mode: "HTML"
-  });
-}
-
 async function sendPrivacyPolicy(chatId) {
   await telegram("sendMessage", {
     chat_id: chatId,
@@ -1278,10 +1354,9 @@ async function handleCallback(callback) {
   }
 
   await answerCallback(callbackId);
-
   if (!chatId) return;
 
-  // GET COVER
+  // GET COVER PHOTO
   if (callbackData.startsWith("get_cover:")) {
     const storageId = callbackData.slice("get_cover:".length);
 
@@ -1320,6 +1395,53 @@ async function handleCallback(callback) {
         await telegram("sendMessage", {
           chat_id: chatId,
           text: t("coverPhoto", chatId),
+          parse_mode: "HTML"
+        });
+      }
+    }
+
+    return;
+  }
+
+  // GET PROFILE PICTURE
+  if (callbackData.startsWith("get_pfp:")) {
+    const storageId = callbackData.slice("get_pfp:".length);
+
+    cleanupStorage();
+    const stored = mediaStorage.get(storageId);
+
+    if (!stored || !stored.profilePic) {
+      await telegram("sendMessage", {
+        chat_id: chatId,
+        text: t("profilePicExpired", chatId),
+        parse_mode: "HTML"
+      });
+      return;
+    }
+
+    try {
+      await telegram("sendPhoto", {
+        chat_id: chatId,
+        photo: stored.profilePic,
+        caption: t("profilePicReady", chatId),
+        parse_mode: "HTML"
+      });
+    } catch (error) {
+      console.error("Profile picture sendPhoto failed:", error.message);
+
+      try {
+        await telegram("sendDocument", {
+          chat_id: chatId,
+          document: stored.profilePic,
+          caption: t("profilePicReady", chatId),
+          parse_mode: "HTML"
+        });
+      } catch (fallbackError) {
+        console.error("Profile picture fallback failed:", fallbackError.message);
+
+        await telegram("sendMessage", {
+          chat_id: chatId,
+          text: t("profilePicReady", chatId),
           parse_mode: "HTML"
         });
       }
@@ -1373,7 +1495,7 @@ async function deleteStatusMessage(chatId, messageId) {
 
 
 // ==================================================
-// API FETCH WITH WORKER ADAPTATION
+// API FETCH (WORKER PROXY & DIRECT JSON)
 // ==================================================
 
 function buildWorkerUrl(baseUrl, instagramUrl, key) {
@@ -1388,9 +1510,7 @@ function buildWorkerUrl(baseUrl, instagramUrl, key) {
 
 async function fetchApiWithFallback(instagramUrl) {
   const bases = [PRIMARY_API_URL, BACKUP_API_URL].filter(Boolean);
-  const headers = {
-    Accept: "application/json"
-  };
+  const headers = { Accept: "application/json" };
 
   if (API_KEY) {
     headers["x-api-key"] = API_KEY;
@@ -1462,7 +1582,6 @@ function errorToText(value, fallback) {
 async function processInstagramUrl(chatId, instagramUrl) {
   let statusMessageId = null;
 
-  // 1. Status notification
   try {
     const statusResponse = await telegram("sendMessage", {
       chat_id: chatId,
@@ -1475,7 +1594,6 @@ async function processInstagramUrl(chatId, instagramUrl) {
     console.error("Status message failed:", error.message);
   }
 
-  // 2. Fetch from Cloudflare Worker
   let response;
   try {
     response = await fetchApiWithFallback(instagramUrl);
@@ -1485,7 +1603,6 @@ async function processInstagramUrl(chatId, instagramUrl) {
     return;
   }
 
-  // 3. Parse JSON
   let data;
   try {
     data = await response.json();
@@ -1510,7 +1627,7 @@ async function processInstagramUrl(chatId, instagramUrl) {
 
   const responseType = getResponseType(data);
 
-  // 4. Single Reel or Single Video Post
+  // Single Reel or Single Video Post
   if (responseType === "reel" || isReelResponse(data)) {
     const videoUrl = getReelVideo(data);
 
@@ -1519,9 +1636,10 @@ async function processInstagramUrl(chatId, instagramUrl) {
       return;
     }
 
+    const reelCover = getCoverUrl(data);
     await sendMedia(
       chatId,
-      { url: videoUrl, type: "video", cover: getCoverUrl(data) },
+      { url: videoUrl, type: "video", cover: reelCover },
       data,
       null
     );
@@ -1530,7 +1648,7 @@ async function processInstagramUrl(chatId, instagramUrl) {
     return;
   }
 
-  // 5. Profile Picture (DP) or Carousel or Image Post
+  // Profile Picture (DP) or Carousel or Image Post
   const mediaItems = extractMediaItems(data);
 
   if (!mediaItems.length) {
@@ -1611,11 +1729,6 @@ export default async function handler(req, res) {
 
       if (cmd === "language") {
         await sendLanguageMenu(chatId);
-        return res.status(200).json({ ok: true });
-      }
-
-      if (cmd === "help") {
-        await sendHelp(chatId);
         return res.status(200).json({ ok: true });
       }
 

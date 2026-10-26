@@ -14,7 +14,7 @@ const API_KEY = process.env.API_KEY || "088697";
 
 const PRIMARY_API_URL =
   process.env.API_URL ||
-  "https://ai-image-transformer.rishad-loginmail.workers.dev";
+  "https://instadrop.rishu-rishad2019.workers.dev";
 
 const BACKUP_API_URL = process.env.BACKUP_API_URL || "";
 
@@ -23,12 +23,12 @@ const WEBSITE_URL = "https://instadrop.web.app/";
 
 
 // ==================================================
-// TEMPORARY STORAGE
+// PERSISTENT STORAGE (SURVIVES WARM INVOCATIONS)
 // ==================================================
 
-const mediaStorage = new Map();
-const notifiedUsers = new Set();
-const userLanguages = new Map();
+const mediaStorage = globalThis.__mediaStorage || (globalThis.__mediaStorage = new Map());
+const notifiedUsers = globalThis.__notifiedUsers || (globalThis.__notifiedUsers = new Set());
+const userLanguages = globalThis.__userLanguages || (globalThis.__userLanguages = new Map());
 
 const STORAGE_TTL = 30 * 60 * 1000;
 
@@ -58,6 +58,21 @@ const LANGUAGES = {
 // ==================================================
 
 const TEXT = {
+  chooseLanguage: {
+    en: "🌍 Choose Language",
+    ru: "🌍 Выбрать язык",
+    uz: "🌍 Tilni tanlash",
+    id: "🌍 Pilih Bahasa",
+    ar: "🌍 اختر اللغة",
+    uk: "🌍 Обрати мову",
+    fa: "🌍 انتخاب زبان",
+    tr: "🌍 Dil Seçin",
+    hi: "🌍 भाषा चुनें",
+    es: "🌍 Elegir idioma",
+    pt: "🌍 Escolher idioma",
+    fr: "🌍 Choisir la langue"
+  },
+
   languageTitle: {
     en: "🌍 <b>Choose your language.</b>",
     ru: "🌍 <b>Выберите язык.</b>",
@@ -314,18 +329,18 @@ const TEXT = {
   },
 
   coverExpired: {
-    en: "⏰ <b>Sorry, this cover has expired.</b>\n\nPlease send the Instagram link again to generate a fresh copy.",
-    ru: "⏰ <b>Извините, срок действия этой обложки истёк.</b>\n\nОтправьте ссылку Instagram ещё раз, чтобы получить новую копию.",
-    uz: "⏰ <b>Kechirasiz, bu muqovaning amal qilish muddati tugagan.</b>\n\nYangi nusxa olish uchun Instagram havolasini qayta yuboring.",
-    id: "⏰ <b>Maaf, sampul ini sudah kedaluwarsa.</b>\n\nKirim kembali tautan Instagram untuk membuat salinan baru.",
-    ar: "⏰ <b>عذرًا، انتهت صلاحية هذه الصورة.</b>\n\nأرسل رابط Instagram مرة أخرى لإنشاء نسخة جديدة.",
-    uk: "⏰ <b>На жаль, термін дії цієї обкладинки минув.</b>\n\nНадішліть посилання Instagram ще раз, щоб отримати нову копію.",
-    fa: "⏰ <b>متأسفانه، این کاور منقضی شده است.</b>\n\nلینک Instagram را دوباره ارسال کنید تا نسخه جدید ایجاد شود.",
-    tr: "⏰ <b>Üzgünüz, bu kapak görselinin süresi doldu.</b>\n\nYeni bir kopya oluşturmak için Instagram bağlantısını tekrar gönderin.",
-    hi: "⏰ <b>माफ़ करें, इस कवर की समय सीमा समाप्त हो गई है।</b>\n\nनई कॉपी बनाने के लिए Instagram लिंक फिर से भेजें।",
-    es: "⏰ <b>Lo sentimos, esta portada ha caducado.</b>\n\nEnvía de nuevo el enlace de Instagram para generar una copia nueva.",
-    pt: "⏰ <b>Desculpe, esta capa expirou.</b>\n\nEnvie o link do Instagram novamente para gerar uma nova cópia.",
-    fr: "⏰ <b>Désolé, cette couverture a expiré.</b>\n\nRenvoyez le lien Instagram pour en générer une nouvelle copie."
+    en: "⏰ <b>Cover photo not found.</b>\n\nPlease send the Instagram link again.",
+    ru: "⏰ <b>Обложка не найдена.</b>\n\nОтправьте ссылку Instagram ещё раз.",
+    uz: "⏰ <b>Muqova topilmadi.</b>\n\nInstagram havolasini qayta yuboring.",
+    id: "⏰ <b>Foto sampul tidak ditemukan.</b>\n\nKirim kembali tautan Instagram.",
+    ar: "⏰ <b>لم يتم العثور على صورة الغلاف.</b>\n\nأرسل رابط Instagram مرة أخرى.",
+    uk: "⏰ <b>Обкладинку не знайдено.</b>\n\nНадішліть посилання Instagram ще раз.",
+    fa: "⏰ <b>تصویر کاور پیدا نشد.</b>\n\nلینک Instagram را دوباره ارسال کنید.",
+    tr: "⏰ <b>Kapak fotoğrafı bulunamadı.</b>\n\nInstagram bağlantısını tekrar gönderin.",
+    hi: "⏰ <b>कवर फोटो नहीं मिला।</b>\n\nInstagram लिंक फिर से भेजें।",
+    es: "⏰ <b>No se encontró la foto de portada.</b>\n\nEnvía de nuevo el enlace de Instagram.",
+    pt: "⏰ <b>Foto de capa não encontrada.</b>\n\nEnvie o link do Instagram novamente.",
+    fr: "⏰ <b>Photo de couverture introuvable.</b>\n\nRenvoyez le lien Instagram."
   },
 
   profilePicReady: {
@@ -344,18 +359,18 @@ const TEXT = {
   },
 
   profilePicExpired: {
-    en: "⏰ <b>Sorry, this profile picture link has expired.</b>\n\nPlease send the Instagram link again.",
-    ru: "⏰ <b>Извините, срок действия фото профиля истёк.</b>\n\nОтправьте ссылку Instagram ещё раз.",
-    uz: "⏰ <b>Kechirasiz, bu profil rasmining muddati tugagan.</b>\n\nInstagram havolasini qayta yuboring.",
-    id: "⏰ <b>Maaf, tautan foto profil ini sudah kedaluwarsa.</b>\n\nKirim kembali tautan Instagram.",
-    ar: "⏰ <b>عذرًا، انتهت صلاحية صورة الملف الشخصي.</b>\n\nأرسل رابط Instagram مرة أخرى.",
-    uk: "⏰ <b>На жаль, термін дії фото профілю минув.</b>\n\nНадішліть посилання Instagram ще раз.",
-    fa: "⏰ <b>متأسفانه لینک این عکس پروفایل منقضی شده است.</b>\n\nلینک Instagram را دوباره ارسال کنید.",
-    tr: "⏰ <b>Üzgünüz, bu profil fotoğrafının süresi doldu.</b>\n\nInstagram bağlantısını tekrar gönderin.",
-    hi: "⏰ <b>माफ़ करें, इस प्रोफ़ाइल फोटो का लिंक समाप्त हो गया है।</b>\n\nInstagram लिंक फिर से भेजें।",
-    es: "⏰ <b>Lo sentimos, esta foto de perfil ha caducado.</b>\n\nEnvía de nuevo el enlace de Instagram.",
-    pt: "⏰ <b>Desculpe, esta foto de perfil expirou.</b>\n\nEnvie o link do Instagram novamente.",
-    fr: "⏰ <b>Désolé, cette photo de profil a expiré.</b>\n\nRenvoyez le lien Instagram."
+    en: "⏰ <b>Profile picture not available.</b>\n\nPlease send the Instagram link again.",
+    ru: "⏰ <b>Фото профиля недоступно.</b>\n\nОтправьте ссылку Instagram ещё раз.",
+    uz: "⏰ <b>Profil rasmi mavjud emas.</b>\n\nInstagram havolasini qayta yuboring.",
+    id: "⏰ <b>Foto profil tidak tersedia.</b>\n\nKirim kembali tautan Instagram.",
+    ar: "⏰ <b>صورة الملف الشخصي غير متوفرة.</b>\n\nأرسل رابط Instagram مرة أخرى.",
+    uk: "⏰ <b>Фото профілю недоступне.</b>\n\nНадішліть посилання Instagram ще раз.",
+    fa: "⏰ <b>عکس پروفایل در دسترس نیست.</b>\n\nلینک Instagram را دوباره ارسال کنید.",
+    tr: "⏰ <b>Profil fotoğrafı kullanılamıyor.</b>\n\nInstagram bağlantısını tekrar gönderin.",
+    hi: "⏰ <b>प्रोफ़ाइल फोटो उपलब्ध नहीं है।</b>\n\nInstagram लिंक फिर से भेजें।",
+    es: "⏰ <b>Foto de perfil no disponible.</b>\n\nEnvía de nuevo el enlace de Instagram.",
+    pt: "⏰ <b>Foto de perfil indisponível.</b>\n\nEnvie o link do Instagram novamente.",
+    fr: "⏰ <b>Photo de profil non disponible.</b>\n\nRenvoyez le lien Instagram."
   },
 
   detailsTitle: {
@@ -389,18 +404,18 @@ const TEXT = {
   },
 
   detailsExpired: {
-    en: "⏰ <b>Sorry, these details have expired.</b>\n\nPlease send the Instagram link again to get fresh information.",
-    ru: "⏰ <b>Извините, срок действия этих данных истёк.</b>\n\nОтправьте ссылку Instagram ещё раз, чтобы получить свежую информацию.",
-    uz: "⏰ <b>Kechirasiz, bu ma’lumotlarning amal qilish muddati tugagan.</b>\n\nYangi ma’lumot olish uchun Instagram havolasini qayta yuboring.",
-    id: "⏰ <b>Maaf, detail ini sudah kedaluwarsa.</b>\n\nKirim kembali tautan Instagram untuk mendapatkan informasi terbaru.",
-    ar: "⏰ <b>عذرًا، انتهت صلاحية هذه التفاصيل.</b>\n\nأرسل رابط Instagram مرة أخرى للحصول على معلومات جديدة.",
-    uk: "⏰ <b>На жаль, термін дії цих даних минув.</b>\n\nНадішліть посилання Instagram ще раз, щоб отримати свіжу інформацію.",
-    fa: "⏰ <b>متأسفانه، این اطلاعات منقضی شده‌اند.</b>\n\nلینک Instagram را دوباره ارسال کنید تا اطلاعات جدید دریافت کنید.",
-    tr: "⏰ <b>Üzgünüz, bu detayların süresi doldu.</b>\n\nGüncel bilgi almak için Instagram bağlantısını tekrar gönderin.",
-    hi: "⏰ <b>माफ़ करें, इन विवरणों की समय सीमा समाप्त हो गई है।</b>\n\nनई जानकारी पाने के लिए Instagram लिंक फिर से भेजें।",
-    es: "⏰ <b>Lo sentimos, estos detalles han caducado.</b>\n\nEnvía de nuevo el enlace de Instagram para obtener información actualizada.",
-    pt: "⏰ <b>Desculpe, estes detalhes expiraram.</b>\n\nEnvie o link do Instagram novamente para obter informações atualizadas.",
-    fr: "⏰ <b>Désolé, ces détails ont expiré.</b>\n\nRenvoyez le lien Instagram pour obtenir des informations à jour."
+    en: "⏰ <b>Sorry, these details are no longer available.</b>\n\nPlease send the Instagram link again.",
+    ru: "⏰ <b>Извините, эти данные больше недоступны.</b>\n\nОтправьте ссылку Instagram ещё раз.",
+    uz: "⏰ <b>Kechirasiz, bu ma’lumotlar mavjud emas.</b>\n\nInstagram havolasini qayta yuboring.",
+    id: "⏰ <b>Maaf, detail ini sudah tidak tersedia.</b>\n\nKirim kembali tautan Instagram.",
+    ar: "⏰ <b>عذرًا، لم تعد هذه التفاصيل متوفرة.</b>\n\nأرسل رابط Instagram مرة أخرى.",
+    uk: "⏰ <b>На жаль, ці дані більше недоступні.</b>\n\nНадішліть посилання Instagram ще раз.",
+    fa: "⏰ <b>متأسفانه این اطلاعات دیگر موجود نیستند.</b>\n\nلینک Instagram را دوباره ارسال کنید.",
+    tr: "⏰ <b>Üzgünüz, bu detaylar artık mevcut değil.</b>\n\nInstagram bağlantısını tekrar gönderin.",
+    hi: "⏰ <b>माफ़ करें, ये विवरण अब उपलब्ध नहीं हैं।</b>\n\nInstagram लिंक फिर से भेजें।",
+    es: "⏰ <b>Lo sentimos, estos detalles ya no están disponibles.</b>\n\nEnvía de nuevo el enlace de Instagram.",
+    pt: "⏰ <b>Desculpe, estes detalhes não estão mais disponíveis.</b>\n\nEnvie o link do Instagram novamente.",
+    fr: "⏰ <b>Désolé, ces détails ne sont plus disponibles.</b>\n\nRenvoyez le lien Instagram."
   }
 };
 
@@ -596,6 +611,47 @@ async function telegram(method, payload) {
   return result;
 }
 
+// Fallback: Upload image buffer directly if Telegram URL fetch fails
+async function sendPhotoOrBuffer(chatId, photoUrl, caption = "") {
+  try {
+    return await telegram("sendPhoto", {
+      chat_id: chatId,
+      photo: photoUrl,
+      caption,
+      parse_mode: "HTML"
+    });
+  } catch (urlError) {
+    console.error("sendPhoto by URL failed, attempting buffer upload:", urlError.message);
+  }
+
+  const res = await fetch(photoUrl, { signal: AbortSignal.timeout(20000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status} from media host`);
+  const arrayBuffer = await res.arrayBuffer();
+  const blob = new Blob([arrayBuffer], {
+    type: res.headers.get("content-type") || "image/jpeg"
+  });
+
+  const form = new FormData();
+  form.append("chat_id", String(chatId));
+  form.append("photo", blob, "image.jpg");
+  if (caption) {
+    form.append("caption", caption);
+    form.append("parse_mode", "HTML");
+  }
+
+  const tgRes = await fetch(
+    `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`,
+    { method: "POST", body: form, signal: AbortSignal.timeout(30000) }
+  );
+
+  const data = await tgRes.json();
+  if (!tgRes.ok || !data.ok) {
+    throw new Error(data?.description || `Telegram error (${tgRes.status})`);
+  }
+
+  return data;
+}
+
 
 // ==================================================
 // BASIC HELPERS
@@ -693,6 +749,54 @@ function cleanupStorage() {
 
 
 // ==================================================
+// DYNAMIC PROXY EXTRACTION & REWRITING
+// ==================================================
+
+function getProxyBase(data) {
+  const candidates = [
+    data?.video?.[0]?.video,
+    data?.video?.[0]?.cover,
+    data?.data?.media?.[0]?.proxy_url,
+    data?.data?.media?.[0]?.url,
+    Array.isArray(data?.image) ? data.image[0] : null
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.includes("/proxy?url=")) {
+      try {
+        const u = new URL(candidate);
+        return `${u.protocol}//${u.host}`;
+      } catch (e) {}
+    }
+  }
+
+  for (const base of [PRIMARY_API_URL, BACKUP_API_URL]) {
+    if (base && isValidUrl(base)) {
+      try {
+        const u = new URL(base);
+        return `${u.protocol}//${u.host}`;
+      } catch (e) {}
+    }
+  }
+
+  return "https://instadrop.rishu-rishad2019.workers.dev";
+}
+
+function ensureProxied(url, data) {
+  if (!isValidUrl(url)) return null;
+  if (url.includes("/proxy?url=")) return url;
+
+  const isMetaCdn = /cdninstagram\.com|fbcdn\.net|instagram\.com/i.test(url);
+  if (!isMetaCdn && !url.includes("instagram")) return url;
+
+  const base = getProxyBase(data);
+  const cleanBase = base.trim().replace(/[?&]url=.*$/i, "").replace(/\/+$/, "");
+  const keyParam = API_KEY ? `&key=${encodeURIComponent(API_KEY)}` : "";
+  return `${cleanBase}/proxy?url=${encodeURIComponent(url)}${keyParam}`;
+}
+
+
+// ==================================================
 // RESPONSE TYPE
 // ==================================================
 
@@ -769,20 +873,24 @@ function getReelVideo(data) {
 
   if (Array.isArray(data.video)) {
     for (const item of data.video) {
-      if (typeof item === "string" && isValidUrl(item)) return item;
+      if (typeof item === "string" && isValidUrl(item)) {
+        return ensureProxied(item, data);
+      }
       if (item && typeof item === "object") {
         const url = getVideoUrlFromObject(item);
-        if (url) return url;
+        if (url) return ensureProxied(url, data);
       }
     }
   }
 
   if (data.video && typeof data.video === "object" && !Array.isArray(data.video)) {
     const url = getVideoUrlFromObject(data.video);
-    if (url) return url;
+    if (url) return ensureProxied(url, data);
   }
 
-  if (typeof data.video === "string" && isValidUrl(data.video)) return data.video;
+  if (typeof data.video === "string" && isValidUrl(data.video)) {
+    return ensureProxied(data.video, data);
+  }
 
   return null;
 }
@@ -790,39 +898,39 @@ function getReelVideo(data) {
 function getCoverUrl(data) {
   if (!data) return null;
 
-  // Direct cover fields
-  if (isValidUrl(data.cover)) return data.cover;
-  if (isValidUrl(data.cover_url)) return data.cover_url;
-  if (isValidUrl(data.thumbnail_url)) return data.thumbnail_url;
-  if (isValidUrl(data.display_url)) return data.display_url;
-
-  // Search inside data.data.media (worker structured items)
-  if (Array.isArray(data.data?.media)) {
-    for (const item of data.data.media) {
-      const thumb = item.thumbnail_url || item.cover;
-      if (isValidUrl(thumb)) return thumb;
-    }
-  }
-
-  // Search inside data.video array
+  // 1. Check video array objects (frequently contains pre-proxied cover)
   if (Array.isArray(data.video)) {
     for (const item of data.video) {
       if (item && typeof item === "object") {
         const cover = getCoverFromObject(item);
-        if (cover) return cover;
+        if (cover) return ensureProxied(cover, data);
       }
     }
   }
 
-  // Object video
-  if (data.video && typeof data.video === "object" && !Array.isArray(data.video)) {
-    const cover = getCoverFromObject(data.video);
-    if (cover) return cover;
+  // 2. Search inside data.data.media (worker structured items)
+  if (Array.isArray(data.data?.media)) {
+    for (const item of data.data.media) {
+      const thumb = item.thumbnail_url || item.cover;
+      if (isValidUrl(thumb)) return ensureProxied(thumb, data);
+    }
   }
 
-  // Fallback to first image if this is a video post or reel
+  // 3. Direct cover fields
+  if (isValidUrl(data.cover)) return ensureProxied(data.cover, data);
+  if (isValidUrl(data.cover_url)) return ensureProxied(data.cover_url, data);
+  if (isValidUrl(data.thumbnail_url)) return ensureProxied(data.thumbnail_url, data);
+  if (isValidUrl(data.display_url)) return ensureProxied(data.display_url, data);
+
+  // 4. Object video
+  if (data.video && typeof data.video === "object" && !Array.isArray(data.video)) {
+    const cover = getCoverFromObject(data.video);
+    if (cover) return ensureProxied(cover, data);
+  }
+
+  // 5. Fallback to first image
   if (Array.isArray(data.image) && data.image.length > 0 && isValidUrl(data.image[0])) {
-    return data.image[0];
+    return ensureProxied(data.image[0], data);
   }
 
   return null;
@@ -831,25 +939,21 @@ function getCoverUrl(data) {
 function getProfilePicUrl(data) {
   if (!data || typeof data !== "object") return null;
 
-  let pic =
+  const pic =
     data.profile_pic_url_hd ||
     data.profile_pic_url ||
     data.raw_profile_pic_url_hd ||
     data.data?.owner?.profile_pic_url ||
-    data.owner?.profile_pic_url;
+    data.owner?.profile_pic_url ||
+    data.data?.user?.profile_pic_url ||
+    data.user?.profile_pic_url;
 
   if (typeof pic === "string" && isValidUrl(pic)) {
-    // If not already proxied, route through the worker proxy to bypass Instagram CDN hotlink restrictions
-    if (!pic.includes("/proxy?url=") && PRIMARY_API_URL) {
-      const base = PRIMARY_API_URL.trim().replace(/[?&]url=.*$/i, "").replace(/\/+$/, "");
-      const keyParam = API_KEY ? `&key=${encodeURIComponent(API_KEY)}` : "";
-      return `${base}/proxy?url=${encodeURIComponent(pic)}${keyParam}`;
-    }
-    return pic;
+    return ensureProxied(pic, data);
   }
 
   if (data.type === "dp" && Array.isArray(data.image) && isValidUrl(data.image[0])) {
-    return data.image[0];
+    return ensureProxied(data.image[0], data);
   }
 
   return null;
@@ -864,21 +968,28 @@ function extractMediaItems(data) {
   const results = [];
   if (!data || typeof data !== "object") return results;
 
-  // 1. Worker Structured Data: preserves accurate carousel sequence
+  // 1. Worker Structured Data
   if (Array.isArray(data.data?.media) && data.data.media.length > 0) {
-    for (const m of data.data.media) {
+    for (let i = 0; i < data.data.media.length; i++) {
+      const m = data.data.media[i];
       const url = m.proxy_url || m.url;
       if (!isValidUrl(url)) continue;
 
       if (m.type === "video") {
+        const cover =
+          m.thumbnail_url ||
+          m.cover ||
+          (Array.isArray(data.video) ? getCoverFromObject(data.video[i]) : null) ||
+          getCoverUrl(data);
+
         results.push({
-          url,
+          url: ensureProxied(url, data),
           type: "video",
-          cover: isValidUrl(m.thumbnail_url) ? m.thumbnail_url : null
+          cover: cover ? ensureProxied(cover, data) : null
         });
       } else {
         results.push({
-          url,
+          url: ensureProxied(url, data),
           type: "photo",
           cover: null
         });
@@ -887,36 +998,41 @@ function extractMediaItems(data) {
     if (results.length > 0) return results;
   }
 
-  // 2. Images Array
-  if (Array.isArray(data.image)) {
-    for (const image of data.image) {
-      if (typeof image === "string" && isValidUrl(image)) {
-        results.push({ url: image, type: "photo", cover: null });
-      } else if (image && typeof image === "object") {
-        const imageUrl = image.image || image.url || image.proxy_url;
-        if (isValidUrl(imageUrl)) {
+  // 2. Videos Array
+  if (Array.isArray(data.video)) {
+    for (const video of data.video) {
+      if (typeof video === "string" && isValidUrl(video)) {
+        results.push({
+          url: ensureProxied(video, data),
+          type: "video",
+          cover: getCoverUrl(data)
+        });
+      } else if (video && typeof video === "object") {
+        const videoUrl = getVideoUrlFromObject(video);
+        if (videoUrl) {
+          const cover = getCoverFromObject(video) || getCoverUrl(data);
           results.push({
-            url: imageUrl,
-            type: "photo",
-            cover: getCoverFromObject(image)
+            url: ensureProxied(videoUrl, data),
+            type: "video",
+            cover: cover ? ensureProxied(cover, data) : null
           });
         }
       }
     }
   }
 
-  // 3. Videos Array
-  if (Array.isArray(data.video)) {
-    for (const video of data.video) {
-      if (typeof video === "string" && isValidUrl(video)) {
-        results.push({ url: video, type: "video", cover: null });
-      } else if (video && typeof video === "object") {
-        const videoUrl = getVideoUrlFromObject(video);
-        if (videoUrl) {
+  // 3. Images Array
+  if (Array.isArray(data.image)) {
+    for (const image of data.image) {
+      if (typeof image === "string" && isValidUrl(image)) {
+        results.push({ url: ensureProxied(image, data), type: "photo", cover: null });
+      } else if (image && typeof image === "object") {
+        const imageUrl = image.image || image.url || image.proxy_url;
+        if (isValidUrl(imageUrl)) {
           results.push({
-            url: videoUrl,
-            type: "video",
-            cover: getCoverFromObject(video)
+            url: ensureProxied(imageUrl, data),
+            type: "photo",
+            cover: null
           });
         }
       }
@@ -925,11 +1041,18 @@ function extractMediaItems(data) {
 
   // 4. Fallback Single Image / Video strings
   if (results.length === 0) {
-    if (typeof data.image === "string" && isValidUrl(data.image)) {
-      results.push({ url: data.image, type: "photo", cover: null });
-    }
     if (typeof data.video === "string" && isValidUrl(data.video)) {
-      results.push({ url: data.video, type: "video", cover: getCoverUrl(data) });
+      results.push({
+        url: ensureProxied(data.video, data),
+        type: "video",
+        cover: getCoverUrl(data)
+      });
+    } else if (typeof data.image === "string" && isValidUrl(data.image)) {
+      results.push({
+        url: ensureProxied(data.image, data),
+        type: "photo",
+        cover: null
+      });
     }
   }
 
@@ -962,16 +1085,18 @@ function storeMedia({ cover = null, profilePic = null, data = null, parent = nul
 // BUTTONS (COVER, PROFILE PIC, DETAILS)
 // ==================================================
 
-function buildMediaKeyboard(storageId, hasCover, hasProfilePic) {
+function buildMediaKeyboard(storageId, hasCover, hasProfilePic, shortcode = "") {
   const keyboard = [];
   const actionRow = [];
 
+  const sc = shortcode ? `:${shortcode}` : "";
+
   if (hasCover) {
-    actionRow.push({ text: "🖼️ Cover Photo", callback_data: `get_cover:${storageId}` });
+    actionRow.push({ text: "🖼️ Cover Photo", callback_data: `cov:${storageId}${sc}` });
   }
 
   if (hasProfilePic) {
-    actionRow.push({ text: "👤 Profile Pic", callback_data: `get_pfp:${storageId}` });
+    actionRow.push({ text: "👤 Profile Pic", callback_data: `pfp:${storageId}${sc}` });
   }
 
   if (actionRow.length > 0) {
@@ -979,7 +1104,7 @@ function buildMediaKeyboard(storageId, hasCover, hasProfilePic) {
   }
 
   keyboard.push([
-    { text: "📋 Get Details", callback_data: `get_details:${storageId}` }
+    { text: "📋 Get Details", callback_data: `det:${storageId}${sc}` }
   ]);
 
   return { inline_keyboard: keyboard };
@@ -1070,7 +1195,11 @@ function formatDetails(data, parent = null, chatId = null) {
   }
 
   // Items count in carousels
-  const mediaCount = data.data?.media_count ?? data.data?.media?.length ?? (Array.isArray(data.items) ? data.items.length : null);
+  const mediaCount =
+    data.data?.media_count ??
+    data.data?.media?.length ??
+    (Array.isArray(data.items) ? data.items.length : null);
+
   if (hasValue(mediaCount) && Number(mediaCount) > 1) {
     lines.push(`${label("items", language)}: <b>${mediaCount}</b>`);
   }
@@ -1100,6 +1229,7 @@ async function sendMedia(chatId, media, data, parent = null) {
 
   const coverUrl = media.cover || getCoverUrl(data);
   const profilePicUrl = getProfilePicUrl(data);
+  const shortcode = data?.shortcode || data?.data?.shortcode || "";
 
   const storageId = storeMedia({
     cover: coverUrl,
@@ -1109,7 +1239,13 @@ async function sendMedia(chatId, media, data, parent = null) {
     kind: "media"
   });
 
-  const keyboard = buildMediaKeyboard(storageId, Boolean(coverUrl), Boolean(profilePicUrl));
+  const keyboard = buildMediaKeyboard(
+    storageId,
+    Boolean(coverUrl),
+    Boolean(profilePicUrl),
+    shortcode
+  );
+
   const caption = t("downloadReady", chatId);
 
   if (media.type === "video") {
@@ -1357,11 +1493,30 @@ async function handleCallback(callback) {
   if (!chatId) return;
 
   // GET COVER PHOTO
-  if (callbackData.startsWith("get_cover:")) {
-    const storageId = callbackData.slice("get_cover:".length);
+  if (callbackData.startsWith("get_cover:") || callbackData.startsWith("cov:")) {
+    const raw = callbackData.replace(/^(get_cover:|cov:)/, "");
+    const [storageId, shortcode] = raw.split(":");
 
     cleanupStorage();
-    const stored = mediaStorage.get(storageId);
+    let stored = mediaStorage.get(storageId);
+
+    // Auto-recover on Vercel cold starts
+    if (!stored?.cover && shortcode) {
+      try {
+        const fallbackUrl = `https://www.instagram.com/p/${shortcode}/`;
+        const res = await fetchApiWithFallback(fallbackUrl);
+        const refetched = await res.json();
+        if (refetched?.success !== false) {
+          const freshCover = getCoverUrl(refetched);
+          if (freshCover) {
+            stored = { ...(stored || {}), cover: freshCover, data: refetched };
+            mediaStorage.set(storageId, stored);
+          }
+        }
+      } catch (e) {
+        console.error("Cover cold-start recovery failed:", e.message);
+      }
+    }
 
     if (!stored || !stored.cover) {
       await telegram("sendMessage", {
@@ -1373,42 +1528,44 @@ async function handleCallback(callback) {
     }
 
     try {
-      await telegram("sendPhoto", {
+      await sendPhotoOrBuffer(chatId, stored.cover, t("coverPhoto", chatId));
+    } catch (error) {
+      console.error("Cover photo send failed:", error.message);
+      await telegram("sendMessage", {
         chat_id: chatId,
-        photo: stored.cover,
-        caption: t("coverPhoto", chatId),
+        text: t("coverExpired", chatId),
         parse_mode: "HTML"
       });
-    } catch (error) {
-      console.error("Cover sendPhoto failed:", error.message);
-
-      try {
-        await telegram("sendDocument", {
-          chat_id: chatId,
-          document: stored.cover,
-          caption: t("coverPhoto", chatId),
-          parse_mode: "HTML"
-        });
-      } catch (fallbackError) {
-        console.error("Cover fallback failed:", fallbackError.message);
-
-        await telegram("sendMessage", {
-          chat_id: chatId,
-          text: t("coverPhoto", chatId),
-          parse_mode: "HTML"
-        });
-      }
     }
 
     return;
   }
 
   // GET PROFILE PICTURE
-  if (callbackData.startsWith("get_pfp:")) {
-    const storageId = callbackData.slice("get_pfp:".length);
+  if (callbackData.startsWith("get_pfp:") || callbackData.startsWith("pfp:")) {
+    const raw = callbackData.replace(/^(get_pfp:|pfp:)/, "");
+    const [storageId, shortcode] = raw.split(":");
 
     cleanupStorage();
-    const stored = mediaStorage.get(storageId);
+    let stored = mediaStorage.get(storageId);
+
+    // Auto-recover on Vercel cold starts
+    if (!stored?.profilePic && shortcode) {
+      try {
+        const fallbackUrl = `https://www.instagram.com/p/${shortcode}/`;
+        const res = await fetchApiWithFallback(fallbackUrl);
+        const refetched = await res.json();
+        if (refetched?.success !== false) {
+          const freshPic = getProfilePicUrl(refetched);
+          if (freshPic) {
+            stored = { ...(stored || {}), profilePic: freshPic, data: refetched };
+            mediaStorage.set(storageId, stored);
+          }
+        }
+      } catch (e) {
+        console.error("Profile picture cold-start recovery failed:", e.message);
+      }
+    }
 
     if (!stored || !stored.profilePic) {
       await telegram("sendMessage", {
@@ -1420,44 +1577,43 @@ async function handleCallback(callback) {
     }
 
     try {
-      await telegram("sendPhoto", {
+      await sendPhotoOrBuffer(chatId, stored.profilePic, t("profilePicReady", chatId));
+    } catch (error) {
+      console.error("Profile picture send failed:", error.message);
+      await telegram("sendMessage", {
         chat_id: chatId,
-        photo: stored.profilePic,
-        caption: t("profilePicReady", chatId),
+        text: t("profilePicExpired", chatId),
         parse_mode: "HTML"
       });
-    } catch (error) {
-      console.error("Profile picture sendPhoto failed:", error.message);
-
-      try {
-        await telegram("sendDocument", {
-          chat_id: chatId,
-          document: stored.profilePic,
-          caption: t("profilePicReady", chatId),
-          parse_mode: "HTML"
-        });
-      } catch (fallbackError) {
-        console.error("Profile picture fallback failed:", fallbackError.message);
-
-        await telegram("sendMessage", {
-          chat_id: chatId,
-          text: t("profilePicReady", chatId),
-          parse_mode: "HTML"
-        });
-      }
     }
 
     return;
   }
 
   // GET DETAILS
-  if (callbackData.startsWith("get_details:")) {
-    const storageId = callbackData.slice("get_details:".length);
+  if (callbackData.startsWith("get_details:") || callbackData.startsWith("det:")) {
+    const raw = callbackData.replace(/^(get_details:|det:)/, "");
+    const [storageId, shortcode] = raw.split(":");
 
     cleanupStorage();
-    const stored = mediaStorage.get(storageId);
+    let stored = mediaStorage.get(storageId);
 
-    if (!stored) {
+    // Auto-recover on Vercel cold starts
+    if (!stored?.data && shortcode) {
+      try {
+        const fallbackUrl = `https://www.instagram.com/p/${shortcode}/`;
+        const res = await fetchApiWithFallback(fallbackUrl);
+        const refetched = await res.json();
+        if (refetched?.success !== false) {
+          stored = { ...(stored || {}), data: refetched };
+          mediaStorage.set(storageId, stored);
+        }
+      } catch (e) {
+        console.error("Details cold-start recovery failed:", e.message);
+      }
+    }
+
+    if (!stored || !stored.data) {
       await telegram("sendMessage", {
         chat_id: chatId,
         text: t("detailsExpired", chatId),
@@ -1499,7 +1655,7 @@ async function deleteStatusMessage(chatId, messageId) {
 // ==================================================
 
 function buildWorkerUrl(baseUrl, instagramUrl, key) {
-  let cleanBase = baseUrl.trim().replace(/[?&]url=.*$/i, "");
+  const cleanBase = baseUrl.trim().replace(/[?&]url=.*$/i, "");
   const u = new URL(cleanBase);
   u.searchParams.set("url", instagramUrl);
   if (key) {
